@@ -21,8 +21,8 @@ public:
     ~Panel() override;
 
 protected:
-    void showEvent(QShowEvent *event) override; // Override showEvent for animation
-    void closeEvent(QCloseEvent *event) override; // Override closeEvent for closing animation
+    void showEvent(QShowEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     Ui::Panel *ui;
@@ -31,8 +31,8 @@ private:
 
     void populateComboBoxes();
     void setAudioDevice(const QString& deviceId);
-    void animatePanelIn(); // Method for opening animation
-    void animatePanelOut(); // Method for closing animation
+    void animatePanelIn();
+    void animatePanelOut();
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);
@@ -40,7 +40,7 @@ private slots:
     void onAnimationFinished();
 
 signals:
-    void closed(); // Signal to indicate panel closure
+    void closed();
 };
 
 #endif // PANEL_H
