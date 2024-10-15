@@ -4,51 +4,10 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QProcess>
+#include <QPalette>
 
-bool Utils::isExternalMonitorEnabled()
-{
-    QString executablePath = "dependencies/EnhancedDisplaySwitch.exe";
-
-    QProcess process;
-    process.start(executablePath, QStringList() << "/lastmode");
-
-    if (!process.waitForFinished()) {
-        qDebug() << "Failed to run the command: " << process.errorString();
-        return false;
-    }
-
-    QString output = process.readAllStandardOutput().trimmed();
-
-    if (output == "internal") {
-        return false;
-    }
-
-    return true;
-}
-
-void Utils::runEnhancedDisplaySwitch(bool state, int mode)
-{
-    QString executablePath = "dependencies/EnhancedDisplaySwitch.exe";
-    QStringList arguments;
-
-    if (state) {
-        if (mode == 0) {
-            arguments << "/extend";
-        } else if (mode == 1) {
-            arguments << "/external";
-        } else if (mode == 2) {
-            arguments << "/clone";
-        }
-    } else {
-        arguments << "/internal";
-    }
-    QProcess process;
-    process.start(executablePath, arguments);
-
-    if (!process.waitForFinished()) {
-        qDebug() << "Failed to run the command: " << process.errorString();
-    }
-}
+#undef min  // Undefine min macro to avoid conflicts with std::min
+#undef max  // Undefine max macro to avoid conflicts with std::max
 
 QString getTheme()
 {
@@ -61,94 +20,35 @@ QString getTheme()
     return (value == 0) ? "light" : "dark";
 }
 
-// Helper function to convert a BYTE value to a hex string
-QString toHex(BYTE value) {
-    const char* hexDigits = "0123456789ABCDEF";
-    return QString("%1%2")
-        .arg(hexDigits[value >> 4])
-        .arg(hexDigits[value & 0xF]);
-}
-
-// Function to fetch the accent color directly from the Windows registry
-QString getAccentColor(const QString &accentKey)
+QIcon Utils::getIcon(int type, int volume, bool muted)
 {
-    HKEY hKey;
-    BYTE accentPalette[32];  // AccentPalette contains 32 bytes
-    DWORD bufferSize = sizeof(accentPalette);
-
-    // Open the Windows registry key for AccentPalette
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-        // Read the AccentPalette binary data
-        if (RegGetValueW(hKey, NULL, L"AccentPalette", RRF_RT_REG_BINARY, NULL, accentPalette, &bufferSize) == ERROR_SUCCESS) {
-            // Close the registry key after reading
-            RegCloseKey(hKey);
-
-            // Determine the correct index based on the accentKey
-            int index = 0;
-            if (accentKey == "dark2") index = 20;   // Index for "dark2"
-            else if (accentKey == "light3") index = 0;  // Index for "light3"
-            else {
-                qDebug() << "Invalid accentKey provided.";
-                return "#FFFFFF";  // Return white if invalid accentKey
-            }
-
-            // Extract RGB values and convert them to hex format
-            QString red = toHex(accentPalette[index]);
-            QString green = toHex(accentPalette[index + 1]);
-            QString blue = toHex(accentPalette[index + 2]);
-
-            // Return the hex color code
-            return QString("#%1%2%3").arg(red, green, blue);
+    QString theme = getTheme();
+    QString variant;
+    if (type == 1) {
+        QString volumeSymbol;
+        if (volume > 66) {
+            volumeSymbol = "100";
+        } else if (volume > 33) {
+            volumeSymbol = "66";
+        } else if (volume > 0) {
+            volumeSymbol = "33";
         } else {
-            qDebug() << "Failed to retrieve AccentPalette from the registry.";
+            volumeSymbol = "0";
         }
-
-        RegCloseKey(hKey);  // Ensure the key is closed
+        return QIcon(":/icons/tray_" + theme + "_" + volumeSymbol + ".png");
+    } else if (type == 2) {
+        if (muted) {
+            return QIcon(":/icons/headset_" + theme + "_muted.png");
+        } else {
+            return QIcon(":/icons/headset_" + theme + ".png");
+        }
     } else {
-        qDebug() << "Failed to open registry key.";
-    }
-
-    // Fallback color if registry access fails
-    return "#FFFFFF";
-}
-
-QPixmap recolorIcon(const QPixmap &originalIcon, const QColor &color)
-{
-    QImage img = originalIcon.toImage();
-    QColor roundedEdgesColor(color.red(), color.green(), color.blue(), color.alpha() / 3);
-
-    for (int y = 0; y < img.height(); ++y) {
-        for (int x = 0; x < img.width(); ++x) {
-            QColor pixelColor = img.pixelColor(x, y);
-            if (pixelColor == QColor(255, 255, 255) || pixelColor == QColor(0, 0, 0)) {
-                img.setPixelColor(x, y, color);
-            }
-            if (pixelColor == QColor(127, 127, 127)) {
-                img.setPixelColor(x, y, roundedEdgesColor);
-            }
+        if (muted) {
+            return QIcon(":/icons/mic_" + theme + "_muted.png");
+        } else {
+            return QIcon(":/icons/mic_" + theme + ".png");
         }
     }
-
-    return QPixmap::fromImage(img);
-}
-
-QIcon Utils::getIcon()
-{
-    //QString theme = getTheme();
-    return QIcon(":/icons/tray_icon.png");
-}
-
-void Utils::playSoundNotification(bool enabled)
-{
-    const wchar_t* soundFile;
-
-    if (enabled) {
-        soundFile = L"C:\\Windows\\Media\\Windows Hardware Insert.wav";
-    } else {
-        soundFile = L"C:\\Windows\\Media\\Windows Hardware Remove.wav";
-    }
-
-    PlaySound(soundFile, NULL, SND_FILENAME | SND_ASYNC);
 }
 
 int getBuildNumber()
@@ -170,4 +70,41 @@ bool Utils::isWindows10()
 {
     int buildNumber = getBuildNumber();
     return (buildNumber >= 10240 && buildNumber < 22000);
+}
+
+QColor adjustColor(const QColor &color, double factor) {
+    int r = color.red();
+    int g = color.green();
+    int b = color.blue();
+    int a = color.alpha();
+
+    r = std::min(std::max(static_cast<int>(r * factor), 0), 255);
+    g = std::min(std::max(static_cast<int>(g * factor), 0), 255);
+    b = std::min(std::max(static_cast<int>(b * factor), 0), 255);
+
+    return QColor(r, g, b, a);
+}
+
+bool isDarkMode(const QColor &color) {
+    int r = color.red();
+    int g = color.green();
+    int b = color.blue();
+    double brightness = (r + g + b) / 3.0;
+    return brightness < 127;
+}
+
+void Utils::setFrameColorBasedOnWindow(QWidget *window, QFrame *frame) {
+    QColor main_bg_color = window->palette().color(QPalette::Window);
+    QColor frame_bg_color;
+
+    if (isDarkMode(main_bg_color)) {
+        frame_bg_color = adjustColor(main_bg_color, 1.75);  // Brighten color
+    } else {
+        frame_bg_color = adjustColor(main_bg_color, 0.95);  // Darken color
+    }
+
+    QPalette palette = frame->palette();
+    palette.setBrush(QPalette::Window, QBrush(frame_bg_color));
+    frame->setAutoFillBackground(true);
+    frame->setPalette(palette);
 }

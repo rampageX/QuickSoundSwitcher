@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include <QRegularExpression>
+#include <QtMath>
 
 namespace AudioManager {
 
@@ -81,6 +82,102 @@ void parseAudioDeviceOutput(QList<AudioDevice> &playbackDevices, QList<AudioDevi
             recordingDevices.append(device);
         }
     }
+}
+
+void setVolume(int volume, bool playback) {
+    QString program = "powershell";
+    QString command;
+
+    if (playback) {
+        command = QString("& { Set-AudioDevice -PlaybackVolume %1 }").arg(volume);
+    } else {
+        command = QString("& { Set-AudioDevice -RecordingVolume %1 }").arg(volume);
+    }
+
+    QStringList arguments;
+    arguments << "-Command" << command;
+
+    QProcess process;
+    process.start(program, arguments);
+    process.waitForFinished();
+}
+
+int getVolume(bool playback) {
+    QString program = "powershell";
+    QStringList arguments;
+
+    if (playback) {
+        arguments << "-Command" << "Get-AudioDevice -PlaybackVolume";
+    } else {
+        arguments << "-Command" << "Get-AudioDevice -RecordingVolume";
+    }
+
+    QProcess process;
+    process.start(program, arguments);
+    process.waitForFinished();
+
+    QString output = process.readAllStandardOutput();
+
+    QRegularExpression regex("(\\d+(?:\\.\\d+)?)%"); // Matches integers or decimals followed by %
+    QRegularExpressionMatch match = regex.match(output);
+
+    if (match.hasMatch()) {
+        QString volumeStr = match.captured(1);
+        bool ok;
+        double volume = volumeStr.toDouble(&ok);
+
+        if (ok) {
+            return qRound(volume);
+        }
+    }
+    return -1;
+}
+
+void setMute(bool playback) {
+    QString program = "powershell";
+    QString command;
+
+    if (playback) {
+        command = QString("& { Set-AudioDevice -PlaybackMuteToggle }");
+    } else {
+        command = QString("& { Set-AudioDevice -RecordingMuteToggle }");
+    }
+
+    QStringList arguments;
+    arguments << "-Command" << command;
+
+    QProcess process;
+    process.start(program, arguments);
+    process.waitForFinished();
+}
+
+bool getMute(bool playback) {
+    QString program = "powershell";
+    QString command;
+
+    if (playback) {
+        command = QString("& { Get-AudioDevice -PlaybackMute }");
+    } else {
+        command = QString("& { Get-AudioDevice -RecordingMute }");
+    }
+
+    QStringList arguments;
+    arguments << "-Command" << command;
+
+    QProcess process;
+    process.start(program, arguments);
+    process.waitForFinished();
+
+    QString output = process.readAllStandardOutput().trimmed();
+
+    if (output == "True") {
+        return true;
+    } else if (output == "False") {
+        return false;
+    }
+
+    qWarning() << "Unexpected output:" << output;
+    return false; // Default to false if the output is unexpected
 }
 
 }

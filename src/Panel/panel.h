@@ -30,17 +30,30 @@ private:
     QList<AudioManager::AudioDevice> recordingDevices;
 
     void populateComboBoxes();
+    void setSliders();
+    void setButtons();
     void setAudioDevice(const QString& deviceId);
     void animatePanelIn();
     void animatePanelOut();
+    bool userClicked;
+    void setFrames();
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);
     void onInputComboBoxIndexChanged(int index);
     void onAnimationFinished();
+    void onOutputSliderPressed();
+    void onOutputValueChanged(int value);
+    void onOutputSliderReleased();
+    void onInputSliderPressed();
+    void onInputValueChanged(int value);
+    void onInputSliderReleased();
+    void onOutputMuteButtonPressed();
+    void onInputMuteButtonPressed();
 
 signals:
     void closed();
+    void volumeChanged();
 };
 
 #endif // PANEL_H

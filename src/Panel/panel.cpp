@@ -1,6 +1,7 @@
 #include "panel.h"
 #include "ui_panel.h"
 #include "audiomanager.h"
+#include "utils.h"
 #include <QComboBox>
 #include <QDebug>
 #include <QList>
@@ -9,29 +10,41 @@
 #include <QStringList>
 #include <QPropertyAnimation>
 #include <QScreen>
-#include <QGuiApplication> // Include for QGuiApplication
+#include <QGuiApplication>
 
 using namespace AudioManager;
+using namespace Utils;
 
 Panel::Panel(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Panel)
+    , userClicked(false)
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Popup);
     setFixedSize(size());
 
-    // Set the initial position off-screen
     QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
     QPoint screenCenter = screenGeometry.bottomLeft();
-    move(screenCenter.x() - width() / 2, screenCenter.y()); // Adjust to position off-screen
-
+    move(screenCenter.x() - width() / 2, screenCenter.y());
     populateComboBoxes();
+    setSliders();
+    setButtons();
+    setFrames();
 
     connect(ui->outputComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Panel::onOutputComboBoxIndexChanged);
     connect(ui->inputComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Panel::onInputComboBoxIndexChanged);
+
+    connect(ui->outputVolumeSlider, &QSlider::valueChanged, this, &Panel::onOutputValueChanged);
+    connect(ui->outputVolumeSlider, &QSlider::sliderPressed, this, &Panel::onOutputSliderPressed);
+    connect(ui->outputVolumeSlider, &QSlider::sliderReleased, this, &Panel::onOutputSliderReleased);
+    connect(ui->inputVolumeSlider, &QSlider::valueChanged, this, &Panel::onInputValueChanged);
+    connect(ui->inputVolumeSlider, &QSlider::sliderPressed, this, &Panel::onInputSliderPressed);
+    connect(ui->inputVolumeSlider, &QSlider::sliderReleased, this, &Panel::onInputSliderReleased);
+    connect(ui->outputMuteButton, &QToolButton::pressed, this, &Panel::onOutputMuteButtonPressed);
+    connect(ui->inputMuteButton, &QToolButton::pressed, this, &Panel::onInputMuteButtonPressed);
 }
 
 Panel::~Panel()
@@ -41,45 +54,40 @@ Panel::~Panel()
 }
 
 void Panel::showEvent(QShowEvent *event) {
-    QMainWindow::showEvent(event); // Call base class implementation
+    QMainWindow::showEvent(event);
 
-    // Start animation when the panel is shown
     animatePanelIn();
 }
 
 void Panel::closeEvent(QCloseEvent *event) {
-    // Prevent the widget from closing immediately
-    event->ignore(); // Ignore the close event to allow for animation
-    animatePanelOut(); // Start the close animation
+    event->ignore();
+    animatePanelOut();
+    raise();
+    activateWindow();
 }
 
 void Panel::animatePanelIn() {
-    // Create the animation for sliding in
     QPropertyAnimation *animation = new QPropertyAnimation(this, "pos");
-    animation->setDuration(100); // Duration in milliseconds
-    animation->setStartValue(QPoint(x(), y() + height())); // Start below the screen
-    animation->setEndValue(QPoint(x(), y())); // End at the current position
-    animation->setEasingCurve(QEasingCurve::Linear); // Smooth easing
+    animation->setDuration(100);
+    animation->setStartValue(QPoint(x(), y() + height()));
+    animation->setEndValue(QPoint(x(), y()));
+    animation->setEasingCurve(QEasingCurve::Linear);
 
-    animation->start(QAbstractAnimation::DeleteWhenStopped); // Automatically delete the animation when done
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void Panel::animatePanelOut() {
-    // Create the animation for sliding out
     QPropertyAnimation *animation = new QPropertyAnimation(this, "pos");
-    animation->setDuration(100); // Duration in milliseconds
-    animation->setStartValue(QPoint(x(), y())); // Start at the current position
-    animation->setEndValue(QPoint(x(), y() + height())); // End below the screen
+    animation->setDuration(100);
+    animation->setStartValue(QPoint(x(), y()));
+    animation->setEndValue(QPoint(x(), y() + height()));
     animation->setEasingCurve(QEasingCurve::Linear);
-    // Connect to the finished signal to close the widget after the animation
     connect(animation, &QPropertyAnimation::finished, this, &Panel::onAnimationFinished);
 
-    animation->start(QAbstractAnimation::DeleteWhenStopped); // Automatically delete the animation when done
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void Panel::onAnimationFinished() {
-    // This slot is called after the animation finishes
-    qDebug() << "finished";
     this->deleteLater();
 }
 
@@ -95,8 +103,6 @@ void Panel::populateComboBoxes()
 
     for (const AudioDevice &device : playbackDevices) {
         ui->outputComboBox->addItem(device.shortName);
-        qDebug() << "Output:" << device.shortName;
-        qDebug() << "Is default:" << device.isDefault;
 
         if (device.isDefault) {
             defaultPlaybackIndex = ui->outputComboBox->count() - 1;
@@ -109,8 +115,6 @@ void Panel::populateComboBoxes()
 
     for (const AudioDevice &device : recordingDevices) {
         ui->inputComboBox->addItem(device.shortName);
-        qDebug() << "Input:" << device.shortName;
-        qDebug() << "Is default:" << device.isDefault;
 
         if (device.isDefault) {
             defaultRecordingIndex = ui->inputComboBox->count() - 1;
@@ -122,18 +126,32 @@ void Panel::populateComboBoxes()
     }
 }
 
+void Panel::setSliders() {
+    ui->outputVolumeSlider->setValue(getVolume(true));
+    ui->inputVolumeSlider->setValue(getVolume(false));
+}
+
+void Panel::setButtons() {
+    ui->outputMuteButton->setIcon(getIcon(2, NULL, getMute(true)));
+    ui->outputMuteButton->setIconSize(QSize(16, 16));
+    ui->inputMuteButton->setIcon(getIcon(3, NULL, getMute(false)));
+    ui->inputMuteButton->setIconSize(QSize(16, 16));
+}
+
+void Panel::setFrames() {
+    setFrameColorBasedOnWindow(this, ui->outputFrame);
+    setFrameColorBasedOnWindow(this, ui->inputFrame);
+}
+
 void Panel::setAudioDevice(const QString& deviceId)
 {
     QString command = QString("Set-AudioDevice -ID \"%1\"").arg(deviceId); // Use escaped double quotes
 
     QProcess process;
     process.start("powershell.exe", QStringList() << "-Command" << command);
-    qDebug() << command;
 
     if (!process.waitForFinished()) {
         qDebug() << "Error executing PowerShell command:" << process.errorString();
-    } else {
-        qDebug() << "Audio device changed to ID:" << deviceId;
     }
 }
 
@@ -155,4 +173,60 @@ void Panel::onInputComboBoxIndexChanged(int index)
 
     const AudioDevice &selectedDevice = recordingDevices[index];
     setAudioDevice(selectedDevice.id);
+}
+
+void Panel::onOutputSliderPressed()
+{
+    userClicked = true;
+}
+
+void Panel::onOutputValueChanged(int value)
+{
+    if (userClicked) {
+        return;
+    } else {
+        setVolume(ui->outputVolumeSlider->value(), true);
+        emit volumeChanged();
+    }
+}
+
+void Panel::onOutputSliderReleased()
+{
+    userClicked = false;
+    setVolume(ui->outputVolumeSlider->value(), true);
+    emit volumeChanged();
+}
+
+void Panel::onInputSliderPressed()
+{
+    userClicked = true;
+}
+
+void Panel::onInputValueChanged(int value)
+{
+    if (userClicked) {
+        return;
+    } else {
+        setVolume(ui->inputVolumeSlider->value(), false);
+    }
+}
+
+void Panel::onInputSliderReleased()
+{
+    userClicked = false;
+    setVolume(ui->inputVolumeSlider->value(), false);
+}
+
+void Panel::onOutputMuteButtonPressed()
+{
+    setMute(true);
+    ui->outputMuteButton->setIcon(getIcon(2, NULL, getMute(true)));
+    ui->outputMuteButton->setIconSize(QSize(16, 16));
+}
+
+void Panel::onInputMuteButtonPressed()
+{
+    setMute(false);
+    ui->inputMuteButton->setIcon(getIcon(3, NULL, getMute(false)));
+    ui->inputMuteButton->setIconSize(QSize(16, 16));
 }

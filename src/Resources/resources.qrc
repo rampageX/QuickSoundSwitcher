@@ -1,6 +1,20 @@
 <RCC>
     <qresource prefix="/">
-        <file>icons/icon.png</file>
-        <file>icons/tray_icon.png</file>
+        <file>icons/tray_light_0.png</file>
+        <file>icons/tray_dark_0.png</file>
+        <file>icons/tray_light_33.png</file>
+        <file>icons/tray_dark_33.png</file>
+        <file>icons/tray_light_66.png</file>
+        <file>icons/tray_dark_66.png</file>
+        <file>icons/tray_light_100.png</file>
+        <file>icons/tray_dark_100.png</file>
+        <file>icons/headset_light.png</file>
+        <file>icons/headset_dark.png</file>
+        <file>icons/headset_light_muted.png</file>
+        <file>icons/headset_dark_muted.png</file>
+        <file>icons/mic_light.png</file>
+        <file>icons/mic_dark.png</file>
+        <file>icons/mic_light_muted.png</file>
+        <file>icons/mic_dark_muted.png</file>
     </qresource>
 </RCC>

@@ -1,11 +1,13 @@
 #include "quicksoundswitcher.h"
 #include "utils.h"
+#include "audiomanager.h"
 #include <QMenu>
 #include <QApplication>
-#include <QScreen>  // Include for screen geometry
-#include <QRect>    // Include for QRect
+#include <QScreen>
+#include <QRect>
 
 using namespace Utils;
+using namespace AudioManager;
 
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
@@ -21,7 +23,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher() {
 
 void QuickSoundSwitcher::createTrayIcon()
 {
-    trayIcon->setIcon(getIcon());
+    trayIcon->setIcon(getIcon(1, getVolume(true), NULL));
 
     QMenu *trayMenu = new QMenu(this);
 
@@ -54,6 +56,7 @@ void QuickSoundSwitcher::showPanel()
     panel = new Panel;
     panel->setAttribute(Qt::WA_DeleteOnClose);
     connect(panel, &Panel::closed, this, &QuickSoundSwitcher::onPanelClosed);
+    connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
 
     // Get the geometry of the tray icon
     QRect iconGeometry = trayIcon->geometry();
@@ -74,4 +77,10 @@ void QuickSoundSwitcher::showPanel()
 void QuickSoundSwitcher::onPanelClosed()
 {
     panel = nullptr;
+}
+
+void QuickSoundSwitcher::onVolumeChanged()
+{
+    qDebug() << "received";
+    trayIcon->setIcon(getIcon(1, getVolume(true), NULL));
 }

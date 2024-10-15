@@ -2,15 +2,12 @@
 #define UTILS_H
 
 #include <QIcon>
-#include <QString>
+#include <QFrame>
 
 namespace Utils {
-
-    bool isExternalMonitorEnabled();
-    void runEnhancedDisplaySwitch(bool state, int mode);
-    void playSoundNotification(bool enabled);
     bool isWindows10();
-    QIcon getIcon();
+    QIcon getIcon(int type, int volume, bool muted);
+    void setFrameColorBasedOnWindow(QWidget *window, QFrame *frame);
 }
 
 #endif // UTILS_H

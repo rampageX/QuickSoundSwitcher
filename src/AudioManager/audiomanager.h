@@ -4,7 +4,6 @@
 #include <QString>
 #include <QList>
 
-// Define a struct to hold audio device information
 namespace AudioManager {
 
 struct AudioDevice {
@@ -12,18 +11,16 @@ struct AudioDevice {
     QString shortName;
     QString id;
     bool isDefault;
-    QString type;  // either "Playback" or "Recording"
+    QString type;
 };
 
-// Function to get audio device output from PowerShell
 QString getAudioDeviceOutput();
-
-// Function to parse audio device output and populate the provided lists
 void parseAudioDeviceOutput(QList<AudioDevice> &playbackDevices, QList<AudioDevice> &recordingDevices);
 
-// Example usage function to demonstrate the functionality
-void exampleUsage();
-
-} // namespace AudioManager
+void setVolume(int volume, bool playback);
+int getVolume(bool playback);
+void setMute(bool playback);
+bool getMute(bool playback);
+}
 
 #endif // AUDIOMANAGER_H

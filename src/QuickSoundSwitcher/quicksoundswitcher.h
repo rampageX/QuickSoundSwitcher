@@ -13,11 +13,14 @@ public:
     QuickSoundSwitcher(QWidget *parent = nullptr);
     ~QuickSoundSwitcher();
 
+private slots:
+    void onVolumeChanged();
+    void onPanelClosed();
+
 private:
     QSystemTrayIcon *trayIcon;
     Panel* panel;
     void createTrayIcon();
-    void onPanelClosed();
     void showPanel();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 };
