@@ -190,9 +190,12 @@ void Panel::onInputMuteButtonPressed()
 
 bool Panel::eventFilter(QObject *obj, QEvent *event)
 {
-    if (event->type() == QEvent::FocusOut) {
-        emit lostFocus();
+    if (event->type() == QEvent::MouseButtonPress) {
+        if (!this->underMouse()) {
+            emit lostFocus();
+        }
     }
+
     return QWidget::eventFilter(obj, event);
 }
 
