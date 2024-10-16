@@ -16,6 +16,7 @@ public:
 private slots:
     void onVolumeChanged();
     void onPanelClosed();
+    void onRunAtStartupStateChanged();
 
 private:
     QSystemTrayIcon *trayIcon;
