@@ -36,7 +36,6 @@ private:
     void setSliders();
     void setButtons();
     void setAudioDevice(const QString& deviceId);
-    bool userClicked;
     void setFrames();
 
 private slots:

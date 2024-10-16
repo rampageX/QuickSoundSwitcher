@@ -20,7 +20,6 @@ using namespace Utils;
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Panel)
-    , userClicked(false)
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
@@ -203,11 +202,11 @@ bool Panel::eventFilter(QObject *obj, QEvent *event)
 }
 
 void Panel::outputAudioMeter() {
-    int level = getPlaybackAudioLevel(); // Get the playback audio level
-    ui->outputAudioMeter->setValue(level); // Update the output progress bar
+    int level = getPlaybackAudioLevel();
+    ui->outputAudioMeter->setValue(level);
 }
 
 void Panel::inputAudioMeter() {
-    int level = getRecordingAudioLevel(); // Get the recording audio level
-    ui->inputAudioMeter->setValue(level); // Update the input progress bar
+    int level = getRecordingAudioLevel();
+    ui->inputAudioMeter->setValue(level);
 }
