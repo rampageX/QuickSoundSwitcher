@@ -55,13 +55,13 @@ void Panel::showEvent(QShowEvent *event) {
     QMainWindow::showEvent(event);
 
     animatePanelIn();
+    raise();
+    activateWindow();
 }
 
 void Panel::closeEvent(QCloseEvent *event) {
     event->ignore();
     animatePanelOut();
-    raise();
-    activateWindow();
 }
 
 void Panel::animatePanelIn() {
