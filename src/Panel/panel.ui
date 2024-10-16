@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>284</width>
-    <height>218</height>
+    <height>230</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -123,7 +123,7 @@
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>0</height>
+          <height>30</height>
          </size>
         </property>
        </widget>
@@ -132,8 +132,8 @@
        <widget class="QToolButton" name="outputMuteButton">
         <property name="minimumSize">
          <size>
-          <width>0</width>
-          <height>0</height>
+          <width>30</width>
+          <height>30</height>
          </size>
         </property>
         <property name="text">
@@ -186,7 +186,7 @@
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>0</height>
+          <height>30</height>
          </size>
         </property>
        </widget>
@@ -195,8 +195,8 @@
        <widget class="QToolButton" name="inputMuteButton">
         <property name="minimumSize">
          <size>
-          <width>0</width>
-          <height>0</height>
+          <width>30</width>
+          <height>30</height>
          </size>
         </property>
         <property name="text">
