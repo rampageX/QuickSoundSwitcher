@@ -11,7 +11,7 @@ using namespace AudioManager;
 
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
-    , trayIcon(new CustomTrayIcon(this))
+    , trayIcon(new QSystemTrayIcon(this))
     , panel(nullptr)
 {
     createTrayIcon();
@@ -83,3 +83,4 @@ void QuickSoundSwitcher::onVolumeChanged()
 {
     trayIcon->setIcon(getIcon(1, getPlaybackVolume(), NULL));
 }
+

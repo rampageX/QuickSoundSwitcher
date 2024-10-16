@@ -12,8 +12,7 @@ INCLUDEPATH += \
     src/QuickSoundSwitcher/ \
     src/Utils/ \
     src/Panel/ \
-    src/AudioManager/ \
-    src/CustomTrayIcon/
+    src/AudioManager/
 
 SOURCES += \
     src/main.cpp \
@@ -27,8 +26,7 @@ HEADERS += \
     src/Panel/panel.h \
     src/QuickSoundSwitcher/quicksoundswitcher.h \
     src/Utils/utils.h \
-    src/AudioManager/audiomanager.h \
-    src/CustomTrayIcon/customtrayicon.h
+    src/AudioManager/audiomanager.h
 
 RESOURCES += \
     src/Resources/resources.qrc \
