@@ -66,20 +66,20 @@ void Panel::closeEvent(QCloseEvent *event) {
 
 void Panel::animatePanelIn() {
     QPropertyAnimation *animation = new QPropertyAnimation(this, "pos");
-    animation->setDuration(100);
+    animation->setDuration(300);
     animation->setStartValue(QPoint(x(), y() + height()));
     animation->setEndValue(QPoint(x(), y()));
-    animation->setEasingCurve(QEasingCurve::Linear);
+    animation->setEasingCurve(QEasingCurve::OutCubic);
 
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void Panel::animatePanelOut() {
     QPropertyAnimation *animation = new QPropertyAnimation(this, "pos");
-    animation->setDuration(100);
+    animation->setDuration(300);
     animation->setStartValue(QPoint(x(), y()));
     animation->setEndValue(QPoint(x(), y() + height()));
-    animation->setEasingCurve(QEasingCurve::Linear);
+    animation->setEasingCurve(QEasingCurve::InCubic);
     connect(animation, &QPropertyAnimation::finished, this, &Panel::onAnimationFinished);
 
     animation->start(QAbstractAnimation::DeleteWhenStopped);
