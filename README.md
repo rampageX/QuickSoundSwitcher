@@ -19,7 +19,7 @@ This will set default both default (General sound)
 and communication (Discord, teams ...) for the selected device.
 - Sliders act as volume sliders.
 
-Click anywhere outside the panel to close it.
+Left click on the tray icon to close the panel.
 
 ## Installation
 

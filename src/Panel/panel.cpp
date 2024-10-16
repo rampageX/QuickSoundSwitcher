@@ -24,7 +24,6 @@ Panel::Panel(QWidget *parent)
     ui->setupUi(this);
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
     setFixedSize(size());
-    qApp->installEventFilter(this);
 
     QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
     QPoint screenCenter = screenGeometry.bottomLeft();
@@ -186,17 +185,6 @@ void Panel::onInputMuteButtonPressed()
     }
     ui->inputMuteButton->setIcon(getIcon(3, NULL, !recordingMute));
     ui->inputMuteButton->setIconSize(QSize(16, 16));
-}
-
-bool Panel::eventFilter(QObject *obj, QEvent *event)
-{
-    if (event->type() == QEvent::MouseButtonPress) {
-        if (!this->underMouse()) {
-            emit lostFocus();
-        }
-    }
-
-    return QWidget::eventFilter(obj, event);
 }
 
 void Panel::outputAudioMeter() {
