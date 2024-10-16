@@ -3,7 +3,6 @@
 #include "audiomanager.h"
 #include "utils.h"
 #include <QComboBox>
-#include <QDebug>
 #include <QList>
 #include <QProcess>
 #include <QRegularExpression>
@@ -39,11 +38,7 @@ Panel::Panel(QWidget *parent)
             this, &Panel::onInputComboBoxIndexChanged);
 
     connect(ui->outputVolumeSlider, &QSlider::valueChanged, this, &Panel::onOutputValueChanged);
-    connect(ui->outputVolumeSlider, &QSlider::sliderPressed, this, &Panel::onOutputSliderPressed);
-    connect(ui->outputVolumeSlider, &QSlider::sliderReleased, this, &Panel::onOutputSliderReleased);
     connect(ui->inputVolumeSlider, &QSlider::valueChanged, this, &Panel::onInputValueChanged);
-    connect(ui->inputVolumeSlider, &QSlider::sliderPressed, this, &Panel::onInputSliderPressed);
-    connect(ui->inputVolumeSlider, &QSlider::sliderReleased, this, &Panel::onInputSliderReleased);
     connect(ui->outputMuteButton, &QToolButton::pressed, this, &Panel::onOutputMuteButtonPressed);
     connect(ui->inputMuteButton, &QToolButton::pressed, this, &Panel::onInputMuteButtonPressed);
 }
@@ -51,7 +46,7 @@ Panel::Panel(QWidget *parent)
 Panel::~Panel()
 {
     emit closed();
-    cleanup();
+    cleanup(); //clean audiomanager
     delete ui;
 }
 
@@ -146,18 +141,6 @@ void Panel::setFrames() {
     setFrameColorBasedOnWindow(this, ui->inputFrame);
 }
 
-void Panel::setAudioDevice(const QString& deviceId)
-{
-    QString command = QString("Set-AudioDevice -ID \"%1\"").arg(deviceId); // Use escaped double quotes
-
-    QProcess process;
-    process.start("powershell.exe", QStringList() << "-Command" << command);
-
-    if (!process.waitForFinished()) {
-        qDebug() << "Error executing PowerShell command:" << process.errorString();
-    }
-}
-
 void Panel::onOutputComboBoxIndexChanged(int index)
 {
     if (index < 0 || index >= playbackDevices.size()) {
@@ -178,45 +161,14 @@ void Panel::onInputComboBoxIndexChanged(int index)
     setAudioDevice(selectedDevice.id);
 }
 
-void Panel::onOutputSliderPressed()
-{
-    userClicked = true;
-}
-
 void Panel::onOutputValueChanged(int value)
 {
-    if (userClicked) {
-        return;
-    } else {
         setPlaybackVolume(ui->outputVolumeSlider->value());
         emit volumeChanged();
-    }
-}
-
-void Panel::onOutputSliderReleased()
-{
-    userClicked = false;
-    setPlaybackVolume(ui->outputVolumeSlider->value());
-    emit volumeChanged();
-}
-
-void Panel::onInputSliderPressed()
-{
-    userClicked = true;
 }
 
 void Panel::onInputValueChanged(int value)
 {
-    if (userClicked) {
-        return;
-    } else {
-        setRecordingVolume(ui->inputVolumeSlider->value());
-    }
-}
-
-void Panel::onInputSliderReleased()
-{
-    userClicked = false;
     setRecordingVolume(ui->inputVolumeSlider->value());
 }
 

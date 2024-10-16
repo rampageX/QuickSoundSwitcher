@@ -81,6 +81,5 @@ void QuickSoundSwitcher::onPanelClosed()
 
 void QuickSoundSwitcher::onVolumeChanged()
 {
-    qDebug() << "received";
     trayIcon->setIcon(getIcon(1, getPlaybackVolume(), NULL));
 }
