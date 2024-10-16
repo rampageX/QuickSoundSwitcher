@@ -190,14 +190,6 @@ void Panel::onInputMuteButtonPressed()
 
 bool Panel::eventFilter(QObject *obj, QEvent *event)
 {
-    if (event->type() == QEvent::MouseButtonPress) {
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-        QPointF mousePos = mouseEvent->globalPosition();
-
-        if (!this->geometry().contains(mousePos.toPoint())) {
-            emit lostFocus();
-        }
-    }
     if (event->type() == QEvent::FocusOut) {
         emit lostFocus();
     }
