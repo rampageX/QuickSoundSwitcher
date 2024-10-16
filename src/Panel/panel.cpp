@@ -11,17 +11,18 @@
 #include <QPropertyAnimation>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QPainter>
 
 using namespace AudioManager;
 using namespace Utils;
 
 Panel::Panel(QWidget *parent)
-    : QMainWindow(parent)
+    : QWidget(parent)
     , ui(new Ui::Panel)
     , userClicked(false)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::Popup);
+    setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
     setFixedSize(size());
     qApp->installEventFilter(this);
 
@@ -52,7 +53,7 @@ Panel::~Panel()
 }
 
 void Panel::showEvent(QShowEvent *event) {
-    QMainWindow::showEvent(event);
+    QWidget::showEvent(event);
 
     raise();
     activateWindow();
@@ -192,6 +193,6 @@ bool Panel::eventFilter(QObject *obj, QEvent *event)
             emit lostFocus();
         }
     }
-    return QMainWindow::eventFilter(obj, event);
+    return QWidget::eventFilter(obj, event);
 }
 

@@ -14,7 +14,7 @@ namespace Ui {
 class Panel;
 }
 
-class Panel : public QMainWindow
+class Panel : public QWidget
 {
     Q_OBJECT
 

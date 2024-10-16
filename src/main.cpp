@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
 
     QuickSoundSwitcher w;
     a.setStyle("fusion");
+
     a.setQuitOnLastWindowClosed(false);
     return a.exec();
 }
