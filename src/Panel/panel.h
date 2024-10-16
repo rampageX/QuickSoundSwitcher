@@ -25,6 +25,7 @@ public:
 protected:
     void showEvent(QShowEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     Ui::Panel *ui;
@@ -35,23 +36,20 @@ private:
     void setSliders();
     void setButtons();
     void setAudioDevice(const QString& deviceId);
-    void animatePanelIn();
-    void animatePanelOut();
     bool userClicked;
     void setFrames();
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);
     void onInputComboBoxIndexChanged(int index);
-    void onAnimationFinished();
     void onOutputValueChanged(int value);
     void onInputValueChanged(int value);
     void onOutputMuteButtonPressed();
     void onInputMuteButtonPressed();
 
 signals:
-    void closed();
     void volumeChanged();
+    void lostFocus();
 };
 
 #endif // PANEL_H

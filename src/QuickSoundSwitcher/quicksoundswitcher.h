@@ -21,8 +21,13 @@ private slots:
 private:
     QSystemTrayIcon *trayIcon;
     Panel* panel;
+    int currentY;
+    int targetY;
     void createTrayIcon();
     void showPanel();
+    void movePanelUp();
+    void hidePanel();
+    void movePanelDown();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 };
 

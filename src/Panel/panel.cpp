@@ -23,6 +23,7 @@ Panel::Panel(QWidget *parent)
     ui->setupUi(this);
     setWindowFlags(Qt::Popup);
     setFixedSize(size());
+    qApp->installEventFilter(this);
 
     QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
     QPoint screenCenter = screenGeometry.bottomLeft();
@@ -46,7 +47,6 @@ Panel::Panel(QWidget *parent)
 
 Panel::~Panel()
 {
-    emit closed();
     cleanup(); //clean audiomanager
     delete ui;
 }
@@ -54,39 +54,12 @@ Panel::~Panel()
 void Panel::showEvent(QShowEvent *event) {
     QMainWindow::showEvent(event);
 
-    animatePanelIn();
     raise();
     activateWindow();
 }
 
 void Panel::closeEvent(QCloseEvent *event) {
     event->ignore();
-    animatePanelOut();
-}
-
-void Panel::animatePanelIn() {
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "pos");
-    animation->setDuration(300);
-    animation->setStartValue(QPoint(x(), y() + height()));
-    animation->setEndValue(QPoint(x(), y()));
-    animation->setEasingCurve(QEasingCurve::OutCubic);
-
-    animation->start(QAbstractAnimation::DeleteWhenStopped);
-}
-
-void Panel::animatePanelOut() {
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "pos");
-    animation->setDuration(300);
-    animation->setStartValue(QPoint(x(), y()));
-    animation->setEndValue(QPoint(x(), y() + height()));
-    animation->setEasingCurve(QEasingCurve::InCubic);
-    connect(animation, &QPropertyAnimation::finished, this, &Panel::onAnimationFinished);
-
-    animation->start(QAbstractAnimation::DeleteWhenStopped);
-}
-
-void Panel::onAnimationFinished() {
-    this->deleteLater();
 }
 
 void Panel::populateComboBoxes()
@@ -208,3 +181,17 @@ void Panel::onInputMuteButtonPressed()
     ui->inputMuteButton->setIcon(getIcon(3, NULL, !recordingMute));
     ui->inputMuteButton->setIconSize(QSize(16, 16));
 }
+
+bool Panel::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        QPointF mousePos = mouseEvent->globalPosition();
+
+        if (!this->geometry().contains(mousePos.toPoint())) {
+            emit lostFocus();
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
+}
+
