@@ -106,6 +106,8 @@ void Panel::populateComboBoxes()
 void Panel::setSliders() {
     ui->outputVolumeSlider->setValue(getPlaybackVolume());
     ui->inputVolumeSlider->setValue(getRecordingVolume());
+    ui->outputVolumeSlider->setEnabled(!getPlaybackMute());
+    ui->inputVolumeSlider->setEnabled(!getRecordingMute());
 }
 
 void Panel::setButtons() {
@@ -166,11 +168,8 @@ void Panel::onInputValueChanged(int value)
 void Panel::onOutputMuteButtonPressed()
 {
     bool playbackMute = getPlaybackMute();
-    if (playbackMute) {
-        setPlaybackMute(false);
-    } else {
-        setPlaybackMute(true);
-    }
+    setPlaybackMute(!playbackMute);
+    ui->outputVolumeSlider->setEnabled(playbackMute);
     ui->outputMuteButton->setIcon(getIcon(2, NULL, !playbackMute));
     ui->outputMuteButton->setIconSize(QSize(16, 16));
 }
@@ -178,11 +177,8 @@ void Panel::onOutputMuteButtonPressed()
 void Panel::onInputMuteButtonPressed()
 {
     bool recordingMute = getRecordingMute();
-    if (recordingMute) {
-        setRecordingMute(false);
-    } else {
-        setRecordingMute(true);
-    }
+    setRecordingMute(!recordingMute);
+    ui->inputVolumeSlider->setEnabled(recordingMute);
     ui->inputMuteButton->setIcon(getIcon(3, NULL, !recordingMute));
     ui->inputMuteButton->setIconSize(QSize(16, 16));
 }
