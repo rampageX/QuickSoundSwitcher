@@ -64,7 +64,7 @@ void enumerateDevices(EDataFlow dataFlow, QList<AudioDevice>& devices) {
         AudioDevice device;
         device.id = QString::fromWCharArray(pwszID);
         device.name = QString::fromWCharArray(varName.pwszVal);
-        device.shortName = device.name; // Customize if needed
+        device.shortName = extractShortName(device.name); // Customize if needed
         device.type = (dataFlow == eRender) ? "Playback" : "Recording";
         device.isDefault = (wcscmp(pwszID, pwszDefaultID) == 0); // Check if this device is the default one
 
@@ -75,6 +75,17 @@ void enumerateDevices(EDataFlow dataFlow, QList<AudioDevice>& devices) {
     }
 
     CoTaskMemFree(pwszDefaultID);
+}
+
+QString extractShortName(const QString& fullName) {
+    int firstOpenParenIndex = fullName.indexOf('(');
+    int lastCloseParenIndex = fullName.lastIndexOf(')');
+
+    if (firstOpenParenIndex != -1 && lastCloseParenIndex != -1 && firstOpenParenIndex < lastCloseParenIndex) {
+        return fullName.mid(firstOpenParenIndex + 1, lastCloseParenIndex - firstOpenParenIndex - 1).trimmed();
+    }
+
+    return fullName;
 }
 
 void enumeratePlaybackDevices(QList<AudioDevice>& playbackDevices) {

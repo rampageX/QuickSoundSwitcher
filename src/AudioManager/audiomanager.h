@@ -35,6 +35,7 @@ bool getPlaybackMute();
 void setRecordingMute(bool mute);
 bool getRecordingMute();
 
+QString extractShortName(const QString& fullName);
 }
 
 #endif // AUDIOMANAGER_H
