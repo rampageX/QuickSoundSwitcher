@@ -38,7 +38,6 @@ private:
     void setAudioDevice(const QString& deviceId);
     bool userClicked;
     void setFrames();
-    void setProgressBars();
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);

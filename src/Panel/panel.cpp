@@ -35,7 +35,6 @@ Panel::Panel(QWidget *parent)
     setSliders();
     setButtons();
     setFrames();
-    setProgressBars();
 
     QTimer *audioMeterTimer = new QTimer(this);
     connect(audioMeterTimer, &QTimer::timeout, this, &Panel::outputAudioMeter);
@@ -121,11 +120,6 @@ void Panel::setButtons() {
 void Panel::setFrames() {
     setFrameColorBasedOnWindow(this, ui->outputFrame);
     setFrameColorBasedOnWindow(this, ui->inputFrame);
-}
-
-void Panel::setProgressBars() {
-    //ui->outputAudioMeter->setFixedHeight(10);
-    //ui->inputAudioMeter->setFixedHeight(10);
 }
 
 void Panel::setAudioDevice(const QString& deviceId)
