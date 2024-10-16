@@ -198,6 +198,9 @@ bool Panel::eventFilter(QObject *obj, QEvent *event)
             emit lostFocus();
         }
     }
+    if (event->type() == QEvent::FocusOut) {
+        emit lostFocus();
+    }
     return QWidget::eventFilter(obj, event);
 }
 
