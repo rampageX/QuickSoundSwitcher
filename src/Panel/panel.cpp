@@ -124,8 +124,8 @@ void Panel::setFrames() {
 }
 
 void Panel::setProgressBars() {
-    ui->outputAudioMeter->setFixedHeight(10);
-    ui->inputAudioMeter->setFixedHeight(10);
+    //ui->outputAudioMeter->setFixedHeight(10);
+    //ui->inputAudioMeter->setFixedHeight(10);
 }
 
 void Panel::setAudioDevice(const QString& deviceId)

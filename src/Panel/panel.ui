@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>284</width>
-    <height>234</height>
+    <height>218</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,6 +20,50 @@
    <property name="spacing">
     <number>12</number>
    </property>
+   <item row="0" column="1">
+    <widget class="QSlider" name="outputVolumeSlider">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
+     </property>
+     <property name="tickPosition">
+      <enum>QSlider::TickPosition::NoTicks</enum>
+     </property>
+     <property name="tickInterval">
+      <number>10</number>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QSlider" name="inputVolumeSlider">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Orientation::Horizontal</enum>
+     </property>
+     <property name="tickPosition">
+      <enum>QSlider::TickPosition::NoTicks</enum>
+     </property>
+     <property name="tickInterval">
+      <number>10</number>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label_2">
      <property name="minimumSize">
@@ -56,28 +100,6 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QSlider" name="outputVolumeSlider">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="maximum">
-      <number>100</number>
-     </property>
-     <property name="orientation">
-      <enum>Qt::Orientation::Horizontal</enum>
-     </property>
-     <property name="tickPosition">
-      <enum>QSlider::TickPosition::NoTicks</enum>
-     </property>
-     <property name="tickInterval">
-      <number>10</number>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0" colspan="2">
     <widget class="QFrame" name="inputFrame">
      <property name="frameShape">
@@ -87,6 +109,9 @@
       <enum>QFrame::Shadow::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
+      <property name="spacing">
+       <number>12</number>
+      </property>
       <item row="1" column="1">
        <widget class="QComboBox" name="outputComboBox">
         <property name="sizePolicy">
@@ -118,6 +143,18 @@
       </item>
       <item row="0" column="0" colspan="2">
        <widget class="QProgressBar" name="outputAudioMeter">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>10</height>
+         </size>
+        </property>
         <property name="maximum">
          <number>100</number>
         </property>
@@ -141,6 +178,9 @@
       <enum>QFrame::Shadow::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+      <property name="spacing">
+       <number>12</number>
+      </property>
       <item row="1" column="1">
        <widget class="QComboBox" name="inputComboBox">
         <property name="minimumSize">
@@ -166,6 +206,18 @@
       </item>
       <item row="0" column="0" colspan="2">
        <widget class="QProgressBar" name="inputAudioMeter">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>10</height>
+         </size>
+        </property>
         <property name="maximum">
          <number>100</number>
         </property>
@@ -178,28 +230,6 @@
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QSlider" name="inputVolumeSlider">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="maximum">
-      <number>100</number>
-     </property>
-     <property name="orientation">
-      <enum>Qt::Orientation::Horizontal</enum>
-     </property>
-     <property name="tickPosition">
-      <enum>QSlider::TickPosition::NoTicks</enum>
-     </property>
-     <property name="tickInterval">
-      <number>10</number>
-     </property>
     </widget>
    </item>
   </layout>
