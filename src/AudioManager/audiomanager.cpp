@@ -29,6 +29,21 @@ void enumerateDevices(EDataFlow dataFlow, QList<AudioDevice>& devices) {
         return;
     }
 
+    // Get the default audio endpoint for this data flow and role
+    CComPtr<IMMDevice> pDefaultDevice;
+    hr = pEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &pDefaultDevice);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get default audio endpoint";
+        return;
+    }
+
+    LPWSTR pwszDefaultID = nullptr;
+    hr = pDefaultDevice->GetId(&pwszDefaultID);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get default device ID";
+        return;
+    }
+
     UINT count;
     pCollection->GetCount(&count);
 
@@ -51,13 +66,15 @@ void enumerateDevices(EDataFlow dataFlow, QList<AudioDevice>& devices) {
         device.name = QString::fromWCharArray(varName.pwszVal);
         device.shortName = device.name; // Customize if needed
         device.type = (dataFlow == eRender) ? "Playback" : "Recording";
-        device.isDefault = (i == 0); // Assuming the first device is the default
+        device.isDefault = (wcscmp(pwszID, pwszDefaultID) == 0); // Check if this device is the default one
 
         devices.append(device);
 
         CoTaskMemFree(pwszID);
         PropVariantClear(&varName);
     }
+
+    CoTaskMemFree(pwszDefaultID);
 }
 
 void enumeratePlaybackDevices(QList<AudioDevice>& playbackDevices) {

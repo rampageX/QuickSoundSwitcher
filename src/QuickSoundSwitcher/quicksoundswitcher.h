@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include "panel.h"
+#include "customtrayicon.h"
 
 class QuickSoundSwitcher : public QMainWindow
 {
@@ -18,7 +19,7 @@ private slots:
     void onPanelClosed();
 
 private:
-    QSystemTrayIcon *trayIcon;
+    CustomTrayIcon *trayIcon;
     Panel* panel;
     void createTrayIcon();
     void showPanel();

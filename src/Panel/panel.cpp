@@ -3,6 +3,7 @@
 #include "audiomanager.h"
 #include "utils.h"
 #include <QComboBox>
+#include <QDebug>
 #include <QList>
 #include <QProcess>
 #include <QRegularExpression>
@@ -139,6 +140,18 @@ void Panel::setButtons() {
 void Panel::setFrames() {
     setFrameColorBasedOnWindow(this, ui->outputFrame);
     setFrameColorBasedOnWindow(this, ui->inputFrame);
+}
+
+void Panel::setAudioDevice(const QString& deviceId)
+{
+    QString command = QString("Set-AudioDevice -ID \"%1\"").arg(deviceId); // Use escaped double quotes
+
+    QProcess process;
+    process.start("powershell.exe", QStringList() << "-Command" << command);
+
+    if (!process.waitForFinished()) {
+        qDebug() << "Error executing PowerShell command:" << process.errorString();
+    }
 }
 
 void Panel::onOutputComboBoxIndexChanged(int index)
