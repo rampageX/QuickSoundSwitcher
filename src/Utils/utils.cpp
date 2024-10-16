@@ -72,7 +72,7 @@ bool Utils::isWindows10()
     return (buildNumber >= 10240 && buildNumber < 22000);
 }
 
-QColor adjustColor(const QColor &color, double factor) {
+QColor Utils::adjustColor(const QColor &color, double factor) {
     int r = color.red();
     int g = color.green();
     int b = color.blue();
@@ -85,7 +85,7 @@ QColor adjustColor(const QColor &color, double factor) {
     return QColor(r, g, b, a);
 }
 
-bool isDarkMode(const QColor &color) {
+bool Utils::isDarkMode(const QColor &color) {
     int r = color.red();
     int g = color.green();
     int b = color.blue();

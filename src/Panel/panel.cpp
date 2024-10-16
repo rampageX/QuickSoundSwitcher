@@ -56,6 +56,25 @@ Panel::~Panel()
     delete ui;
 }
 
+void Panel::paintEvent(QPaintEvent *event) {
+    Q_UNUSED(event);  // Prevent unused parameter warning
+    QPainter painter(this);
+
+    QColor main_bg_color = this->palette().color(QPalette::Window);
+    QColor frame_bg_color;
+
+    if (isDarkMode(main_bg_color)) {
+        frame_bg_color = adjustColor(main_bg_color, 1.75);  // Brighten color
+    } else {
+        frame_bg_color = adjustColor(main_bg_color, 0.95);  // Darken color
+    }
+
+    painter.setPen(QPen(frame_bg_color, 6)); // Set pen width to 4 pixels
+
+    // Draw the border
+    painter.drawRect(0, 0, width(), height()); // Draw border rectangle
+}
+
 void Panel::showEvent(QShowEvent *event) {
     QWidget::showEvent(event);
 
