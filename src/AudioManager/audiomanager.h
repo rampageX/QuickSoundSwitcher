@@ -3,24 +3,38 @@
 
 #include <QString>
 #include <QList>
+#include <windows.h>
+#include <mmdeviceapi.h>
+#include <endpointvolume.h>
+
+struct AudioDevice {
+    QString id;
+    QString name;
+    QString shortName;
+    QString type;
+    bool isDefault;
+};
 
 namespace AudioManager {
 
-struct AudioDevice {
-    QString name;
-    QString shortName;
-    QString id;
-    bool isDefault;
-    QString type;
-};
+void initialize();
+void cleanup();
 
-QString getAudioDeviceOutput();
-void parseAudioDeviceOutput(QList<AudioDevice> &playbackDevices, QList<AudioDevice> &recordingDevices);
+void enumeratePlaybackDevices(QList<AudioDevice>& playbackDevices);
+void enumerateRecordingDevices(QList<AudioDevice>& recordingDevices);
 
-void setVolume(int volume, bool playback);
-int getVolume(bool playback);
-void setMute(bool playback);
-bool getMute(bool playback);
+void setPlaybackVolume(int volume);
+int getPlaybackVolume();
+
+void setRecordingVolume(int volume);
+int getRecordingVolume();
+
+void setPlaybackMute(bool mute);
+bool getPlaybackMute();
+
+void setRecordingMute(bool mute);
+bool getRecordingMute();
+
 }
 
 #endif // AUDIOMANAGER_H

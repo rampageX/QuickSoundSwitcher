@@ -27,6 +27,7 @@ Panel::Panel(QWidget *parent)
     QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
     QPoint screenCenter = screenGeometry.bottomLeft();
     move(screenCenter.x() - width() / 2, screenCenter.y());
+    initialize(); // init audiomanager
     populateComboBoxes();
     setSliders();
     setButtons();
@@ -50,6 +51,7 @@ Panel::Panel(QWidget *parent)
 Panel::~Panel()
 {
     emit closed();
+    cleanup();
     delete ui;
 }
 
@@ -93,7 +95,8 @@ void Panel::onAnimationFinished() {
 
 void Panel::populateComboBoxes()
 {
-    parseAudioDeviceOutput(playbackDevices, recordingDevices);
+    enumeratePlaybackDevices(playbackDevices);
+    enumerateRecordingDevices(recordingDevices);
 
     ui->outputComboBox->clear();
     ui->inputComboBox->clear();
@@ -127,14 +130,14 @@ void Panel::populateComboBoxes()
 }
 
 void Panel::setSliders() {
-    ui->outputVolumeSlider->setValue(getVolume(true));
-    ui->inputVolumeSlider->setValue(getVolume(false));
+    ui->outputVolumeSlider->setValue(getPlaybackVolume());
+    ui->inputVolumeSlider->setValue(getRecordingVolume());
 }
 
 void Panel::setButtons() {
-    ui->outputMuteButton->setIcon(getIcon(2, NULL, getMute(true)));
+    ui->outputMuteButton->setIcon(getIcon(2, NULL, getPlaybackMute()));
     ui->outputMuteButton->setIconSize(QSize(16, 16));
-    ui->inputMuteButton->setIcon(getIcon(3, NULL, getMute(false)));
+    ui->inputMuteButton->setIcon(getIcon(3, NULL, getRecordingMute()));
     ui->inputMuteButton->setIconSize(QSize(16, 16));
 }
 
@@ -185,7 +188,7 @@ void Panel::onOutputValueChanged(int value)
     if (userClicked) {
         return;
     } else {
-        setVolume(ui->outputVolumeSlider->value(), true);
+        setPlaybackVolume(ui->outputVolumeSlider->value());
         emit volumeChanged();
     }
 }
@@ -193,7 +196,7 @@ void Panel::onOutputValueChanged(int value)
 void Panel::onOutputSliderReleased()
 {
     userClicked = false;
-    setVolume(ui->outputVolumeSlider->value(), true);
+    setPlaybackVolume(ui->outputVolumeSlider->value());
     emit volumeChanged();
 }
 
@@ -207,26 +210,36 @@ void Panel::onInputValueChanged(int value)
     if (userClicked) {
         return;
     } else {
-        setVolume(ui->inputVolumeSlider->value(), false);
+        setRecordingVolume(ui->inputVolumeSlider->value());
     }
 }
 
 void Panel::onInputSliderReleased()
 {
     userClicked = false;
-    setVolume(ui->inputVolumeSlider->value(), false);
+    setRecordingVolume(ui->inputVolumeSlider->value());
 }
 
 void Panel::onOutputMuteButtonPressed()
 {
-    setMute(true);
-    ui->outputMuteButton->setIcon(getIcon(2, NULL, getMute(true)));
+    bool playbackMute = getPlaybackMute();
+    if (playbackMute) {
+        setPlaybackMute(false);
+    } else {
+        setPlaybackMute(true);
+    }
+    ui->outputMuteButton->setIcon(getIcon(2, NULL, !playbackMute));
     ui->outputMuteButton->setIconSize(QSize(16, 16));
 }
 
 void Panel::onInputMuteButtonPressed()
 {
-    setMute(false);
-    ui->inputMuteButton->setIcon(getIcon(3, NULL, getMute(false)));
+    bool recordingMute = getRecordingMute();
+    if (recordingMute) {
+        setRecordingMute(false);
+    } else {
+        setRecordingMute(true);
+    }
+    ui->inputMuteButton->setIcon(getIcon(3, NULL, !recordingMute));
     ui->inputMuteButton->setIconSize(QSize(16, 16));
 }

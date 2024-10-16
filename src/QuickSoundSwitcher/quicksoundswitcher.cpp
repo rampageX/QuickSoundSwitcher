@@ -23,7 +23,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher() {
 
 void QuickSoundSwitcher::createTrayIcon()
 {
-    trayIcon->setIcon(getIcon(1, getVolume(true), NULL));
+    trayIcon->setIcon(getIcon(1, getPlaybackVolume(), NULL));
 
     QMenu *trayMenu = new QMenu(this);
 
@@ -82,5 +82,5 @@ void QuickSoundSwitcher::onPanelClosed()
 void QuickSoundSwitcher::onVolumeChanged()
 {
     qDebug() << "received";
-    trayIcon->setIcon(getIcon(1, getVolume(true), NULL));
+    trayIcon->setIcon(getIcon(1, getPlaybackVolume(), NULL));
 }

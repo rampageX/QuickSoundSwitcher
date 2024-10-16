@@ -8,6 +8,8 @@
 #include <QPropertyAnimation>
 #include "audiomanager.h"
 
+using namespace AudioManager;
+
 namespace Ui {
 class Panel;
 }
@@ -26,8 +28,8 @@ protected:
 
 private:
     Ui::Panel *ui;
-    QList<AudioManager::AudioDevice> playbackDevices;
-    QList<AudioManager::AudioDevice> recordingDevices;
+    QList<AudioDevice> playbackDevices;
+    QList<AudioDevice> recordingDevices;
 
     void populateComboBoxes();
     void setSliders();
