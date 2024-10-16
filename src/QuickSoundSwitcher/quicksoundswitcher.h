@@ -16,7 +16,6 @@ public:
 private slots:
     void onVolumeChanged();
     void onPanelClosed();
-    void onTrayIconWheelScrolled(int delta);
 
 private:
     QSystemTrayIcon *trayIcon;
