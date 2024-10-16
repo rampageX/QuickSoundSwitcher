@@ -199,4 +199,40 @@ void setRecordingMute(bool mute) {
 bool getRecordingMute() {
     return getMute(eCapture);
 }
+
+int getAudioLevelPercentage(EDataFlow dataFlow) {
+    CComPtr<IMMDeviceEnumerator> pEnumerator;
+    CComPtr<IMMDevice> pDevice;
+    CComPtr<IAudioMeterInformation> pMeterInfo;
+    float peakLevel = 0.0f;
+
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+    if (SUCCEEDED(hr)) {
+        hr = pEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &pDevice);
+    }
+    if (SUCCEEDED(hr)) {
+        hr = pDevice->Activate(__uuidof(IAudioMeterInformation), CLSCTX_ALL, nullptr, (void**)&pMeterInfo);
+    }
+    if (SUCCEEDED(hr)) {
+        hr = pMeterInfo->GetPeakValue(&peakLevel);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to get audio peak level";
+            return 0;
+        }
+    } else {
+        qDebug() << "Failed to activate IAudioMeterInformation";
+        return 0;
+    }
+
+    return static_cast<int>(peakLevel * 100);
+}
+
+int getPlaybackAudioLevel() {
+    return getAudioLevelPercentage(eRender);
+}
+
+int getRecordingAudioLevel() {
+    return getAudioLevelPercentage(eCapture);
+}
+
 }

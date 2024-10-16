@@ -35,6 +35,9 @@ bool getPlaybackMute();
 void setRecordingMute(bool mute);
 bool getRecordingMute();
 
+int getPlaybackAudioLevel();
+int getRecordingAudioLevel();
+
 QString extractShortName(const QString& fullName);
 }
 

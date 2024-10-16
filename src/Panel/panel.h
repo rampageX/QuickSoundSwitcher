@@ -38,6 +38,7 @@ private:
     void setAudioDevice(const QString& deviceId);
     bool userClicked;
     void setFrames();
+    void setProgressBars();
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);
@@ -46,6 +47,8 @@ private slots:
     void onInputValueChanged(int value);
     void onOutputMuteButtonPressed();
     void onInputMuteButtonPressed();
+    void outputAudioMeter();
+    void inputAudioMeter();
 
 signals:
     void volumeChanged();

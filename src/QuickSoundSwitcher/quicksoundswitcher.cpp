@@ -56,9 +56,7 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 void QuickSoundSwitcher::showPanel()
 {
     if (panel) {
-        panel->showNormal();
-        panel->raise();
-        panel->activateWindow();
+        hidePanel();
         return;
     }
 
@@ -67,30 +65,23 @@ void QuickSoundSwitcher::showPanel()
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
 
-    // Get the geometry of the tray icon
     QRect iconGeometry = trayIcon->geometry();
 
-    // Calculate the center position of the tray icon
     int iconCenterX = iconGeometry.x() + iconGeometry.width() / 2;
     int iconCenterY = iconGeometry.y() + iconGeometry.height() / 2;
 
-    // Calculate the target position for the panel (centering it above the tray icon)
-    int panelX = iconCenterX - (panel->width() / 2); // Center the panel horizontally
-    int panelY = iconCenterY - panel->height() - 35; // Set Y position 35 pixels above the tray icon
+    int panelX = iconCenterX - (panel->width() / 2);
+    int panelY = iconCenterY - panel->height() - 35;
 
-    // Set initial position for the panel (offscreen or hidden)
-    panel->move(panelX, iconCenterY + 50); // Start position below the tray icon
-
-    // Show the panel to ensure it's created
+    panel->move(panelX, iconCenterY + 50);
     panel->show();
 
-    // Create a timer for moving the panel
     QTimer* timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &QuickSoundSwitcher::movePanelUp);
 
-    targetY = panelY; // Set target Y position
-    currentY = iconCenterY + 50; // Initial Y position
-    timer->start(4); // Reduced interval for faster movement
+    targetY = panelY;
+    currentY = iconCenterY + 50;
+    timer->start(4);
 }
 
 void QuickSoundSwitcher::movePanelUp()

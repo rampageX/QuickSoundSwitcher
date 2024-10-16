@@ -12,6 +12,7 @@
 #include <QScreen>
 #include <QGuiApplication>
 #include <QPainter>
+#include <QTimer>
 
 using namespace AudioManager;
 using namespace Utils;
@@ -34,6 +35,12 @@ Panel::Panel(QWidget *parent)
     setSliders();
     setButtons();
     setFrames();
+    setProgressBars();
+
+    QTimer *audioMeterTimer = new QTimer(this);
+    connect(audioMeterTimer, &QTimer::timeout, this, &Panel::outputAudioMeter);
+    connect(audioMeterTimer, &QTimer::timeout, this, &Panel::inputAudioMeter);
+    audioMeterTimer->start(32);
 
     connect(ui->outputComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Panel::onOutputComboBoxIndexChanged);
@@ -116,6 +123,11 @@ void Panel::setFrames() {
     setFrameColorBasedOnWindow(this, ui->inputFrame);
 }
 
+void Panel::setProgressBars() {
+    ui->outputAudioMeter->setFixedHeight(10);
+    ui->inputAudioMeter->setFixedHeight(10);
+}
+
 void Panel::setAudioDevice(const QString& deviceId)
 {
     QString command = QString("Set-AudioDevice -ID \"%1\"").arg(deviceId); // Use escaped double quotes
@@ -196,3 +208,12 @@ bool Panel::eventFilter(QObject *obj, QEvent *event)
     return QWidget::eventFilter(obj, event);
 }
 
+void Panel::outputAudioMeter() {
+    int level = getPlaybackAudioLevel(); // Get the playback audio level
+    ui->outputAudioMeter->setValue(level); // Update the output progress bar
+}
+
+void Panel::inputAudioMeter() {
+    int level = getRecordingAudioLevel(); // Get the recording audio level
+    ui->inputAudioMeter->setValue(level); // Update the input progress bar
+}
