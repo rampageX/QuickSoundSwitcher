@@ -38,6 +38,7 @@ private:
     void setButtons();
     void setAudioDevice(const QString& deviceId);
     void setFrames();
+    void updateUi();
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);

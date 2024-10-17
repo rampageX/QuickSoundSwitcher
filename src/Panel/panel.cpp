@@ -162,6 +162,7 @@ void Panel::onOutputComboBoxIndexChanged(int index)
 
     const AudioDevice &selectedDevice = playbackDevices[index];
     setAudioDevice(selectedDevice.id);
+    updateUi();
 }
 
 void Panel::onInputComboBoxIndexChanged(int index)
@@ -172,12 +173,13 @@ void Panel::onInputComboBoxIndexChanged(int index)
 
     const AudioDevice &selectedDevice = recordingDevices[index];
     setAudioDevice(selectedDevice.id);
+    updateUi();
 }
 
 void Panel::onOutputValueChanged(int value)
 {
-        setPlaybackVolume(ui->outputVolumeSlider->value());
-        emit volumeChanged();
+    setPlaybackVolume(ui->outputVolumeSlider->value());
+    emit volumeChanged();
 }
 
 void Panel::onInputValueChanged(int value)
@@ -222,4 +224,19 @@ bool Panel::eventFilter(QObject *obj, QEvent *event)
     }
 
     return QWidget::eventFilter(obj, event);
+}
+
+void Panel::updateUi()
+{
+    ui->outputVolumeSlider->setValue(getPlaybackVolume());
+    ui->inputVolumeSlider->setValue(getRecordingVolume());
+
+    bool playbackMute = getPlaybackMute();
+    bool recordingMute = getRecordingMute();
+
+    ui->outputMuteButton->setIcon(getIcon(2, NULL, playbackMute));
+    ui->inputMuteButton->setIcon(getIcon(3, NULL, recordingMute));
+
+    ui->outputVolumeSlider->setEnabled(!playbackMute);
+    ui->inputVolumeSlider->setEnabled(!recordingMute);
 }
