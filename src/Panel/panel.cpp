@@ -24,6 +24,7 @@ Panel::Panel(QWidget *parent)
     ui->setupUi(this);
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
     setFixedSize(size());
+    this->installEventFilter(this);
 
     QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
     QPoint screenCenter = screenGeometry.bottomLeft();
@@ -52,7 +53,7 @@ Panel::Panel(QWidget *parent)
 
 Panel::~Panel()
 {
-    cleanup(); //clean audiomanager
+    cleanup();
     delete ui;
 }
 
@@ -210,4 +211,15 @@ void Panel::outputAudioMeter() {
 void Panel::inputAudioMeter() {
     int level = getRecordingAudioLevel();
     ui->inputAudioMeter->setValue(level);
+}
+
+bool Panel::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress) {
+        if (!this->underMouse()) {
+            emit lostFocus();
+        }
+    }
+
+    return QWidget::eventFilter(obj, event);
 }
