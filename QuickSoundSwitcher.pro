@@ -24,7 +24,6 @@ SOURCES += \
     src/ShortcutManager/shortcutmanager.cpp
 
 HEADERS += \
-    customtrayicon.h \
     src/Panel/panel.h \
     src/QuickSoundSwitcher/quicksoundswitcher.h \
     src/Utils/utils.h \

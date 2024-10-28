@@ -147,7 +147,7 @@ void Panel::setAudioDevice(const QString& deviceId)
     QString command = QString("Set-AudioDevice -ID \"%1\"").arg(deviceId); // Use escaped double quotes
 
     QProcess process;
-    process.start("powershell.exe", QStringList() << "-Command" << command);
+    process.start("powershell.exe", QStringList() << "-NoProfile" << "-Command" << command);
 
     if (!process.waitForFinished()) {
         qDebug() << "Error executing PowerShell command:" << process.errorString();
@@ -176,13 +176,13 @@ void Panel::onInputComboBoxIndexChanged(int index)
     updateUi();
 }
 
-void Panel::onOutputValueChanged(int value)
+void Panel::onOutputValueChanged()
 {
     setPlaybackVolume(ui->outputVolumeSlider->value());
     emit volumeChanged();
 }
 
-void Panel::onInputValueChanged(int value)
+void Panel::onInputValueChanged()
 {
     setRecordingVolume(ui->inputVolumeSlider->value());
 }

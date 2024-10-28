@@ -43,8 +43,8 @@ private:
 private slots:
     void onOutputComboBoxIndexChanged(int index);
     void onInputComboBoxIndexChanged(int index);
-    void onOutputValueChanged(int value);
-    void onInputValueChanged(int value);
+    void onOutputValueChanged();
+    void onInputValueChanged();
     void onOutputMuteButtonPressed();
     void onInputMuteButtonPressed();
     void outputAudioMeter();
