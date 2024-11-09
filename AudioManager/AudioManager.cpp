@@ -1,8 +1,13 @@
 #include "AudioManager.h"
 #include "PolicyConfig.h"
+#include <Audiopolicy.h>
 #include <atlbase.h>
 #include <Functiondiscoverykeys_devpkey.h>
 #include <QDebug>
+#include <psapi.h>
+#include <Shlobj.h>
+#include <QIcon>
+#include <QPixmap>
 
 void AudioManager::initialize() {
     CoInitialize(nullptr);
@@ -310,3 +315,343 @@ bool AudioManager::setDefaultEndpoint(const QString &deviceId)
     return true;
 }
 
+QIcon getAppIcon(const QString &executablePath) {
+    SHFILEINFO shFileInfo;
+    if (SHGetFileInfo(executablePath.toStdWString().c_str(),
+                      0, &shFileInfo, sizeof(shFileInfo),
+                      SHGFI_ICON | SHGFI_LARGEICON)) {
+        HICON hIcon = shFileInfo.hIcon;
+
+        // Retrieve the icon's bitmap information
+        ICONINFO iconInfo;
+        if (GetIconInfo(hIcon, &iconInfo)) {
+            // Get the size of the icon
+            int width = GetSystemMetrics(SM_CXICON);
+            int height = GetSystemMetrics(SM_CYICON);
+
+            // Create a compatible DC to extract the pixels
+            HDC hdc = GetDC(NULL);
+            HDC hdcMem = CreateCompatibleDC(hdc);
+            HBITMAP hbmColor = iconInfo.hbmColor;  // Icon bitmap
+
+            // Select the icon's bitmap into the memory DC
+            HBITMAP hbmOld = (HBITMAP)SelectObject(hdcMem, hbmColor);
+
+            // Create a BITMAPINFO structure to retrieve pixel data
+            BITMAPINFOHEADER biHeader = {0};
+            biHeader.biSize = sizeof(BITMAPINFOHEADER);
+            biHeader.biWidth = width;
+            biHeader.biHeight = -height;  // Negative height for top-down DIB
+            biHeader.biPlanes = 1;
+            biHeader.biBitCount = 32;  // 32-bit color (ARGB)
+            biHeader.biCompression = BI_RGB;
+
+            int imageSize = width * height * 4;  // 4 bytes per pixel (ARGB)
+            unsigned char *pixels = new unsigned char[imageSize];
+
+            // Get the pixel data from the bitmap into the pixel buffer
+            GetDIBits(hdcMem, hbmColor, 0, height, pixels, (BITMAPINFO *)&biHeader, DIB_RGB_COLORS);
+
+            // Create a QImage from the pixel buffer
+            QImage image(pixels, width, height, QImage::Format_ARGB32);
+
+            // Clean up
+            SelectObject(hdcMem, hbmOld);
+            DeleteDC(hdcMem);
+            ReleaseDC(NULL, hdc);
+
+            // Create a QPixmap from the QImage and return it
+            QPixmap pixmap = QPixmap::fromImage(image);
+
+            // Free the pixel buffer
+            delete[] pixels;
+
+            // Return QIcon from QPixmap
+            return QIcon(pixmap);
+        }
+    }
+    return QIcon();  // Return an empty icon if extraction failed
+}
+
+QList<Application> AudioManager::enumerateAudioApplications() {
+    QList<Application> applications;
+
+    CComPtr<IMMDeviceEnumerator> pEnumerator;
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                                  __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to create device enumerator";
+        return applications;
+    }
+
+    CComPtr<IMMDevice> pDevice;
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get default audio endpoint";
+        return applications;
+    }
+
+    CComPtr<IAudioSessionManager2> pSessionManager;
+    hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get audio session manager";
+        return applications;
+    }
+
+    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
+    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get session enumerator";
+        return applications;
+    }
+
+    int sessionCount;
+    pSessionEnumerator->GetCount(&sessionCount);
+
+    for (int i = 0; i < sessionCount; ++i) {
+        CComPtr<IAudioSessionControl> pSessionControl;
+        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to get session control";
+            continue;
+        }
+
+        CComPtr<IAudioSessionControl2> pSessionControl2;
+        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to query IAudioSessionControl2";
+            continue;
+        }
+
+        DWORD processId;
+        pSessionControl2->GetProcessId(&processId);
+        QString appId = QString::number(processId);
+
+        LPWSTR pwszDisplayName = nullptr;
+        hr = pSessionControl->GetDisplayName(&pwszDisplayName);
+        QString appName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "Unknown Application";
+        CoTaskMemFree(pwszDisplayName);
+
+        CComPtr<ISimpleAudioVolume> pSimpleAudioVolume;
+        hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pSimpleAudioVolume);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to get ISimpleAudioVolume";
+            continue;
+        }
+
+        BOOL isMuted;
+        pSimpleAudioVolume->GetMute(&isMuted);
+
+        float volumeLevel;
+        pSimpleAudioVolume->GetMasterVolume(&volumeLevel);
+
+        // Fetch executable path and icon
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+        QString executablePath;
+        QIcon appIcon;
+        if (hProcess) {
+            WCHAR exePath[MAX_PATH];
+            if (GetModuleFileNameEx(hProcess, NULL, exePath, MAX_PATH)) {
+                executablePath = QString::fromWCharArray(exePath);
+
+                // Use the helper function to extract the icon
+                appIcon = getAppIcon(executablePath);  // Extract icon using SHGetFileInfo or ExtractIcon
+            }
+            CloseHandle(hProcess);
+        }
+
+        // Create an Application struct and populate fields
+        Application app;
+        app.id = appId;
+        app.name = appName;
+        app.isMuted = isMuted;
+        app.volume = static_cast<int>(volumeLevel * 100);
+        app.icon = appIcon; // Assign the extracted icon
+
+        applications.append(app);
+    }
+
+    return applications;
+}
+
+bool AudioManager::setApplicationMute(const QString& appId, bool mute) {
+    CComPtr<IMMDeviceEnumerator> pEnumerator;
+    CComPtr<IMMDevice> pDevice;
+    CComPtr<IAudioSessionManager2> pSessionManager;
+
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+    if (SUCCEEDED(hr)) {
+        hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+    }
+    if (SUCCEEDED(hr)) {
+        hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
+    }
+    if (FAILED(hr)) {
+        qDebug() << "Failed to initialize audio session manager";
+        return false;
+    }
+
+    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
+    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get session enumerator";
+        return false;
+    }
+
+    int sessionCount;
+    pSessionEnumerator->GetCount(&sessionCount);
+
+    for (int i = 0; i < sessionCount; ++i) {
+        CComPtr<IAudioSessionControl> pSessionControl;
+        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
+        if (FAILED(hr)) continue;
+
+        CComPtr<IAudioSessionControl2> pSessionControl2;
+        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
+        if (FAILED(hr)) continue;
+
+        // Get the process ID of the application
+        DWORD pid = 0;
+        hr = pSessionControl2->GetProcessId(&pid);
+        if (FAILED(hr)) continue;
+
+        // Compare the process ID to the appId (PID)
+        if (QString::number(pid) == appId) {
+            // Set mute status
+            CComPtr<ISimpleAudioVolume> pAudioVolume;
+            hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pAudioVolume);
+            if (SUCCEEDED(hr)) {
+                pAudioVolume->SetMute(mute, nullptr);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool AudioManager::setApplicationVolume(const QString& appId, int volume) {
+    CComPtr<IMMDeviceEnumerator> pEnumerator;
+    CComPtr<IMMDevice> pDevice;
+    CComPtr<IAudioSessionManager2> pSessionManager;
+
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+    if (SUCCEEDED(hr)) {
+        hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+    }
+    if (SUCCEEDED(hr)) {
+        hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
+    }
+    if (FAILED(hr)) {
+        qDebug() << "Failed to initialize audio session manager";
+        return false;
+    }
+
+    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
+    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get session enumerator";
+        return false;
+    }
+
+    int sessionCount;
+    pSessionEnumerator->GetCount(&sessionCount);
+
+    for (int i = 0; i < sessionCount; ++i) {
+        CComPtr<IAudioSessionControl> pSessionControl;
+        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
+        if (FAILED(hr)) continue;
+
+        CComPtr<IAudioSessionControl2> pSessionControl2;
+        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
+        if (FAILED(hr)) continue;
+
+        // Get the process ID of the application
+        DWORD pid = 0;
+        hr = pSessionControl2->GetProcessId(&pid);
+        if (FAILED(hr)) continue;
+
+        // Compare the process ID to the appId (PID)
+        if (QString::number(pid) == appId) {
+            // Set volume level
+            CComPtr<ISimpleAudioVolume> pAudioVolume;
+            hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pAudioVolume);
+            if (SUCCEEDED(hr)) {
+                float volumeScalar = static_cast<float>(volume) / 100.0f;
+                pAudioVolume->SetMasterVolume(volumeScalar, nullptr);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool AudioManager::getApplicationMute(const QString &appId) {
+    DWORD processId = appId.toULong();
+
+    CComPtr<IMMDeviceEnumerator> pEnumerator;
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                                  __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to create device enumerator";
+        return false;
+    }
+
+    // Get the default audio endpoint for rendering
+    CComPtr<IMMDevice> pDevice;
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get default audio endpoint";
+        return false;
+    }
+
+    // Get the audio session manager
+    CComPtr<IAudioSessionManager2> pSessionManager;
+    hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get audio session manager";
+        return false;
+    }
+
+    // Enumerate audio sessions to find the specific one
+    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
+    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get session enumerator";
+        return false;
+    }
+
+    int sessionCount;
+    pSessionEnumerator->GetCount(&sessionCount);
+
+    for (int i = 0; i < sessionCount; ++i) {
+        CComPtr<IAudioSessionControl> pSessionControl;
+        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
+        if (FAILED(hr)) continue;
+
+        CComPtr<IAudioSessionControl2> pSessionControl2;
+        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
+        if (FAILED(hr)) continue;
+
+        // Retrieve the process ID of the session
+        DWORD pid;
+        hr = pSessionControl2->GetProcessId(&pid);
+        if (FAILED(hr)) continue;
+
+        // If the process ID matches, get the mute status
+        if (pid == processId) {
+            CComPtr<ISimpleAudioVolume> pSimpleAudioVolume;
+            hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pSimpleAudioVolume);
+            if (FAILED(hr)) continue;
+
+            BOOL isMuted;
+            hr = pSimpleAudioVolume->GetMute(&isMuted);
+            if (FAILED(hr)) continue;
+
+            return isMuted == TRUE;  // Return true if muted, false otherwise
+        }
+    }
+
+    return false;  // Default return value if not found
+}

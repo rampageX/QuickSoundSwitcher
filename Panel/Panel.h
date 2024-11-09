@@ -36,6 +36,7 @@ private:
     void setButtons();
     void setFrames();
     void updateUi();
+    void populateApplications();
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);

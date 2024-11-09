@@ -33,4 +33,4 @@ FORMS +=                                            \
 RESOURCES +=                                        \
     Resources/resources.qrc                         \
 
-LIBS += -luser32 -ladvapi32 -lwinmm -lole32
+LIBS += -luser32 -ladvapi32 -lwinmm -lole32 -lgdi32

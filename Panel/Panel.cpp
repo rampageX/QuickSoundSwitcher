@@ -28,6 +28,8 @@ Panel::Panel(QWidget *parent)
     move(screenCenter.x() - width() / 2, screenCenter.y());
     AudioManager::initialize();
     populateComboBoxes();
+    populateApplications();
+
     setSliders();
     setButtons();
     setFrames();
@@ -143,6 +145,7 @@ void Panel::setFrames()
 {
     Utils::setFrameColorBasedOnWindow(this, ui->outputFrame);
     Utils::setFrameColorBasedOnWindow(this, ui->inputFrame);
+    Utils::setFrameColorBasedOnWindow(this, ui->appFrame);
 }
 
 void Panel::onOutputComboBoxIndexChanged(int index)
@@ -233,3 +236,111 @@ void Panel::updateUi()
     ui->outputVolumeSlider->setEnabled(!playbackMute);
     ui->inputVolumeSlider->setEnabled(!recordingMute);
 }
+
+void Panel::populateApplications() {
+    // Ensure the frame's layout exists and is a QGridLayout
+    if (!ui->appFrame->layout()) {
+        ui->appFrame->setLayout(new QGridLayout);
+    }
+
+    QGridLayout *gridLayout = qobject_cast<QGridLayout *>(ui->appFrame->layout());
+    if (!gridLayout) {
+        qWarning() << "ui->appFrame layout is not a QGridLayout!";
+        return;
+    }
+
+    // Clear existing widgets in the frame to avoid duplicates
+    while (QLayoutItem *child = gridLayout->takeAt(0)) {
+        delete child->widget();
+        delete child;
+    }
+
+    // Retrieve the list of active audio applications
+    QList<Application> applications = AudioManager::enumerateAudioApplications();
+
+    int row = 0;  // Track the current row for placing widgets
+    QList<QSlider*> sliders;
+    QList<QToolButton*> muteButtons;
+
+    // Create sliders and mute buttons for each application
+    for (const Application& app : applications) {
+        // Skip the application with the specific name
+        if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+            continue;  // Skip this iteration and move to the next application
+        }
+
+        // Create a vertical slider for volume control
+        QSlider *slider = new QSlider(Qt::Vertical, ui->appFrame);
+        slider->setRange(0, 100);  // Volume range from 0 to 100
+        slider->setValue(app.volume);  // Set current volume level
+
+        // Create a tool button for mute/unmute control
+        QToolButton *muteButton = new QToolButton(ui->appFrame);
+        muteButton->setFixedSize(30, 30);
+        muteButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+
+        // Scale the application icon to 16x16
+        QIcon originalIcon = app.icon;
+        QPixmap originalPixmap = originalIcon.pixmap(16, 16);
+
+        // Set the icon to muted or original depending on the mute state
+        if (app.isMuted) {
+            QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
+            muteButton->setIcon(mutedIcon);
+        } else {
+            muteButton->setIcon(originalIcon);
+        }
+
+        // Connect slider to control application's volume
+        connect(slider, &QSlider::valueChanged, [appId = app.id](int value) {
+            AudioManager::setApplicationVolume(appId, value);
+        });
+
+        // Connect muteButton to toggle mute for the application
+        connect(muteButton, &QToolButton::clicked, [appId = app.id, muteButton, originalPixmap]() mutable {
+            bool newMuteState = !AudioManager::getApplicationMute(appId);
+            AudioManager::setApplicationMute(appId, newMuteState);
+
+            if (newMuteState) {
+                QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
+                muteButton->setIcon(mutedIcon);
+            } else {
+                muteButton->setIcon(QIcon(originalPixmap));
+            }
+
+            muteButton->setText(newMuteState ? "Unmute" : "Mute");
+        });
+
+        // Place widgets in the grid layout
+        gridLayout->addWidget(slider, 1, row, Qt::AlignHCenter);     // Slider on the second row
+        gridLayout->addWidget(muteButton, 2, row, Qt::AlignHCenter); // Mute button with icon on the third row
+
+        sliders.append(slider);
+        muteButtons.append(muteButton);
+        ++row;  // Move to the next column for the next application
+    }
+
+    // If there are less than 7 applications, create additional sliders and mute buttons
+    while (row < 7) {
+        // Create empty slider and mute button
+        QSlider *slider = new QSlider(Qt::Vertical, ui->appFrame);
+        slider->setRange(0, 100);  // Volume range from 0 to 100
+        slider->setValue(0);  // Default value (muted)
+        slider->setEnabled(false);  // Disable slider
+
+        QToolButton *muteButton = new QToolButton(ui->appFrame);
+        muteButton->setFixedSize(30, 30);
+        muteButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        muteButton->setEnabled(false);  // Disable mute button
+
+        // Add to the grid layout
+        gridLayout->addWidget(slider, 1, row, Qt::AlignHCenter);
+        gridLayout->addWidget(muteButton, 2, row, Qt::AlignHCenter);
+
+        sliders.append(slider);
+        muteButtons.append(muteButton);
+        ++row;  // Move to the next column
+    }
+}
+
+

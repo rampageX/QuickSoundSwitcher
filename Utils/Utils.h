@@ -10,6 +10,7 @@ namespace Utils {
     void setFrameColorBasedOnWindow(QWidget *window, QFrame *frame);
     QColor adjustColor(const QColor &color, double factor);
     bool isDarkMode(const QColor &color);
+    QIcon generateMutedIcon(QPixmap originalPixmap);
 }
 
 #endif // UTILS_H

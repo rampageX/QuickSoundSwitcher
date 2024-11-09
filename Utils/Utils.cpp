@@ -1,4 +1,5 @@
 #include "Utils.h"
+#include <QPainter>
 #include <windows.h>
 #include <QSettings>
 #include <QStandardPaths>
@@ -114,3 +115,19 @@ void Utils::setFrameColorBasedOnWindow(QWidget *window, QFrame *frame) {
     frame->setAutoFillBackground(true);
     frame->setPalette(palette);
 }
+
+QIcon Utils::generateMutedIcon(QPixmap originalPixmap) {
+    // Load the muted layer and scale it to match the original pixmap size
+    QPixmap mutedLayer(":/icons/muted_layer.png");
+    mutedLayer = mutedLayer.scaled(originalPixmap.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    // Create a painter to combine the original icon with the muted layer
+    QPainter painter(&originalPixmap);  // Pass originalPixmap as writable
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);  // Ensure the layer is drawn on top
+    painter.drawPixmap(0, 0, mutedLayer);  // Draw muted layer on top of the original icon
+    painter.end();  // End the painting process
+
+    return QIcon(originalPixmap);  // Return the modified icon with the muted layer
+}
+
+

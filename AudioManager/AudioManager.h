@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QList>
+#include <QIcon>
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
@@ -14,6 +15,14 @@ struct AudioDevice
     QString shortName;
     QString type;
     bool isDefault;
+};
+
+struct Application {
+    QString id;
+    QString name;
+    bool isMuted;
+    int volume;
+    QIcon icon; // Add an icon field to store the application icon
 };
 
 namespace AudioManager
@@ -40,6 +49,11 @@ namespace AudioManager
 
     int getPlaybackAudioLevel();
     int getRecordingAudioLevel();
+
+    QList<Application> enumerateAudioApplications();
+    bool setApplicationVolume(const QString& appName, int volume);
+    bool setApplicationMute(const QString& appName, bool mute);
+    bool getApplicationMute(const QString &appId);
 }
 
 #endif // AUDIOMANAGER_H

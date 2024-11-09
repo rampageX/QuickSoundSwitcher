@@ -77,7 +77,7 @@ void QuickSoundSwitcher::showPanel()
 
     targetY = panelY;
     currentY = iconCenterY + 50;
-    timer->start(4);
+    timer->start(3);
 }
 
 void QuickSoundSwitcher::movePanelUp()
