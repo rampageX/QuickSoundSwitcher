@@ -1,7 +1,7 @@
-#include "panel.h"
-#include "ui_panel.h"
-#include "audiomanager.h"
-#include "utils.h"
+#include "Panel.h"
+#include "ui_Panel.h"
+#include "AudioManager.h"
+#include "Utils.h"
 #include <QComboBox>
 #include <QDebug>
 #include <QList>
@@ -13,9 +13,6 @@
 #include <QGuiApplication>
 #include <QPainter>
 #include <QTimer>
-
-using namespace AudioManager;
-using namespace Utils;
 
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
@@ -29,7 +26,7 @@ Panel::Panel(QWidget *parent)
     QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
     QPoint screenCenter = screenGeometry.bottomLeft();
     move(screenCenter.x() - width() / 2, screenCenter.y());
-    initialize(); // init audiomanager
+    AudioManager::initialize();
     populateComboBoxes();
     setSliders();
     setButtons();
@@ -53,21 +50,22 @@ Panel::Panel(QWidget *parent)
 
 Panel::~Panel()
 {
-    cleanup();
+    AudioManager::cleanup();
     delete ui;
 }
 
-void Panel::paintEvent(QPaintEvent *event) {
+void Panel::paintEvent(QPaintEvent *event)
+{
     Q_UNUSED(event);  // Prevent unused parameter warning
     QPainter painter(this);
 
     QColor main_bg_color = this->palette().color(QPalette::Window);
     QColor frame_bg_color;
 
-    if (isDarkMode(main_bg_color)) {
-        frame_bg_color = adjustColor(main_bg_color, 1.75);  // Brighten color
+    if (Utils::isDarkMode(main_bg_color)) {
+        frame_bg_color = Utils::adjustColor(main_bg_color, 1.75);  // Brighten color
     } else {
-        frame_bg_color = adjustColor(main_bg_color, 0.95);  // Darken color
+        frame_bg_color = Utils::adjustColor(main_bg_color, 0.95);  // Darken color
     }
 
     painter.setPen(QPen(frame_bg_color, 6)); // Set pen width to 4 pixels
@@ -76,21 +74,23 @@ void Panel::paintEvent(QPaintEvent *event) {
     painter.drawRect(0, 0, width(), height()); // Draw border rectangle
 }
 
-void Panel::showEvent(QShowEvent *event) {
+void Panel::showEvent(QShowEvent *event)
+{
     QWidget::showEvent(event);
 
     raise();
     activateWindow();
 }
 
-void Panel::closeEvent(QCloseEvent *event) {
+void Panel::closeEvent(QCloseEvent *event)
+{
     event->ignore();
 }
 
 void Panel::populateComboBoxes()
 {
-    enumeratePlaybackDevices(playbackDevices);
-    enumerateRecordingDevices(recordingDevices);
+    AudioManager::enumeratePlaybackDevices(playbackDevices);
+    AudioManager::enumerateRecordingDevices(recordingDevices);
 
     ui->outputComboBox->clear();
     ui->inputComboBox->clear();
@@ -123,35 +123,26 @@ void Panel::populateComboBoxes()
     }
 }
 
-void Panel::setSliders() {
-    ui->outputVolumeSlider->setValue(getPlaybackVolume());
-    ui->inputVolumeSlider->setValue(getRecordingVolume());
-    ui->outputVolumeSlider->setEnabled(!getPlaybackMute());
-    ui->inputVolumeSlider->setEnabled(!getRecordingMute());
+void Panel::setSliders()
+{
+    ui->outputVolumeSlider->setValue(AudioManager::getPlaybackVolume());
+    ui->inputVolumeSlider->setValue(AudioManager::getRecordingVolume());
+    ui->outputVolumeSlider->setEnabled(!AudioManager::getPlaybackMute());
+    ui->inputVolumeSlider->setEnabled(!AudioManager::getRecordingMute());
 }
 
-void Panel::setButtons() {
-    ui->outputMuteButton->setIcon(getIcon(2, NULL, getPlaybackMute()));
+void Panel::setButtons()
+{
+    ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, AudioManager::getPlaybackMute()));
     ui->outputMuteButton->setIconSize(QSize(16, 16));
-    ui->inputMuteButton->setIcon(getIcon(3, NULL, getRecordingMute()));
+    ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, AudioManager::getRecordingMute()));
     ui->inputMuteButton->setIconSize(QSize(16, 16));
 }
 
-void Panel::setFrames() {
-    setFrameColorBasedOnWindow(this, ui->outputFrame);
-    setFrameColorBasedOnWindow(this, ui->inputFrame);
-}
-
-void Panel::setAudioDevice(const QString& deviceId)
+void Panel::setFrames()
 {
-    QString command = QString("Set-AudioDevice -ID \"%1\"").arg(deviceId); // Use escaped double quotes
-
-    QProcess process;
-    process.start("powershell.exe", QStringList() << "-NoProfile" << "-Command" << command);
-
-    if (!process.waitForFinished()) {
-        qDebug() << "Error executing PowerShell command:" << process.errorString();
-    }
+    Utils::setFrameColorBasedOnWindow(this, ui->outputFrame);
+    Utils::setFrameColorBasedOnWindow(this, ui->inputFrame);
 }
 
 void Panel::onOutputComboBoxIndexChanged(int index)
@@ -161,7 +152,8 @@ void Panel::onOutputComboBoxIndexChanged(int index)
     }
 
     const AudioDevice &selectedDevice = playbackDevices[index];
-    setAudioDevice(selectedDevice.id);
+    AudioManager::setDefaultEndpoint(selectedDevice.id);
+
     updateUi();
 }
 
@@ -172,46 +164,47 @@ void Panel::onInputComboBoxIndexChanged(int index)
     }
 
     const AudioDevice &selectedDevice = recordingDevices[index];
-    setAudioDevice(selectedDevice.id);
+    AudioManager::setDefaultEndpoint(selectedDevice.id);
+
     updateUi();
 }
 
 void Panel::onOutputValueChanged()
 {
-    setPlaybackVolume(ui->outputVolumeSlider->value());
+    AudioManager::setPlaybackVolume(ui->outputVolumeSlider->value());
     emit volumeChanged();
 }
 
 void Panel::onInputValueChanged()
 {
-    setRecordingVolume(ui->inputVolumeSlider->value());
+    AudioManager::setRecordingVolume(ui->inputVolumeSlider->value());
 }
 
 void Panel::onOutputMuteButtonPressed()
 {
-    bool playbackMute = getPlaybackMute();
-    setPlaybackMute(!playbackMute);
+    bool playbackMute = AudioManager::getPlaybackMute();
+    AudioManager::setPlaybackMute(!playbackMute);
     ui->outputVolumeSlider->setEnabled(playbackMute);
-    ui->outputMuteButton->setIcon(getIcon(2, NULL, !playbackMute));
+    ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, !playbackMute));
     ui->outputMuteButton->setIconSize(QSize(16, 16));
 }
 
 void Panel::onInputMuteButtonPressed()
 {
-    bool recordingMute = getRecordingMute();
-    setRecordingMute(!recordingMute);
+    bool recordingMute = AudioManager::getRecordingMute();
+    AudioManager::setRecordingMute(!recordingMute);
     ui->inputVolumeSlider->setEnabled(recordingMute);
-    ui->inputMuteButton->setIcon(getIcon(3, NULL, !recordingMute));
+    ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
     ui->inputMuteButton->setIconSize(QSize(16, 16));
 }
 
 void Panel::outputAudioMeter() {
-    int level = getPlaybackAudioLevel();
+    int level = AudioManager::getPlaybackAudioLevel();
     ui->outputAudioMeter->setValue(level);
 }
 
 void Panel::inputAudioMeter() {
-    int level = getRecordingAudioLevel();
+    int level = AudioManager::getRecordingAudioLevel();
     ui->inputAudioMeter->setValue(level);
 }
 
@@ -228,14 +221,14 @@ bool Panel::eventFilter(QObject *obj, QEvent *event)
 
 void Panel::updateUi()
 {
-    ui->outputVolumeSlider->setValue(getPlaybackVolume());
-    ui->inputVolumeSlider->setValue(getRecordingVolume());
+    ui->outputVolumeSlider->setValue(AudioManager::getPlaybackVolume());
+    ui->inputVolumeSlider->setValue(AudioManager::getRecordingVolume());
 
-    bool playbackMute = getPlaybackMute();
-    bool recordingMute = getRecordingMute();
+    bool playbackMute = AudioManager::getPlaybackMute();
+    bool recordingMute = AudioManager::getRecordingMute();
 
-    ui->outputMuteButton->setIcon(getIcon(2, NULL, playbackMute));
-    ui->inputMuteButton->setIcon(getIcon(3, NULL, recordingMute));
+    ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, playbackMute));
+    ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
 
     ui->outputVolumeSlider->setEnabled(!playbackMute);
     ui->inputVolumeSlider->setEnabled(!recordingMute);

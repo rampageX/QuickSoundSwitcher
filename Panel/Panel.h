@@ -6,9 +6,7 @@
 #include <QCloseEvent> // Include for close event
 #include <QPoint>
 #include <QPropertyAnimation>
-#include "audiomanager.h"
-
-using namespace AudioManager;
+#include "AudioManager.h"
 
 namespace Ui {
 class Panel;
@@ -36,7 +34,6 @@ private:
     void populateComboBoxes();
     void setSliders();
     void setButtons();
-    void setAudioDevice(const QString& deviceId);
     void setFrames();
     void updateUi();
 

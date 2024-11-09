@@ -1,16 +1,26 @@
 #include "AudioManager.h"
+#include "PolicyConfig.h"
 #include <atlbase.h>
 #include <Functiondiscoverykeys_devpkey.h>
 #include <QDebug>
 
-namespace AudioManager {
-
-void initialize() {
+void AudioManager::initialize() {
     CoInitialize(nullptr);
 }
 
-void cleanup() {
+void AudioManager::cleanup() {
     CoUninitialize();
+}
+
+QString extractShortName(const QString& fullName) {
+    int firstOpenParenIndex = fullName.indexOf('(');
+    int lastCloseParenIndex = fullName.lastIndexOf(')');
+
+    if (firstOpenParenIndex != -1 && lastCloseParenIndex != -1 && firstOpenParenIndex < lastCloseParenIndex) {
+        return fullName.mid(firstOpenParenIndex + 1, lastCloseParenIndex - firstOpenParenIndex - 1).trimmed();
+    }
+
+    return fullName;
 }
 
 void enumerateDevices(EDataFlow dataFlow, QList<AudioDevice>& devices) {
@@ -77,22 +87,11 @@ void enumerateDevices(EDataFlow dataFlow, QList<AudioDevice>& devices) {
     CoTaskMemFree(pwszDefaultID);
 }
 
-QString extractShortName(const QString& fullName) {
-    int firstOpenParenIndex = fullName.indexOf('(');
-    int lastCloseParenIndex = fullName.lastIndexOf(')');
-
-    if (firstOpenParenIndex != -1 && lastCloseParenIndex != -1 && firstOpenParenIndex < lastCloseParenIndex) {
-        return fullName.mid(firstOpenParenIndex + 1, lastCloseParenIndex - firstOpenParenIndex - 1).trimmed();
-    }
-
-    return fullName;
-}
-
-void enumeratePlaybackDevices(QList<AudioDevice>& playbackDevices) {
+void AudioManager::enumeratePlaybackDevices(QList<AudioDevice>& playbackDevices) {
     enumerateDevices(eRender, playbackDevices);
 }
 
-void enumerateRecordingDevices(QList<AudioDevice>& recordingDevices) {
+void AudioManager::enumerateRecordingDevices(QList<AudioDevice>& recordingDevices) {
     enumerateDevices(eCapture, recordingDevices);
 }
 
@@ -168,35 +167,35 @@ bool getMute(EDataFlow dataFlow) {
     return mute;
 }
 
-void setPlaybackVolume(int volume) {
+void AudioManager::setPlaybackVolume(int volume) {
     setVolume(eRender, volume);
 }
 
-int getPlaybackVolume() {
+int AudioManager::getPlaybackVolume() {
     return getVolume(eRender);
 }
 
-void setRecordingVolume(int volume) {
+void AudioManager::setRecordingVolume(int volume) {
     setVolume(eCapture, volume);
 }
 
-int getRecordingVolume() {
+int AudioManager::getRecordingVolume() {
     return getVolume(eCapture);
 }
 
-void setPlaybackMute(bool mute) {
+void AudioManager::setPlaybackMute(bool mute) {
     setMute(eRender, mute);
 }
 
-bool getPlaybackMute() {
+bool AudioManager::getPlaybackMute() {
     return getMute(eRender);
 }
 
-void setRecordingMute(bool mute) {
+void AudioManager::setRecordingMute(bool mute) {
     setMute(eCapture, mute);
 }
 
-bool getRecordingMute() {
+bool AudioManager::getRecordingMute() {
     return getMute(eCapture);
 }
 
@@ -227,12 +226,87 @@ int getAudioLevelPercentage(EDataFlow dataFlow) {
     return static_cast<int>(peakLevel * 100);
 }
 
-int getPlaybackAudioLevel() {
+int AudioManager::getPlaybackAudioLevel() {
     return getAudioLevelPercentage(eRender);
 }
 
-int getRecordingAudioLevel() {
+int AudioManager::getRecordingAudioLevel() {
     return getAudioLevelPercentage(eCapture);
 }
 
+bool AudioManager::setDefaultEndpoint(const QString &deviceId)
+{
+    HRESULT hr;
+    IMMDeviceEnumerator *deviceEnumerator = nullptr;
+    IMMDevice *defaultDevice = nullptr;
+    IPolicyConfig *policyConfig = nullptr;
+    IPolicyConfigVista *policyConfigVista = nullptr;
+
+    // Initialize COM library
+    hr = CoInitialize(nullptr);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to initialize COM library";
+        return false;
+    }
+
+    // Create device enumerator
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER,
+                          IID_PPV_ARGS(&deviceEnumerator));
+    if (FAILED(hr)) {
+        qDebug() << "Failed to create device enumerator";
+        CoUninitialize();
+        return false;
+    }
+
+    // Get the device by ID
+    hr = deviceEnumerator->GetDevice(reinterpret_cast<LPCWSTR>(deviceId.utf16()), &defaultDevice);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get device by ID";
+        deviceEnumerator->Release();
+        CoUninitialize();
+        return false;
+    }
+
+    // Attempt to get IPolicyConfig interface
+    hr = CoCreateInstance(__uuidof(CPolicyConfigClient), nullptr, CLSCTX_ALL,
+                          IID_PPV_ARGS(&policyConfig));
+    if (FAILED(hr)) {
+        // If IPolicyConfig is unavailable, try IPolicyConfigVista
+        hr = CoCreateInstance(__uuidof(CPolicyConfigVistaClient), nullptr, CLSCTX_ALL,
+                              IID_PPV_ARGS(&policyConfigVista));
+        if (FAILED(hr)) {
+            qDebug() << "Failed to create PolicyConfig interface";
+            defaultDevice->Release();
+            deviceEnumerator->Release();
+            CoUninitialize();
+            return false;
+        }
+    }
+
+    // Set as default device for all audio roles (Console, Multimedia, Communications)
+    if (policyConfig) {
+        hr = policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eConsole);
+        policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eMultimedia);
+        policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eCommunications);
+    } else if (policyConfigVista) {
+        hr = policyConfigVista->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eConsole);
+        policyConfigVista->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eMultimedia);
+        policyConfigVista->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eCommunications);
+    }
+
+    // Release resources
+    if (policyConfig) policyConfig->Release();
+    if (policyConfigVista) policyConfigVista->Release();
+    defaultDevice->Release();
+    deviceEnumerator->Release();
+    CoUninitialize();
+
+    if (FAILED(hr)) {
+        qDebug() << "Failed to set default audio output device";
+        return false;
+    }
+
+    qDebug() << "Default audio output device set to:" << deviceId;
+    return true;
 }
+

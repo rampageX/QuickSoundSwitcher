@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
-#include "panel.h"
+#include "Panel.h"
 
 class QuickSoundSwitcher : public QMainWindow
 {

@@ -1,16 +1,12 @@
-#include "quicksoundswitcher.h"
-#include "utils.h"
-#include "audiomanager.h"
-#include "shortcutmanager.h"
+#include "QuickSoundSwitcher.h"
+#include "Utils.h"
+#include "AudioManager.h"
+#include "ShortcutManager.h"
 #include <QMenu>
 #include <QApplication>
 #include <QScreen>
 #include <QRect>
 #include <QTimer>
-
-using namespace Utils;
-using namespace AudioManager;
-using namespace ShortcutManager;
 
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
@@ -26,13 +22,13 @@ QuickSoundSwitcher::~QuickSoundSwitcher() {
 
 void QuickSoundSwitcher::createTrayIcon()
 {
-    trayIcon->setIcon(getIcon(1, getPlaybackVolume(), NULL));
+    trayIcon->setIcon(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL));
 
     QMenu *trayMenu = new QMenu(this);
 
     QAction *startupAction = new QAction("Run at startup", this);
     startupAction->setCheckable(true);
-    startupAction->setChecked(isShortcutPresent());
+    startupAction->setChecked(ShortcutManager::isShortcutPresent());
     connect(startupAction, &QAction::triggered, this, &QuickSoundSwitcher::onRunAtStartupStateChanged);
     trayMenu->addAction(startupAction);
 

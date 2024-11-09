@@ -4,41 +4,33 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
-# You can make your code fail to compile if it uses deprecated APIs.
-# In order to do so, uncomment the following line.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+INCLUDEPATH +=                                      \
+    QuickSoundSwitcher/                             \
+    Utils/                                          \
+    Panel/                                          \
+    AudioManager/                                   \
+    ShortcutManager/                                \
 
-INCLUDEPATH += \
-    src/QuickSoundSwitcher/ \
-    src/Utils/ \
-    src/Panel/ \
-    src/AudioManager/ \
-    src/ShortcutManager/
+SOURCES +=                                          \
+    main.cpp                                        \
+    Panel/Panel.cpp                                 \
+    QuickSoundSwitcher/QuickSoundSwitcher.cpp       \
+    Utils/Utils.cpp                                 \
+    AudioManager/AudioManager.cpp                   \
+    ShortcutManager/ShortcutManager.cpp             \
 
-SOURCES += \
-    src/main.cpp \
-    src/Panel/panel.cpp \
-    src/QuickSoundSwitcher/quicksoundswitcher.cpp \
-    src/Utils/utils.cpp \
-    src/AudioManager/audiomanager.cpp \
-    src/ShortcutManager/shortcutmanager.cpp
+HEADERS +=                                          \
+    Panel/Panel.h                                   \
+    QuickSoundSwitcher/QuickSoundSwitcher.h         \
+    Utils/Utils.h                                   \
+    AudioManager/AudioManager.h                     \
+    AudioManager/PolicyConfig.h                     \
+    ShortcutManager/ShortcutManager.h               \
 
-HEADERS += \
-    src/Panel/panel.h \
-    src/QuickSoundSwitcher/quicksoundswitcher.h \
-    src/Utils/utils.h \
-    src/AudioManager/audiomanager.h \
-    src/ShortcutManager/shortcutmanager.h
+FORMS +=                                            \
+    Panel/Panel.ui                                  \
 
-RESOURCES += \
-    src/Resources/resources.qrc \
+RESOURCES +=                                        \
+    Resources/resources.qrc                         \
 
-LIBS += -luser32 -ladvapi32 -lwinmm
-
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
-
-FORMS += \
-    src/Panel/panel.ui
+LIBS += -luser32 -ladvapi32 -lwinmm -lole32
