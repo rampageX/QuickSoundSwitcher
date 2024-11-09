@@ -53,17 +53,23 @@ QIcon Utils::getIcon(int type, int volume, bool muted)
 
 int getBuildNumber()
 {
-    HKEY hKey;
-    RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                 TEXT("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"),
-                 0, KEY_READ, &hKey);
+    QSettings registry("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", QSettings::NativeFormat);
+    QVariant buildVariant = registry.value("CurrentBuild");
 
-    char buildNumberString[256];
-    DWORD bufferSize = sizeof(buildNumberString);
-    RegQueryValueEx(hKey, TEXT("CurrentBuild"), NULL, NULL, (LPBYTE)buildNumberString, &bufferSize);
-    RegCloseKey(hKey);
+    if (!buildVariant.isValid()) {
+        buildVariant = registry.value("CurrentBuildNumber");
+    }
 
-    return std::stoi(buildNumberString);
+    if (buildVariant.isValid() && buildVariant.canConvert<QString>()) {
+        bool ok;
+        int buildNumber = buildVariant.toString().toInt(&ok);
+        if (ok) {
+            return buildNumber;
+        }
+    }
+
+    qDebug() << "Failed to retrieve build number from the registry.";
+    return -1;
 }
 
 bool Utils::isWindows10()
