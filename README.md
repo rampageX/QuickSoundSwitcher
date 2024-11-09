@@ -5,9 +5,6 @@ While default sound menu in quick access menu does the job, it does not support 
 
 ![image](assets/demo.gif)
 
-## Requirements
-
-- [AudioDeviceCmdlets](https://github.com/frgnca/AudioDeviceCmdlets)
 
 ## Usage
 
@@ -41,7 +38,3 @@ opm install quicksoundswitcher
 ```
 
 QuickSoundSwitcher will be available in your start menu.
-
-## To-do
-
-- Get rid of AudioDeviceCmdlets
