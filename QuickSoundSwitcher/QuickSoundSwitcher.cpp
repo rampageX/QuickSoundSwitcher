@@ -134,11 +134,11 @@ void QuickSoundSwitcher::onPanelClosed()
 
 void QuickSoundSwitcher::onVolumeChanged()
 {
-    trayIcon->setIcon(getIcon(1, getPlaybackVolume(), NULL));
+    trayIcon->setIcon(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL));
 }
 
 void QuickSoundSwitcher::onRunAtStartupStateChanged()
 {
     QAction *action = qobject_cast<QAction *>(sender());
-    manageShortcut(action->isChecked());
+    ShortcutManager::manageShortcut(action->isChecked());
 }
