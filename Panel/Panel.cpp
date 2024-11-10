@@ -24,14 +24,9 @@ Panel::Panel(QWidget *parent)
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedSize(size());
     this->installEventFilter(this);
-
-    QRect screenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
-    QPoint screenCenter = screenGeometry.bottomLeft();
-    move(screenCenter.x() - width() / 2, screenCenter.y());
     AudioManager::initialize();
     populateComboBoxes();
     populateApplications();
-
     setSliders();
     setButtons();
     setFrames();
@@ -41,11 +36,8 @@ Panel::Panel(QWidget *parent)
     connect(audioMeterTimer, &QTimer::timeout, this, &Panel::inputAudioMeter);
     audioMeterTimer->start(32);
 
-    connect(ui->outputComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &Panel::onOutputComboBoxIndexChanged);
-    connect(ui->inputComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &Panel::onInputComboBoxIndexChanged);
-
+    connect(ui->outputComboBox, &QComboBox::currentIndexChanged, this, &Panel::onOutputComboBoxIndexChanged);
+    connect(ui->inputComboBox, &QComboBox::currentIndexChanged, this, &Panel::onInputComboBoxIndexChanged);
     connect(ui->outputVolumeSlider, &QSlider::valueChanged, this, &Panel::onOutputValueChanged);
     connect(ui->inputVolumeSlider, &QSlider::valueChanged, this, &Panel::onInputValueChanged);
     connect(ui->outputMuteButton, &QToolButton::pressed, this, &Panel::onOutputMuteButtonPressed);
