@@ -12,12 +12,12 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , panel(nullptr)
+    , hiding(false)
 {
     createTrayIcon();
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher() {
-
 }
 
 void QuickSoundSwitcher::createTrayIcon()
@@ -51,6 +51,9 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 
 void QuickSoundSwitcher::showPanel()
 {
+    if (hiding) {
+        return;
+    }
     if (panel) {
         hidePanel();
         return;
@@ -61,53 +64,34 @@ void QuickSoundSwitcher::showPanel()
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
 
-    QRect iconGeometry = trayIcon->geometry();
+    QRect trayIconGeometry = trayIcon->geometry();
+    QPoint trayIconPos = trayIconGeometry.topLeft();
+    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
 
-    int iconCenterX = iconGeometry.x() + iconGeometry.width() / 2;
-    int iconCenterY = iconGeometry.y() + iconGeometry.height() / 2;
+    int panelX = trayIconCenterX - panel->width() / 2;
+    int panelY = trayIconPos.y() - panel->height() - 13;
 
-    int panelX = iconCenterX - (panel->width() / 2);
-    int panelY = iconCenterY - panel->height() - 35;
+    panel->move(panelX, panelY);
 
-    panel->move(panelX, iconCenterY + 50);
-    panel->show();
+    connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
+    connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
 
-    QTimer* timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &QuickSoundSwitcher::movePanelUp);
-
-    targetY = panelY;
-    currentY = iconCenterY + 50;
-    timer->start(3);
-}
-
-void QuickSoundSwitcher::movePanelUp()
-{
-    if (currentY > targetY) {
-        currentY -= 5;
-        panel->move(panel->x(), currentY);
-    } else {
-        panel->move(panel->x(), targetY);
-        panel->raise();
-        panel->activateWindow();
-        QTimer* timer = qobject_cast<QTimer*>(sender());
-        if (timer) {
-            timer->stop();
-            timer->deleteLater();
-        }
-    }
+    panel->fadeIn();
 }
 
 void QuickSoundSwitcher::hidePanel()
 {
     if (!panel) return;
+    hiding = true;
     disconnect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
 
-    QTimer* timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &QuickSoundSwitcher::movePanelDown);
+    connect(panel, &Panel::fadeOutFinished, this, [this]() {
+        delete panel;
+        panel = nullptr;
+        hiding = false;
+    });
 
-    currentY = panel->y();
-    targetY = trayIcon->geometry().y() + trayIcon->geometry().height() + 50;
-    timer->start(4);
+    panel->fadeOut();
 }
 
 void QuickSoundSwitcher::movePanelDown()

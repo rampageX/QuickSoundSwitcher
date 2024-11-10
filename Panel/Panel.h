@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QShowEvent>
-#include <QCloseEvent> // Include for close event
+#include <QCloseEvent>
 #include <QPoint>
 #include <QPropertyAnimation>
 #include "AudioManager.h"
@@ -19,6 +19,8 @@ class Panel : public QWidget
 public:
     explicit Panel(QWidget *parent = nullptr);
     ~Panel() override;
+    void fadeIn();
+    void fadeOut();
 
 protected:
     void showEvent(QShowEvent *event) override;
@@ -51,6 +53,7 @@ private slots:
 signals:
     void volumeChanged();
     void lostFocus();
+    void fadeOutFinished();
 };
 
 #endif // PANEL_H

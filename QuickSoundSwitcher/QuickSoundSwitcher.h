@@ -25,10 +25,10 @@ private:
     int targetY;
     void createTrayIcon();
     void showPanel();
-    void movePanelUp();
     void hidePanel();
     void movePanelDown();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
+    bool hiding;
 };
 
 #endif // QUICKSOUNDSWITCHER_H

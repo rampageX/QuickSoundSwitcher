@@ -13,6 +13,7 @@
 #include <QGuiApplication>
 #include <QPainter>
 #include <QTimer>
+#include <QPainterPath>
 
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
@@ -20,6 +21,7 @@ Panel::Panel(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_TranslucentBackground);
     setFixedSize(size());
     this->installEventFilter(this);
 
@@ -61,25 +63,24 @@ void Panel::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);  // Prevent unused parameter warning
     QPainter painter(this);
 
+    // Get the main background color from the widget's palette
     QColor main_bg_color = this->palette().color(QPalette::Window);
-    QColor frame_bg_color;
 
-    if (Utils::isDarkMode(main_bg_color)) {
-        frame_bg_color = Utils::adjustColor(main_bg_color, 1.75);  // Brighten color
-    } else {
-        frame_bg_color = Utils::adjustColor(main_bg_color, 0.95);  // Darken color
-    }
+    // Set the brush to fill the rectangle with the background color
+    painter.setBrush(main_bg_color);
+    painter.setPen(Qt::NoPen); // No border
 
-    painter.setPen(QPen(frame_bg_color, 6)); // Set pen width to 4 pixels
+    // Create a rounded rectangle path
+    QPainterPath path;
+    path.addRoundedRect(this->rect(), 8, 8); // 8px radius
 
-    // Draw the border
-    painter.drawRect(0, 0, width(), height()); // Draw border rectangle
+    // Draw the rounded rectangle
+    painter.drawPath(path);
 }
 
 void Panel::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
-
     raise();
     activateWindow();
 }
@@ -343,4 +344,27 @@ void Panel::populateApplications() {
     }
 }
 
+void Panel::fadeIn()
+{
+    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
+    animation->setDuration(200);
+    animation->setStartValue(0);
+    animation->setEndValue(1);
+    setWindowOpacity(0);
+    show();
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
+}
 
+void Panel::fadeOut()
+{
+    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
+    animation->setDuration(200);
+    animation->setStartValue(1);
+    animation->setEndValue(0);
+
+    connect(animation, &QPropertyAnimation::finished, this, [this]() {
+        emit fadeOutFinished();
+    });
+
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
+}
