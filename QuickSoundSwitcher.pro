@@ -2,7 +2,9 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++17
+CONFIG += c++17 silent lrelease embed_translations
+
+QM_FILES_RESOURCE_PREFIX = /translations
 
 INCLUDEPATH +=                                      \
     QuickSoundSwitcher/                             \
@@ -29,6 +31,10 @@ HEADERS +=                                          \
 
 FORMS +=                                            \
     Panel/Panel.ui                                  \
+
+TRANSLATIONS +=                                     \
+    Resources/Tr/QuickSoundSwitcher_fr.ts           \
+    Resources/Tr/QuickSoundSwitcher_en.ts           \
 
 RESOURCES +=                                        \
     Resources/resources.qrc                         \

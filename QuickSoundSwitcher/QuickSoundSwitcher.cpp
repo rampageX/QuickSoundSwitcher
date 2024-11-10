@@ -25,13 +25,13 @@ void QuickSoundSwitcher::createTrayIcon()
     onOutputMuteChanged();
     QMenu *trayMenu = new QMenu(this);
 
-    QAction *startupAction = new QAction("Run at startup", this);
+    QAction *startupAction = new QAction(tr("Run at startup"), this);
     startupAction->setCheckable(true);
     startupAction->setChecked(ShortcutManager::isShortcutPresent());
     connect(startupAction, &QAction::triggered, this, &QuickSoundSwitcher::onRunAtStartupStateChanged);
     trayMenu->addAction(startupAction);
 
-    QAction *exitAction = new QAction("Exit", this);
+    QAction *exitAction = new QAction(tr("Exit"), this);
     connect(exitAction, &QAction::triggered, this, &QApplication::quit);
     trayMenu->addAction(exitAction);
 
