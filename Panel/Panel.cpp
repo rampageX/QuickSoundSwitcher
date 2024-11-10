@@ -68,14 +68,26 @@ void Panel::paintEvent(QPaintEvent *event)
 
     // Set the brush to fill the rectangle with the background color
     painter.setBrush(main_bg_color);
-    painter.setPen(Qt::NoPen); // No border
+    painter.setPen(Qt::NoPen); // No border for background fill
 
     // Create a rounded rectangle path
     QPainterPath path;
-    path.addRoundedRect(this->rect(), 8, 8); // 8px radius
+    path.addRoundedRect(this->rect().adjusted(1, 1, -1, -1), 8, 8); // Adjusted for inner fill
 
-    // Draw the rounded rectangle
+    // Draw the filled rounded rectangle
     painter.drawPath(path);
+
+    // Now set the pen for the border with 30% alpha
+    QColor borderColor = QColor(255, 255, 255, 32); // White with 30% alpha (255 * 0.3 = 77)
+    QPen borderPen(borderColor);
+    borderPen.setWidth(1);
+    painter.setPen(borderPen);
+    painter.setBrush(Qt::NoBrush); // No fill for border
+
+    // Draw the border around the adjusted rectangle
+    QPainterPath borderPath;
+    borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8); // Full size for outer border
+    painter.drawPath(borderPath);
 }
 
 void Panel::showEvent(QShowEvent *event)
