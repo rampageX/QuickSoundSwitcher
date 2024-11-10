@@ -22,8 +22,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher() {
 
 void QuickSoundSwitcher::createTrayIcon()
 {
-    trayIcon->setIcon(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL));
-
+    onOutputMuteChanged();
     QMenu *trayMenu = new QMenu(this);
 
     QAction *startupAction = new QAction("Run at startup", this);
@@ -62,6 +61,7 @@ void QuickSoundSwitcher::showPanel()
     panel = new Panel;
 
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
+    connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
     connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
 
     QRect trayIconGeometry = trayIcon->geometry();
@@ -72,10 +72,6 @@ void QuickSoundSwitcher::showPanel()
     int panelY = trayIconPos.y() - panel->height() - 13;
 
     panel->move(panelX, panelY);
-
-    connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
-    connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
-
     panel->fadeIn();
 }
 
@@ -119,6 +115,18 @@ void QuickSoundSwitcher::onPanelClosed()
 void QuickSoundSwitcher::onVolumeChanged()
 {
     trayIcon->setIcon(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL));
+}
+
+void QuickSoundSwitcher::onOutputMuteChanged()
+{
+    int volumeIcon;
+    if (AudioManager::getPlaybackMute()) {
+        volumeIcon = 0;
+    } else {
+        volumeIcon = AudioManager::getPlaybackVolume();
+    }
+
+    trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
 }
 
 void QuickSoundSwitcher::onRunAtStartupStateChanged()

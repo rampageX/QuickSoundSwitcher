@@ -54,6 +54,7 @@ signals:
     void volumeChanged();
     void lostFocus();
     void fadeOutFinished();
+    void outputMuteChanged();
 };
 
 #endif // PANEL_H

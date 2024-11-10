@@ -15,6 +15,7 @@ public:
 
 private slots:
     void onVolumeChanged();
+    void onOutputMuteChanged();
     void onPanelClosed();
     void onRunAtStartupStateChanged();
 

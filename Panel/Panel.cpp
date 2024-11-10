@@ -191,6 +191,7 @@ void Panel::onOutputMuteButtonPressed()
     ui->outputVolumeSlider->setEnabled(playbackMute);
     ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, !playbackMute));
     ui->outputMuteButton->setIconSize(QSize(16, 16));
+    emit outputMuteChanged();
 }
 
 void Panel::onInputMuteButtonPressed()
