@@ -11,6 +11,7 @@ namespace Utils {
     QColor adjustColor(const QColor &color, double factor);
     bool isDarkMode(const QColor &color);
     QIcon generateMutedIcon(QPixmap originalPixmap);
+    void lightenWidgetColor(QWidget* widget);
 }
 
 #endif // UTILS_H

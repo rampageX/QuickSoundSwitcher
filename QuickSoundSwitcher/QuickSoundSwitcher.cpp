@@ -69,7 +69,7 @@ void QuickSoundSwitcher::showPanel()
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
 
     int panelX = trayIconCenterX - panel->width() / 2;
-    int panelY = trayIconPos.y() - panel->height() - 13;
+    int panelY = trayIconPos.y() - panel->height() - 23;
 
     panel->move(panelX, panelY);
     panel->fadeIn();

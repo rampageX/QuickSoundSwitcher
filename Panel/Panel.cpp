@@ -22,14 +22,17 @@ Panel::Panel(QWidget *parent)
     ui->setupUi(this);
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
-    setFixedSize(size());
+    setFixedWidth(width());
     this->installEventFilter(this);
     AudioManager::initialize();
     populateComboBoxes();
     populateApplications();
     setSliders();
     setButtons();
-    setFrames();
+    Utils::lightenWidgetColor(ui->inputComboBox);
+    Utils::lightenWidgetColor(ui->outputComboBox);
+    Utils::lightenWidgetColor(ui->inputMuteButton);
+    Utils::lightenWidgetColor(ui->outputMuteButton);
 
     QTimer *audioMeterTimer = new QTimer(this);
     connect(audioMeterTimer, &QTimer::timeout, this, &Panel::outputAudioMeter);
@@ -40,8 +43,8 @@ Panel::Panel(QWidget *parent)
     connect(ui->inputComboBox, &QComboBox::currentIndexChanged, this, &Panel::onInputComboBoxIndexChanged);
     connect(ui->outputVolumeSlider, &QSlider::valueChanged, this, &Panel::onOutputValueChanged);
     connect(ui->inputVolumeSlider, &QSlider::valueChanged, this, &Panel::onInputValueChanged);
-    connect(ui->outputMuteButton, &QToolButton::pressed, this, &Panel::onOutputMuteButtonPressed);
-    connect(ui->inputMuteButton, &QToolButton::pressed, this, &Panel::onInputMuteButtonPressed);
+    connect(ui->outputMuteButton, &QPushButton::pressed, this, &Panel::onOutputMuteButtonPressed);
+    connect(ui->inputMuteButton, &QPushButton::pressed, this, &Panel::onInputMuteButtonPressed);
 }
 
 Panel::~Panel()
@@ -266,7 +269,7 @@ void Panel::populateApplications() {
 
     int row = 0;  // Track the current row for placing widgets
     QList<QSlider*> sliders;
-    QList<QToolButton*> muteButtons;
+    QList<QPushButton*> muteButtons;
 
     // Create sliders and mute buttons for each application
     for (const Application& app : applications) {
@@ -281,9 +284,10 @@ void Panel::populateApplications() {
         slider->setValue(app.volume);  // Set current volume level
 
         // Create a tool button for mute/unmute control
-        QToolButton *muteButton = new QToolButton(ui->appFrame);
+        QPushButton *muteButton = new QPushButton(ui->appFrame);
         muteButton->setFixedSize(30, 30);
-        muteButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        Utils::lightenWidgetColor(muteButton);
+        //muteButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
 
         // Scale the application icon to 16x16
         QIcon originalIcon = app.icon;
@@ -303,7 +307,7 @@ void Panel::populateApplications() {
         });
 
         // Connect muteButton to toggle mute for the application
-        connect(muteButton, &QToolButton::clicked, [appId = app.id, muteButton, originalPixmap]() mutable {
+        connect(muteButton, &QPushButton::clicked, [appId = app.id, muteButton, originalPixmap]() mutable {
             bool newMuteState = !AudioManager::getApplicationMute(appId);
             AudioManager::setApplicationMute(appId, newMuteState);
 
@@ -313,8 +317,6 @@ void Panel::populateApplications() {
             } else {
                 muteButton->setIcon(QIcon(originalPixmap));
             }
-
-            muteButton->setText(newMuteState ? "Unmute" : "Mute");
         });
 
         // Place widgets in the grid layout
@@ -334,9 +336,8 @@ void Panel::populateApplications() {
         slider->setValue(0);  // Default value (muted)
         slider->setEnabled(false);  // Disable slider
 
-        QToolButton *muteButton = new QToolButton(ui->appFrame);
+        QPushButton *muteButton = new QPushButton(ui->appFrame);
         muteButton->setFixedSize(30, 30);
-        muteButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
         muteButton->setEnabled(false);  // Disable mute button
 
         // Add to the grid layout
@@ -373,3 +374,5 @@ void Panel::fadeOut()
 
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
+
+

@@ -6,6 +6,8 @@
 #include <QDir>
 #include <QProcess>
 #include <QPalette>
+#include <QPushButton>
+#include <QComboBox>
 
 #undef min  // Undefine min macro to avoid conflicts with std::min
 #undef max  // Undefine max macro to avoid conflicts with std::max
@@ -130,4 +132,24 @@ QIcon Utils::generateMutedIcon(QPixmap originalPixmap) {
     return QIcon(originalPixmap);  // Return the modified icon with the muted layer
 }
 
+void Utils::lightenWidgetColor(QWidget* widget) {
+    if (!widget) return;
+    QColor originalColor = widget->palette().color(QPalette::Button);
+    QColor editedColor;
 
+    if (isDarkMode(originalColor)) {
+        editedColor = originalColor.lighter(130);
+    } else {
+        editedColor = originalColor.darker(110);
+    }
+
+    QPalette palette = widget->palette();
+
+    if (qobject_cast<QComboBox*>(widget)) {
+        palette.setColor(QPalette::Base, editedColor);
+    } else if (qobject_cast<QPushButton*>(widget)) {
+        palette.setColor(QPalette::Button, editedColor);
+    }
+
+    widget->setPalette(palette);
+}
