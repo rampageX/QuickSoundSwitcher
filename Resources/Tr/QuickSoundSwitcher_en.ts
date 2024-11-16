@@ -4,18 +4,23 @@
 <context>
     <name>Panel</name>
     <message>
-        <location filename="../../Panel/Panel.ui" line="71"/>
+        <location filename="../../Panel/Panel.ui" line="194"/>
         <source>Input</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Panel/Panel.ui" line="221"/>
+        <location filename="../../Panel/Panel.ui" line="73"/>
         <source>Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Panel/Panel.ui" line="271"/>
+        <location filename="../../Panel/Panel.ui" line="297"/>
         <source>Volume mixer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Panel/Panel.cpp" line="282"/>
+        <source>All quiet for now.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
