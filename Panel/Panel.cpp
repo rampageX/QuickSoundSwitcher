@@ -3,7 +3,6 @@
 #include "AudioManager.h"
 #include "Utils.h"
 #include <QComboBox>
-#include <QDebug>
 #include <QList>
 #include <QProcess>
 #include <QRegularExpression>
@@ -109,7 +108,7 @@ void Panel::populateComboBoxes()
     int defaultRecordingIndex = -1;
 
     for (const AudioDevice &device : playbackDevices) {
-        ui->outputComboBox->addItem(device.shortName);
+        ui->outputComboBox->addItem(" " + device.shortName);
 
         if (device.isDefault) {
             defaultPlaybackIndex = ui->outputComboBox->count() - 1;
@@ -121,7 +120,7 @@ void Panel::populateComboBoxes()
     }
 
     for (const AudioDevice &device : recordingDevices) {
-        ui->inputComboBox->addItem(device.shortName);
+        ui->inputComboBox->addItem(" " + device.shortName);
 
         if (device.isDefault) {
             defaultRecordingIndex = ui->inputComboBox->count() - 1;
@@ -262,7 +261,6 @@ void Panel::populateApplications() {
     bool shouldDisplayLabel = applications.isEmpty() || (applications.size() == 1 && applications[0].name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202");
 
     if (shouldDisplayLabel) {
-        qDebug() << "pass";
         QLabel *label = new QLabel(tr("All quiet for now."), ui->appFrame);
         label->setAlignment(Qt::AlignCenter);
         label->setStyleSheet("font-style: italic;");
@@ -322,7 +320,6 @@ void Panel::populateApplications() {
 
     // Adjust total height by subtracting the last spacing (no spacing after the last row)
     totalHeight -= spacing;
-    qDebug() << height();
 
     ui->appFrame->setMinimumHeight(totalHeight);
     setMinimumHeight(height() + 12 + ui->appFrame->height());
