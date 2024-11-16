@@ -20,6 +20,7 @@ struct AudioDevice
 struct Application {
     QString id;
     QString name;
+    QString executableName;
     bool isMuted;
     int volume;
     QIcon icon; // Add an icon field to store the application icon

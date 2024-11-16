@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>284</width>
-    <height>430</height>
+    <width>330</width>
+    <height>460</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -88,14 +88,14 @@
        <widget class="QPushButton" name="inputMuteButton">
         <property name="minimumSize">
          <size>
-          <width>30</width>
-          <height>30</height>
+          <width>35</width>
+          <height>35</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>30</width>
-          <height>30</height>
+          <width>35</width>
+          <height>35</height>
          </size>
         </property>
         <property name="text">
@@ -108,7 +108,7 @@
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>30</height>
+          <height>35</height>
          </size>
         </property>
        </widget>
@@ -163,14 +163,14 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>30</width>
-          <height>30</height>
+          <width>35</width>
+          <height>35</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>30</width>
-          <height>30</height>
+          <width>35</width>
+          <height>35</height>
          </size>
         </property>
         <property name="text">
@@ -189,7 +189,7 @@
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>30</height>
+          <height>35</height>
          </size>
         </property>
        </widget>
@@ -267,7 +267,7 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>150</height>
+       <height>170</height>
       </size>
      </property>
      <property name="frameShape">

@@ -8,6 +8,7 @@
 #include <Shlobj.h>
 #include <QIcon>
 #include <QPixmap>
+#include <QFileInfo>
 
 void AudioManager::initialize() {
     CoInitialize(nullptr);
@@ -448,11 +449,21 @@ QList<Application> AudioManager::enumerateAudioApplications() {
         // Fetch executable path and icon
         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
         QString executablePath;
+        QString executableName;
         QIcon appIcon;
         if (hProcess) {
             WCHAR exePath[MAX_PATH];
             if (GetModuleFileNameEx(hProcess, NULL, exePath, MAX_PATH)) {
                 executablePath = QString::fromWCharArray(exePath);
+
+                // Extract executable name from path
+                QFileInfo fileInfo(executablePath);
+                executableName = fileInfo.baseName(); // Extract name without extension
+
+                // Capitalize the first character if possible
+                if (!executableName.isEmpty()) {
+                    executableName[0] = executableName[0].toUpper();
+                }
 
                 // Use the helper function to extract the icon
                 appIcon = getAppIcon(executablePath);  // Extract icon using SHGetFileInfo or ExtractIcon
@@ -464,6 +475,7 @@ QList<Application> AudioManager::enumerateAudioApplications() {
         Application app;
         app.id = appId;
         app.name = appName;
+        app.executableName = executableName;
         app.isMuted = isMuted;
         app.volume = static_cast<int>(volumeLevel * 100);
         app.icon = appIcon; // Assign the extracted icon

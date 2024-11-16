@@ -285,7 +285,8 @@ void Panel::populateApplications() {
 
         // Create a tool button for mute/unmute control
         QPushButton *muteButton = new QPushButton(ui->appFrame);
-        muteButton->setFixedSize(30, 30);
+        muteButton->setFixedSize(35, 35);
+        muteButton->setToolTip(app.executableName);
         Utils::lightenWidgetColor(muteButton);
         //muteButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
 
@@ -337,7 +338,7 @@ void Panel::populateApplications() {
         slider->setEnabled(false);  // Disable slider
 
         QPushButton *muteButton = new QPushButton(ui->appFrame);
-        muteButton->setFixedSize(30, 30);
+        muteButton->setFixedSize(35, 35);
         muteButton->setEnabled(false);  // Disable mute button
 
         // Add to the grid layout
