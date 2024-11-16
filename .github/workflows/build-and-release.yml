@@ -71,7 +71,7 @@ jobs:
           $windeployqtPath = "D:\a\QuickSoundSwitcher\Qt\6.7.2\msvc2019_64\bin\windeployqt6.exe"
           if (Test-Path $windeployqtPath) {
               & $windeployqtPath `
-                  --exclude-plugins qsvgicon,qsvg,qico,qjpeg,qgif,qnetworklistmanager,qtuiotouchplugin `
+                  --exclude-plugins qmodernwindowsstyle,qsvgicon,qsvg,qico,qjpeg,qgif,qnetworklistmanager,qtuiotouchplugin `
                   --no-opengl-sw `
                   --no-system-dxc-compiler `
                   --no-compiler-runtime `

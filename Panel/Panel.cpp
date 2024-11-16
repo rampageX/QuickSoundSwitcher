@@ -28,10 +28,9 @@ Panel::Panel(QWidget *parent)
     populateApplications();
     setSliders();
     setButtons();
-    Utils::lightenWidgetColor(ui->inputComboBox);
-    Utils::lightenWidgetColor(ui->outputComboBox);
-    Utils::lightenWidgetColor(ui->inputMuteButton);
-    Utils::lightenWidgetColor(ui->outputMuteButton);
+    Utils::setFrameColorBasedOnWindow(this, ui->appFrame);
+    Utils::setFrameColorBasedOnWindow(this, ui->inputFrame);
+    Utils::setFrameColorBasedOnWindow(this, ui->outputFrame);
 
     QTimer *audioMeterTimer = new QTimer(this);
     connect(audioMeterTimer, &QTimer::timeout, this, &Panel::outputAudioMeter);
@@ -108,7 +107,7 @@ void Panel::populateComboBoxes()
     int defaultRecordingIndex = -1;
 
     for (const AudioDevice &device : playbackDevices) {
-        ui->outputComboBox->addItem(" " + device.shortName);
+        ui->outputComboBox->addItem(device.shortName);
 
         if (device.isDefault) {
             defaultPlaybackIndex = ui->outputComboBox->count() - 1;
@@ -120,7 +119,7 @@ void Panel::populateComboBoxes()
     }
 
     for (const AudioDevice &device : recordingDevices) {
-        ui->inputComboBox->addItem(" " + device.shortName);
+        ui->inputComboBox->addItem(device.shortName);
 
         if (device.isDefault) {
             defaultRecordingIndex = ui->inputComboBox->count() - 1;
@@ -196,7 +195,6 @@ void Panel::onOutputMuteButtonPressed()
     AudioManager::setPlaybackMute(!playbackMute);
     ui->outputVolumeSlider->setEnabled(playbackMute);
     ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, !playbackMute));
-    ui->outputMuteButton->setIconSize(QSize(16, 16));
     emit outputMuteChanged();
 }
 
@@ -206,7 +204,6 @@ void Panel::onInputMuteButtonPressed()
     AudioManager::setRecordingMute(!recordingMute);
     ui->inputVolumeSlider->setEnabled(recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
-    ui->inputMuteButton->setIconSize(QSize(16, 16));
 }
 
 void Panel::outputAudioMeter() {

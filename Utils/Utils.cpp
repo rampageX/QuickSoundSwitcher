@@ -12,7 +12,7 @@
 #undef min  // Undefine min macro to avoid conflicts with std::min
 #undef max  // Undefine max macro to avoid conflicts with std::max
 
-QString getTheme()
+QString Utils::getTheme()
 {
     // Determine the theme based on registry value
     QSettings settings(
@@ -152,4 +152,51 @@ void Utils::lightenWidgetColor(QWidget* widget) {
     }
 
     widget->setPalette(palette);
+}
+
+QString toHex(BYTE value) {
+    const char* hexDigits = "0123456789ABCDEF";
+    return QString("%1%2")
+        .arg(hexDigits[value >> 4])
+        .arg(hexDigits[value & 0xF]);
+}
+
+QString Utils::getAccentColor(const QString &accentKey)
+{
+    HKEY hKey;
+    BYTE accentPalette[32];  // AccentPalette contains 32 bytes
+    DWORD bufferSize = sizeof(accentPalette);
+
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        if (RegGetValueW(hKey, NULL, L"AccentPalette", RRF_RT_REG_BINARY, NULL, accentPalette, &bufferSize) == ERROR_SUCCESS) {
+            RegCloseKey(hKey);
+
+            int index = 0;
+            if (accentKey == "light3") index = 0;
+            else if (accentKey == "light2") index = 4;
+            else if (accentKey == "light1") index = 8;
+            else if (accentKey == "normal") index = 12;
+            else if (accentKey == "dark1") index = 16;
+            else if (accentKey == "dark2") index = 20;
+            else if (accentKey == "dark3") index = 24;
+            else {
+                qDebug() << "Invalid accentKey provided.";
+                return "#FFFFFF";
+            }
+
+            QString red = toHex(accentPalette[index]);
+            QString green = toHex(accentPalette[index + 1]);
+            QString blue = toHex(accentPalette[index + 2]);
+
+            return QString("#%1%2%3").arg(red, green, blue);
+        } else {
+            qDebug() << "Failed to retrieve AccentPalette from the registry.";
+        }
+
+        RegCloseKey(hKey);
+    } else {
+        qDebug() << "Failed to open registry key.";
+    }
+
+    return "#FFFFFF";
 }

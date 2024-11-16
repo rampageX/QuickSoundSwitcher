@@ -12,6 +12,8 @@ namespace Utils {
     bool isDarkMode(const QColor &color);
     QIcon generateMutedIcon(QPixmap originalPixmap);
     void lightenWidgetColor(QWidget* widget);
+    QString getAccentColor(const QString &accentKey);
+    QString getTheme();
 }
 
 #endif // UTILS_H
