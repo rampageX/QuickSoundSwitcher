@@ -75,13 +75,8 @@ int getBuildNumber()
     return -1;
 }
 
-bool Utils::isWindows10()
+QColor Utils::adjustColor(const QColor &color, double factor)
 {
-    int buildNumber = getBuildNumber();
-    return (buildNumber >= 10240 && buildNumber < 22000);
-}
-
-QColor Utils::adjustColor(const QColor &color, double factor) {
     int r = color.red();
     int g = color.green();
     int b = color.blue();
@@ -94,7 +89,8 @@ QColor Utils::adjustColor(const QColor &color, double factor) {
     return QColor(r, g, b, a);
 }
 
-bool Utils::isDarkMode(const QColor &color) {
+bool Utils::isDarkMode(const QColor &color)
+{
     int r = color.red();
     int g = color.green();
     int b = color.blue();
@@ -102,7 +98,8 @@ bool Utils::isDarkMode(const QColor &color) {
     return brightness < 127;
 }
 
-void Utils::setFrameColorBasedOnWindow(QWidget *window, QFrame *frame) {
+void Utils::setFrameColorBasedOnWindow(QWidget *window, QFrame *frame)
+{
     QColor main_bg_color = window->palette().color(QPalette::Window);
     QColor frame_bg_color;
 
@@ -118,43 +115,21 @@ void Utils::setFrameColorBasedOnWindow(QWidget *window, QFrame *frame) {
     frame->setPalette(palette);
 }
 
-QIcon Utils::generateMutedIcon(QPixmap originalPixmap) {
-    // Load the muted layer and scale it to match the original pixmap size
+QIcon Utils::generateMutedIcon(QPixmap originalPixmap)
+{
     QPixmap mutedLayer(":/icons/muted_layer.png");
     mutedLayer = mutedLayer.scaled(originalPixmap.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    // Create a painter to combine the original icon with the muted layer
-    QPainter painter(&originalPixmap);  // Pass originalPixmap as writable
-    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);  // Ensure the layer is drawn on top
-    painter.drawPixmap(0, 0, mutedLayer);  // Draw muted layer on top of the original icon
-    painter.end();  // End the painting process
+    QPainter painter(&originalPixmap);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    painter.drawPixmap(0, 0, mutedLayer);
+    painter.end();
 
-    return QIcon(originalPixmap);  // Return the modified icon with the muted layer
+    return QIcon(originalPixmap);
 }
 
-void Utils::lightenWidgetColor(QWidget* widget) {
-    if (!widget) return;
-    QColor originalColor = widget->palette().color(QPalette::Button);
-    QColor editedColor;
-
-    if (isDarkMode(originalColor)) {
-        editedColor = originalColor.lighter(130);
-    } else {
-        editedColor = originalColor.darker(110);
-    }
-
-    QPalette palette = widget->palette();
-
-    if (qobject_cast<QComboBox*>(widget)) {
-        palette.setColor(QPalette::Base, editedColor);
-    } else if (qobject_cast<QPushButton*>(widget)) {
-        palette.setColor(QPalette::Button, editedColor);
-    }
-
-    widget->setPalette(palette);
-}
-
-QString toHex(BYTE value) {
+QString toHex(BYTE value)
+{
     const char* hexDigits = "0123456789ABCDEF";
     return QString("%1%2")
         .arg(hexDigits[value >> 4])

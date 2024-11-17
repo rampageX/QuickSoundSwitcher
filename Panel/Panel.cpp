@@ -242,7 +242,8 @@ void Panel::updateUi()
     ui->inputVolumeSlider->setEnabled(!recordingMute);
 }
 
-void Panel::populateApplications() {
+void Panel::populateApplications()
+{
     if (!ui->appFrame->layout()) {
         ui->appFrame->setLayout(new QVBoxLayout);
     }
@@ -275,7 +276,6 @@ void Panel::populateApplications() {
             QPushButton *muteButton = new QPushButton(ui->appFrame);
             muteButton->setFixedSize(35, 35);
             muteButton->setToolTip(app.executableName);
-            Utils::lightenWidgetColor(muteButton);
 
             QIcon originalIcon = app.icon;
             QPixmap originalPixmap = originalIcon.pixmap(16, 16);
