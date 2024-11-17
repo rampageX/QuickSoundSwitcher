@@ -246,16 +246,13 @@ bool AudioManager::setDefaultEndpoint(const QString &deviceId)
     IMMDeviceEnumerator *deviceEnumerator = nullptr;
     IMMDevice *defaultDevice = nullptr;
     IPolicyConfig *policyConfig = nullptr;
-    IPolicyConfigVista *policyConfigVista = nullptr;
 
-    // Initialize COM library
     hr = CoInitialize(nullptr);
     if (FAILED(hr)) {
         qDebug() << "Failed to initialize COM library";
         return false;
     }
 
-    // Create device enumerator
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER,
                           IID_PPV_ARGS(&deviceEnumerator));
     if (FAILED(hr)) {
@@ -264,7 +261,6 @@ bool AudioManager::setDefaultEndpoint(const QString &deviceId)
         return false;
     }
 
-    // Get the device by ID
     hr = deviceEnumerator->GetDevice(reinterpret_cast<LPCWSTR>(deviceId.utf16()), &defaultDevice);
     if (FAILED(hr)) {
         qDebug() << "Failed to get device by ID";
@@ -273,36 +269,22 @@ bool AudioManager::setDefaultEndpoint(const QString &deviceId)
         return false;
     }
 
-    // Attempt to get IPolicyConfig interface
     hr = CoCreateInstance(__uuidof(CPolicyConfigClient), nullptr, CLSCTX_ALL,
                           IID_PPV_ARGS(&policyConfig));
     if (FAILED(hr)) {
-        // If IPolicyConfig is unavailable, try IPolicyConfigVista
-        hr = CoCreateInstance(__uuidof(CPolicyConfigVistaClient), nullptr, CLSCTX_ALL,
-                              IID_PPV_ARGS(&policyConfigVista));
-        if (FAILED(hr)) {
-            qDebug() << "Failed to create PolicyConfig interface";
-            defaultDevice->Release();
-            deviceEnumerator->Release();
-            CoUninitialize();
-            return false;
-        }
+        qDebug() << "Failed to create PolicyConfig interface";
+        defaultDevice->Release();
+        deviceEnumerator->Release();
+        CoUninitialize();
+        return false;
     }
 
     // Set as default device for all audio roles (Console, Multimedia, Communications)
-    if (policyConfig) {
-        hr = policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eConsole);
-        policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eMultimedia);
-        policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eCommunications);
-    } else if (policyConfigVista) {
-        hr = policyConfigVista->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eConsole);
-        policyConfigVista->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eMultimedia);
-        policyConfigVista->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eCommunications);
-    }
+    hr = policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eConsole);
+    policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eMultimedia);
+    policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eCommunications);
 
-    // Release resources
-    if (policyConfig) policyConfig->Release();
-    if (policyConfigVista) policyConfigVista->Release();
+    policyConfig->Release();
     defaultDevice->Release();
     deviceEnumerator->Release();
     CoUninitialize();
@@ -312,7 +294,6 @@ bool AudioManager::setDefaultEndpoint(const QString &deviceId)
         return false;
     }
 
-    qDebug() << "Default audio output device set to:" << deviceId;
     return true;
 }
 

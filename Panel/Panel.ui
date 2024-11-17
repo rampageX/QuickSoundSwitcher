@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>330</width>
-    <height>290</height>
+    <height>303</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -66,6 +66,7 @@
         </property>
         <property name="font">
          <font>
+          <pointsize>10</pointsize>
           <bold>true</bold>
          </font>
         </property>
@@ -147,6 +148,11 @@
              <height>35</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
           </widget>
          </item>
          <item row="0" column="0" colspan="2">
@@ -187,6 +193,7 @@
         </property>
         <property name="font">
          <font>
+          <pointsize>10</pointsize>
           <bold>true</bold>
          </font>
         </property>
@@ -256,6 +263,11 @@
              <height>35</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
           </widget>
          </item>
          <item row="0" column="0" colspan="2">
@@ -290,6 +302,7 @@
        <widget class="QLabel" name="label_3">
         <property name="font">
          <font>
+          <pointsize>10</pointsize>
           <bold>true</bold>
          </font>
         </property>
