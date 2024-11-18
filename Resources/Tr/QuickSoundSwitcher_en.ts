@@ -4,22 +4,22 @@
 <context>
     <name>Panel</name>
     <message>
-        <location filename="../../Panel/Panel.ui" line="194"/>
+        <location filename="../../Panel/Panel.ui" line="201"/>
         <source>Input</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Panel/Panel.ui" line="73"/>
+        <location filename="../../Panel/Panel.ui" line="74"/>
         <source>Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Panel/Panel.ui" line="297"/>
+        <location filename="../../Panel/Panel.ui" line="310"/>
         <source>Volume mixer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Panel/Panel.cpp" line="282"/>
+        <location filename="../../Panel/Panel.cpp" line="262"/>
         <source>All quiet for now.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -27,12 +27,22 @@
 <context>
     <name>QuickSoundSwitcher</name>
     <message>
-        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="28"/>
+        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="34"/>
+        <source>Output device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="38"/>
+        <source>Input device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="42"/>
         <source>Run at startup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="34"/>
+        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="48"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>

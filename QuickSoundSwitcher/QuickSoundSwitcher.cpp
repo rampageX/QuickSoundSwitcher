@@ -23,23 +23,56 @@ QuickSoundSwitcher::~QuickSoundSwitcher() {
 void QuickSoundSwitcher::createTrayIcon()
 {
     onOutputMuteChanged();
+
     QMenu *trayMenu = new QMenu(this);
 
-    QAction *startupAction = new QAction(tr("Run at startup"), this);
-    startupAction->setCheckable(true);
-    startupAction->setChecked(ShortcutManager::isShortcutPresent());
-    connect(startupAction, &QAction::triggered, this, &QuickSoundSwitcher::onRunAtStartupStateChanged);
-    trayMenu->addAction(startupAction);
+    connect(trayMenu, &QMenu::aboutToShow, this, [trayMenu, this]() {
+        trayMenu->clear();
 
-    QAction *exitAction = new QAction(tr("Exit"), this);
-    connect(exitAction, &QAction::triggered, this, &QApplication::quit);
-    trayMenu->addAction(exitAction);
+        QList<AudioDevice> playbackDevices;
+        AudioManager::enumeratePlaybackDevices(playbackDevices);
+        createDeviceSubMenu(trayMenu, playbackDevices, tr("Output device"));
+
+        QList<AudioDevice> recordingDevices;
+        AudioManager::enumerateRecordingDevices(recordingDevices);
+        createDeviceSubMenu(trayMenu, recordingDevices, tr("Input device"));
+
+        trayMenu->addSeparator();
+
+        QAction *startupAction = new QAction(tr("Run at startup"), this);
+        startupAction->setCheckable(true);
+        startupAction->setChecked(ShortcutManager::isShortcutPresent());
+        connect(startupAction, &QAction::triggered, this, &QuickSoundSwitcher::onRunAtStartupStateChanged);
+        trayMenu->addAction(startupAction);
+
+        QAction *exitAction = new QAction(tr("Exit"), this);
+        connect(exitAction, &QAction::triggered, this, &QApplication::quit);
+        trayMenu->addAction(exitAction);
+    });
 
     trayIcon->setContextMenu(trayMenu);
     trayIcon->setToolTip("Quick Sound Switcher");
     trayIcon->show();
     connect(trayIcon, &QSystemTrayIcon::activated, this, &QuickSoundSwitcher::trayIconActivated);
 }
+
+void QuickSoundSwitcher::createDeviceSubMenu(QMenu *parentMenu, const QList<AudioDevice> &devices, const QString &title)
+{
+    QMenu *subMenu = parentMenu->addMenu(title);
+
+    for (const AudioDevice &device : devices) {
+        QAction *deviceAction = new QAction(device.shortName, subMenu);
+        deviceAction->setCheckable(true);
+        deviceAction->setChecked(device.isDefault);
+
+        connect(deviceAction, &QAction::triggered, this, [device]() {
+            AudioManager::setDefaultEndpoint(device.id);
+        });
+
+        subMenu->addAction(deviceAction);
+    }
+}
+
 
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
