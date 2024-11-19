@@ -277,9 +277,9 @@ void QuickSoundSwitcher::showSettings()
 void QuickSoundSwitcher::loadSettings()
 {
     position = settings.value("overlayPosition", "topRightCorner").toString();
-    disableOverlay = settings.value("disableOverlay", false).toBool();
+    disableOverlay = settings.value("disableOverlay", true).toBool();
     potatoMode = settings.value("potatoMode", false).toBool();
-    disableNotification = settings.value("disableNotification", false).toBool();
+    disableNotification = settings.value("disableNotification", true).toBool();
 }
 
 void QuickSoundSwitcher::onSettingsChanged()
