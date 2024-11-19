@@ -267,6 +267,7 @@ void Panel::onInputMuteButtonPressed()
     AudioManager::setRecordingMute(!recordingMute);
     ui->inputVolumeSlider->setEnabled(recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
+    emit inputMuteChanged();
 }
 
 void Panel::outputAudioMeter() {
@@ -320,6 +321,9 @@ void Panel::populateApplications()
     } else {
         for (const Application& app : applications) {
             if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+                continue;
+            }
+            if (app.executableName == "QuickSoundSwitcher") {
                 continue;
             }
 

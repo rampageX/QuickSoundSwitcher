@@ -17,5 +17,7 @@
         <file>icons/mic_light_muted.png</file>
         <file>icons/mic_dark_muted.png</file>
         <file>icons/muted_layer.png</file>
+        <file>icons/overlay_dark.png</file>
+        <file>icons/overlay_light.png</file>
     </qresource>
 </RCC>

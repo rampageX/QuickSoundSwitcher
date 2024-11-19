@@ -12,6 +12,8 @@ INCLUDEPATH +=                                      \
     Panel/                                          \
     AudioManager/                                   \
     ShortcutManager/                                \
+    OverlaySettings/                                \
+    OverlayWidget/                                  \
 
 SOURCES +=                                          \
     main.cpp                                        \
@@ -20,6 +22,8 @@ SOURCES +=                                          \
     Utils/Utils.cpp                                 \
     AudioManager/AudioManager.cpp                   \
     ShortcutManager/ShortcutManager.cpp             \
+    OverlaySettings/OverlaySettings.cpp             \
+    OverlayWidget/OverlayWidget.cpp                 \
 
 HEADERS +=                                          \
     Panel/Panel.h                                   \
@@ -28,9 +32,12 @@ HEADERS +=                                          \
     AudioManager/AudioManager.h                     \
     AudioManager/PolicyConfig.h                     \
     ShortcutManager/ShortcutManager.h               \
+    OverlaySettings/OverlaySettings.h               \
+    OverlayWidget/OverlayWidget.h                   \
 
 FORMS +=                                            \
     Panel/Panel.ui                                  \
+    OverlaySettings/OverlaySettings.ui              \
 
 TRANSLATIONS +=                                     \
     Resources/Tr/QuickSoundSwitcher_fr.ts           \
@@ -38,5 +45,7 @@ TRANSLATIONS +=                                     \
 
 RESOURCES +=                                        \
     Resources/resources.qrc                         \
+
+RC_FILE = Resources/appicon.rc
 
 LIBS += -luser32 -ladvapi32 -lwinmm -lole32 -lgdi32
