@@ -180,7 +180,7 @@ void QuickSoundSwitcher::onOutputMuteChanged()
 void QuickSoundSwitcher::onInputMuteChanged()
 {
     toggleMutedOverlay(AudioManager::getRecordingMute());
-    Utils::playSoundNotification(!AudioManager::getRecordingMute());
+    sendNotification(AudioManager::getRecordingMute());
 }
 
 void QuickSoundSwitcher::onRunAtStartupStateChanged()
