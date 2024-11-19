@@ -10,6 +10,9 @@
 #include <windows.h>
 #include <QPropertyAnimation>
 
+HHOOK QuickSoundSwitcher::mouseHook = NULL;
+QuickSoundSwitcher* QuickSoundSwitcher::instance = nullptr;
+
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
@@ -19,15 +22,19 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , overlaySettings(nullptr)
     , settings("Odizinne", "QuickSoundSwitcher")
 {
+    instance = this;
     createTrayIcon();
     registerGlobalHotkey();
     loadSettings();
     toggleMutedOverlay(AudioManager::getRecordingMute());
+    installGlobalMouseHook();
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
 {
     unregisterGlobalHotkey();
+    uninstallGlobalMouseHook();
+    instance = nullptr;
 }
 
 void QuickSoundSwitcher::createTrayIcon()
@@ -278,4 +285,58 @@ void QuickSoundSwitcher::onSettingsClosed()
     disconnect(overlaySettings, &OverlaySettings::closed, this, &QuickSoundSwitcher::onSettingsClosed);
     disconnect(overlaySettings, &OverlaySettings::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
     overlaySettings = nullptr;
+}
+
+void QuickSoundSwitcher::installGlobalMouseHook() {
+    if (mouseHook == NULL) {
+        mouseHook = SetWindowsHookEx(WH_MOUSE_LL, MouseProc, NULL, 0);
+    }
+}
+
+void QuickSoundSwitcher::uninstallGlobalMouseHook() {
+    if (mouseHook != NULL) {
+        UnhookWindowsHookEx(mouseHook);
+        mouseHook = NULL;
+    }
+}
+
+LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode == HC_ACTION) {
+        MSLLHOOKSTRUCT *hookStruct = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
+        if (wParam == WM_MOUSEWHEEL) {
+            int zDelta = GET_WHEEL_DELTA_WPARAM(hookStruct->mouseData);  // Check the scroll direction
+            QPoint cursorPos = QCursor::pos();  // Get current cursor position
+
+            QRect trayIconRect = instance->trayIcon->geometry();  // Get tray icon position
+            if (trayIconRect.contains(cursorPos)) {  // Check if the cursor is over the tray icon
+                if (zDelta > 0) {
+                    instance->adjustOutputVolume(true);
+                } else {
+                    instance->adjustOutputVolume(false);
+                }
+            }
+        }
+    }
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+void QuickSoundSwitcher::adjustOutputVolume(bool up)
+{
+    int volume = AudioManager::getPlaybackVolume();
+    if (up) {
+        int newVolume = volume + 2;
+        if (newVolume > 100) {
+            newVolume = 100;
+        }
+        AudioManager::setPlaybackVolume(newVolume);
+    } else {
+        int newVolume = volume - 2;
+        if (newVolume < 0) {
+            newVolume = 0;
+        }
+        AudioManager::setPlaybackVolume(newVolume);
+    }
+
+    trayIcon->setIcon(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL));
+    emit volumeChangedWithTray();
 }

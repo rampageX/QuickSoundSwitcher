@@ -15,6 +15,8 @@ class QuickSoundSwitcher : public QMainWindow
 public:
     QuickSoundSwitcher(QWidget *parent = nullptr);
     ~QuickSoundSwitcher();
+    static QuickSoundSwitcher* instance;
+    void adjustOutputVolume(bool up);
 
 private slots:
     void onVolumeChanged();
@@ -24,7 +26,7 @@ private slots:
     void onRunAtStartupStateChanged();
 
 protected:
-    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result);
+    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 
 private:
     QSystemTrayIcon *trayIcon;
@@ -35,6 +37,11 @@ private:
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     bool hiding;
     void createDeviceSubMenu(QMenu *parentMenu, const QList<AudioDevice> &devices, const QString &title);
+
+    static LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
+    static HHOOK mouseHook;
+    void installGlobalMouseHook();
+    void uninstallGlobalMouseHook();
 
     static const int HOTKEY_ID = 1;
     bool registerGlobalHotkey();
@@ -57,6 +64,7 @@ private:
 
 signals:
     void muteStateChanged();
+    void volumeChangedWithTray();
 };
 
 #endif // QUICKSOUNDSWITCHER_H

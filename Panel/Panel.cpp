@@ -54,6 +54,8 @@ Panel::Panel(QWidget *parent)
     connect(ui->inputMuteButton, &QPushButton::pressed, this, &Panel::onInputMuteButtonPressed);
     connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::muteStateChanged,
             this, &Panel::onMuteStateChanged);
+    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::volumeChangedWithTray,
+            this, &Panel::onVolumeChangedWithTray);
 }
 
 Panel::~Panel()
@@ -222,13 +224,10 @@ void Panel::paintEvent(QPaintEvent *event)
 
 void Panel::keyPressEvent(QKeyEvent *event)
 {
-    // Check if the pressed key is Escape
     if (event->key() == Qt::Key_Escape) {
-        // Emit lostFocus signal when Escape is pressed
         emit lostFocus();
     }
 
-    // Call the base class keyPressEvent to ensure normal handling of other keys
     QWidget::keyPressEvent(event);
 }
 
@@ -349,6 +348,13 @@ void Panel::onMuteStateChanged()
     bool recordingMute = AudioManager::getRecordingMute();
     ui->inputVolumeSlider->setEnabled(!recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
+}
+
+void Panel::onVolumeChangedWithTray()
+{
+    ui->outputVolumeSlider->blockSignals(true);
+    ui->outputVolumeSlider->setValue(AudioManager::getPlaybackVolume());
+    ui->outputVolumeSlider->blockSignals(false);
 }
 
 void Panel::outputAudioMeter() {
