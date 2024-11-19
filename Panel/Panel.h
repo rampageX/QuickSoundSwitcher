@@ -19,13 +19,9 @@ class Panel : public QWidget
 public:
     explicit Panel(QWidget *parent = nullptr);
     ~Panel() override;
-    void fadeIn();
-    void fadeOut();
     static Panel* panelInstance;
 
 protected:
-    void showEvent(QShowEvent *event) override;
-    void closeEvent(QCloseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
 

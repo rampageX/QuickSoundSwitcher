@@ -118,7 +118,7 @@ void QuickSoundSwitcher::showPanel()
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
 
     int panelX = trayIconCenterX - panel->width() / 2; // Center horizontally
-    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
     int startY = screenGeometry.bottom();  // Start from the bottom of the screen
     int targetY = trayIconGeometry.top() - panel->height() - 12; // Final position
 

@@ -29,8 +29,6 @@ protected:
 private:
     QSystemTrayIcon *trayIcon;
     Panel* panel;
-    int currentY;
-    int targetY;
     void createTrayIcon();
     void showPanel();
     void hidePanel();

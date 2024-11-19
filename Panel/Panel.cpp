@@ -23,7 +23,7 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::Popup | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedWidth(width());
     AudioManager::initialize();
@@ -144,18 +144,6 @@ void Panel::keyPressEvent(QKeyEvent *event)
 
     // Call the base class keyPressEvent to ensure normal handling of other keys
     QWidget::keyPressEvent(event);
-}
-
-void Panel::showEvent(QShowEvent *event)
-{
-    QWidget::showEvent(event);
-    raise();
-    activateWindow();
-}
-
-void Panel::closeEvent(QCloseEvent *event)
-{
-    event->ignore();
 }
 
 void Panel::populateComboBoxes()
@@ -392,29 +380,4 @@ void Panel::populateApplications()
 
     ui->appFrame->setMinimumHeight(totalHeight);
     setMinimumHeight(height() + 12 + ui->appFrame->height());
-}
-
-void Panel::fadeIn()
-{
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
-    animation->setDuration(200);
-    animation->setStartValue(0);
-    animation->setEndValue(1);
-    setWindowOpacity(0);
-    show();
-    animation->start(QAbstractAnimation::DeleteWhenStopped);
-}
-
-void Panel::fadeOut()
-{
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
-    animation->setDuration(200);
-    animation->setStartValue(1);
-    animation->setEndValue(0);
-
-    connect(animation, &QPropertyAnimation::finished, this, [this]() {
-        emit fadeOutFinished();
-    });
-
-    animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
