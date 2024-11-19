@@ -7,7 +7,7 @@
 #include <QPoint>
 #include <QPropertyAnimation>
 #include "AudioManager.h"
-
+#include <Windows.h>
 namespace Ui {
 class Panel;
 }
@@ -21,18 +21,24 @@ public:
     ~Panel() override;
     void fadeIn();
     void fadeOut();
+    static Panel* panelInstance;
 
 protected:
     void showEvent(QShowEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
-    bool eventFilter(QObject *obj, QEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     Ui::Panel *ui;
     QList<AudioDevice> playbackDevices;
     QList<AudioDevice> recordingDevices;
+    static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);  // Mouse hook callback
+    static HHOOK mouseHook;
+    static HWND hwndPanel;
 
+    void installMouseHook();
+    void uninstallMouseHook();
     void populateComboBoxes();
     void setSliders();
     void setButtons();

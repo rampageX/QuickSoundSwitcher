@@ -14,6 +14,10 @@
 #include <QTimer>
 #include <QPainterPath>
 
+HHOOK Panel::mouseHook = nullptr;
+HWND Panel::hwndPanel = nullptr;
+Panel* Panel::panelInstance = nullptr;
+
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Panel)
@@ -22,8 +26,12 @@ Panel::Panel(QWidget *parent)
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedWidth(width());
-    this->installEventFilter(this);
     AudioManager::initialize();
+
+    panelInstance = this;
+    hwndPanel = reinterpret_cast<HWND>(this->winId());
+    installMouseHook();
+
     populateComboBoxes();
     populateApplications();
     setSliders();
@@ -48,7 +56,50 @@ Panel::Panel(QWidget *parent)
 Panel::~Panel()
 {
     AudioManager::cleanup();
+    uninstallMouseHook();
     delete ui;
+}
+
+void Panel::installMouseHook()
+{
+    if (!mouseHook) {
+        mouseHook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, NULL, 0);
+    }
+}
+
+void Panel::uninstallMouseHook()
+{
+    if (mouseHook) {
+        UnhookWindowsHookEx(mouseHook);
+        mouseHook = nullptr;
+    }
+}
+
+// Low-level mouse hook callback
+LRESULT CALLBACK Panel::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION) {
+        // Only process mouse click events (left or right click)
+        if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {
+            // Get the current position of the mouse
+            MSLLHOOKSTRUCT *pMouseStruct = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
+            POINT mousePos = pMouseStruct->pt;
+
+            // Get the window's position and size
+            RECT rect;
+            GetWindowRect(hwndPanel, &rect);  // Use stored HWND
+
+            if (!PtInRect(&rect, mousePos)) {
+                // Use the static panelInstance to emit the lostFocus signal
+                if (panelInstance) {
+                    emit panelInstance->lostFocus();
+                }
+            }
+        }
+    }
+
+    // Pass the event to the next hook in the chain
+    return CallNextHookEx(mouseHook, nCode, wParam, lParam);
 }
 
 void Panel::paintEvent(QPaintEvent *event)
@@ -81,6 +132,18 @@ void Panel::paintEvent(QPaintEvent *event)
     QPainterPath borderPath;
     borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8); // Full size for outer border
     painter.drawPath(borderPath);
+}
+
+void Panel::keyPressEvent(QKeyEvent *event)
+{
+    // Check if the pressed key is Escape
+    if (event->key() == Qt::Key_Escape) {
+        // Emit lostFocus signal when Escape is pressed
+        emit lostFocus();
+    }
+
+    // Call the base class keyPressEvent to ensure normal handling of other keys
+    QWidget::keyPressEvent(event);
 }
 
 void Panel::showEvent(QShowEvent *event)
@@ -214,24 +277,6 @@ void Panel::outputAudioMeter() {
 void Panel::inputAudioMeter() {
     int level = AudioManager::getRecordingAudioLevel();
     ui->inputAudioMeter->setValue(level);
-}
-
-bool Panel::eventFilter(QObject *obj, QEvent *event)
-{
-    if (event->type() == QEvent::MouseButtonPress) {
-        qDebug() << "detected";
-        if (!this->underMouse()) {
-            emit lostFocus();
-        }
-    }
-    if (event->type() == QEvent::KeyPress) {
-        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
-        if (keyEvent->key() == Qt::Key_Escape) {
-            emit lostFocus();
-        }
-    }
-
-    return QWidget::eventFilter(obj, event);
 }
 
 void Panel::updateUi()
