@@ -327,11 +327,11 @@ void Panel::populateApplications()
                 continue;
             }
 
-            QHBoxLayout *hBoxLayout = new QHBoxLayout;
+            QGridLayout *gridLayout = new QGridLayout;
+            gridLayout->setVerticalSpacing(0);
 
             QPushButton *muteButton = new QPushButton(ui->appFrame);
             muteButton->setFixedSize(35, 35);
-            muteButton->setToolTip(app.executableName);
 
             QIcon originalIcon = app.icon;
             QPixmap originalPixmap = originalIcon.pixmap(16, 16);
@@ -355,6 +355,12 @@ void Panel::populateApplications()
                 }
             });
 
+            QSpacerItem *spacer1 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+
+            QLabel *nameLabel = new QLabel(app.executableName, ui->appFrame);
+            nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+            nameLabel->setStyleSheet("font-size: 13px;");
+
             QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
             slider->setRange(0, 100);
             slider->setValue(app.volume);
@@ -363,10 +369,20 @@ void Panel::populateApplications()
                 AudioManager::setApplicationVolume(appId, value);
             });
 
-            hBoxLayout->addWidget(muteButton);
-            hBoxLayout->addWidget(slider);
-            vBoxLayout->addLayout(hBoxLayout);
+            QSpacerItem *spacer2 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+            QSpacerItem *spacer3 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+            QSpacerItem *spacer4 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
 
+            gridLayout->addWidget(muteButton, 0, 0, 6, 1);  // Mute button spans 6 rows (row 0 to row 5)
+            gridLayout->addItem(spacer1, 1, 1);              // Spacer in row 1
+            gridLayout->addWidget(nameLabel, 2, 1, 1, 1);    // Label in row 2
+            gridLayout->addWidget(slider, 3, 1, 1, 1);       // Slider in row 3
+            gridLayout->addItem(spacer2, 4, 1);              // Spacer in row 4
+            gridLayout->addItem(spacer3, 5, 1);              // Spacer in row 5
+            gridLayout->addItem(spacer4, 6, 1);              // Spacer in row 6
+
+            gridLayout->setColumnStretch(1, 1);
+            vBoxLayout->addLayout(gridLayout);
             totalHeight += muteButton->height() + spacing;
         }
     }
