@@ -34,7 +34,6 @@ private:
     void createTrayIcon();
     void showPanel();
     void hidePanel();
-    void movePanelDown();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     bool hiding;
     void createDeviceSubMenu(QMenu *parentMenu, const QList<AudioDevice> &devices, const QString &title);

@@ -8,6 +8,7 @@
 #include <QRect>
 #include <QTimer>
 #include <windows.h>
+#include <QPropertyAnimation>
 
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
@@ -116,43 +117,88 @@ void QuickSoundSwitcher::showPanel()
     QPoint trayIconPos = trayIconGeometry.topLeft();
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
 
-    int panelX = trayIconCenterX - panel->width() / 2;
-    int panelY = trayIconPos.y() - panel->height() - 12;
+    int panelX = trayIconCenterX - panel->width() / 2; // Center horizontally
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    int startY = screenGeometry.bottom();  // Start from the bottom of the screen
+    int targetY = trayIconGeometry.top() - panel->height() - 12; // Final position
 
-    panel->move(panelX, panelY);
-    panel->fadeIn();
+    panel->move(panelX, startY); // Start at the bottom
+    panel->show();              // Ensure the panel is visible
+
+    // Animation parameters
+    const int durationMs = 300; // Total duration in milliseconds
+    const int refreshRate = 8; // Timer interval (~60 FPS)
+    const double totalSteps = durationMs / refreshRate;
+
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate); // ~60 updates per second
+
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        if (currentStep >= totalSteps) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            panel->move(panelX, targetY); // Ensure final position is set
+            return;
+        }
+
+        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
+        // Easing function: Smooth deceleration
+        double easedT = 1 - pow(1 - t, 3);
+
+        // Interpolated Y position
+        int currentY = startY + easedT * (targetY - startY);
+        panel->move(panelX, currentY);
+
+        ++currentStep;
+    });
 }
 
 void QuickSoundSwitcher::hidePanel()
 {
     if (!panel) return;
     hiding = true;
-    disconnect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
 
-    connect(panel, &Panel::fadeOutFinished, this, [this]() {
-        delete panel;
-        panel = nullptr;
-        hiding = false;
-    });
+    QRect trayIconGeometry = trayIcon->geometry();
+    QPoint trayIconPos = trayIconGeometry.topLeft();
+    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
 
-    panel->fadeOut();
-}
+    int panelX = trayIconCenterX - panel->width() / 2; // Center horizontally
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    int startY = panel->y();
+    int targetY = screenGeometry.bottom(); // Move to the bottom of the screen
 
-void QuickSoundSwitcher::movePanelDown()
-{
-    if (currentY < targetY) {
-        currentY += 5;
-        panel->move(panel->x(), currentY);
-    } else {
-        delete panel;
-        panel = nullptr;
+    // Animation parameters
+    const int durationMs = 300; // Total duration in milliseconds
+    const int refreshRate = 8; // Timer interval (~60 FPS)
+    const double totalSteps = durationMs / refreshRate;
 
-        QTimer* timer = qobject_cast<QTimer*>(sender());
-        if (timer) {
-            timer->stop();
-            timer->deleteLater();
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate); // ~60 updates per second
+
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        if (currentStep >= totalSteps) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            delete panel;
+            panel = nullptr;
+            hiding = false;
+            return;
         }
-    }
+
+        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
+        // Easing function: Smooth deceleration
+        double easedT = 1 - pow(1 - t, 3);
+
+        // Interpolated Y position
+        int currentY = startY + easedT * (targetY - startY);
+        panel->move(panelX, currentY);
+
+        ++currentStep;
+    });
 }
 
 void QuickSoundSwitcher::onPanelClosed()
