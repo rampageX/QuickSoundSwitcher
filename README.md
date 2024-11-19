@@ -1,5 +1,9 @@
 # QuickSoundSwitcher
 
+[![Version](https://img.shields.io/github/v/release/odizinne/quicksoundswitcher)]()
+[![Github All Releases](https://img.shields.io/github/downloads/odizinne/quicksoundswitcher/total.svg)]()
+[![license](https://img.shields.io/github/license/odizinne/quicksoundswitcher)]()
+
 Popup panel for controlling windows I/O audio devices.  
 While default sound menu in quick access menu does the job, it does not support switching communication device nor input device.
 
