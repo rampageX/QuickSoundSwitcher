@@ -51,6 +51,7 @@ private slots:
     void onInputMuteButtonPressed();
     void outputAudioMeter();
     void inputAudioMeter();
+    void onMuteStateChanged();
 
 signals:
     void volumeChanged();

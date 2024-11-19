@@ -106,7 +106,7 @@ void QuickSoundSwitcher::showPanel()
         return;
     }
 
-    panel = new Panel;
+    panel = new Panel(this);
 
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
@@ -127,7 +127,7 @@ void QuickSoundSwitcher::showPanel()
 
     // Animation parameters
     const int durationMs = 300; // Total duration in milliseconds
-    const int refreshRate = 8; // Timer interval (~60 FPS)
+    const int refreshRate = 1; // Timer interval (~60 FPS)
     const double totalSteps = durationMs / refreshRate;
 
     int currentStep = 0;
@@ -170,14 +170,14 @@ void QuickSoundSwitcher::hidePanel()
     int targetY = screenGeometry.bottom(); // Move to the bottom of the screen
 
     // Animation parameters
-    const int durationMs = 300; // Total duration in milliseconds
-    const int refreshRate = 8; // Timer interval (~60 FPS)
+    const int durationMs = 300;
+    const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
 
     int currentStep = 0;
     QTimer *animationTimer = new QTimer(this);
 
-    animationTimer->start(refreshRate); // ~60 updates per second
+    animationTimer->start(refreshRate);
 
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         if (currentStep >= totalSteps) {
@@ -265,6 +265,10 @@ void QuickSoundSwitcher::toggleMicMute()
     } else {
         sendNotification(false);
         toggleMutedOverlay(false);
+    }
+
+    if (panel) {
+        emit muteStateChanged();
     }
 }
 

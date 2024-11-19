@@ -54,6 +54,9 @@ private:
     QSettings settings;
     QString position;
     bool isMuted;
+
+signals:
+    void muteStateChanged();
 };
 
 #endif // QUICKSOUNDSWITCHER_H

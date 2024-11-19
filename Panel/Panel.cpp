@@ -13,6 +13,7 @@
 #include <QPainter>
 #include <QTimer>
 #include <QPainterPath>
+#include "QuickSoundSwitcher.h"
 
 HHOOK Panel::mouseHook = nullptr;
 HWND Panel::hwndPanel = nullptr;
@@ -51,6 +52,8 @@ Panel::Panel(QWidget *parent)
     connect(ui->inputVolumeSlider, &QSlider::valueChanged, this, &Panel::onInputValueChanged);
     connect(ui->outputMuteButton, &QPushButton::pressed, this, &Panel::onOutputMuteButtonPressed);
     connect(ui->inputMuteButton, &QPushButton::pressed, this, &Panel::onInputMuteButtonPressed);
+    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::muteStateChanged,
+            this, &Panel::onMuteStateChanged);
 }
 
 Panel::~Panel()
@@ -256,6 +259,13 @@ void Panel::onInputMuteButtonPressed()
     ui->inputVolumeSlider->setEnabled(recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
     emit inputMuteChanged();
+}
+
+void Panel::onMuteStateChanged()
+{
+    bool recordingMute = AudioManager::getRecordingMute();
+    ui->inputVolumeSlider->setEnabled(!recordingMute);
+    ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
 }
 
 void Panel::outputAudioMeter() {
