@@ -88,7 +88,6 @@ void QuickSoundSwitcher::createDeviceSubMenu(QMenu *parentMenu, const QList<Audi
     }
 }
 
-
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::Trigger) {
@@ -112,47 +111,9 @@ void QuickSoundSwitcher::showPanel()
     connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
     connect(panel, &Panel::inputMuteChanged, this, &QuickSoundSwitcher::onInputMuteChanged);
     connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
+    connect(panel, &Panel::panelClosed, this, &QuickSoundSwitcher::onPanelClosed);
 
-    QRect trayIconGeometry = trayIcon->geometry();
-    QPoint trayIconPos = trayIconGeometry.topLeft();
-    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
-
-    int panelX = trayIconCenterX - panel->width() / 2; // Center horizontally
-    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
-    int startY = screenGeometry.bottom();  // Start from the bottom of the screen
-    int targetY = trayIconGeometry.top() - panel->height() - 12; // Final position
-
-    panel->move(panelX, startY); // Start at the bottom
-    panel->show();              // Ensure the panel is visible
-
-    // Animation parameters
-    const int durationMs = 300; // Total duration in milliseconds
-    const int refreshRate = 1; // Timer interval (~60 FPS)
-    const double totalSteps = durationMs / refreshRate;
-
-    int currentStep = 0;
-    QTimer *animationTimer = new QTimer(this);
-
-    animationTimer->start(refreshRate); // ~60 updates per second
-
-    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        if (currentStep >= totalSteps) {
-            animationTimer->stop();
-            animationTimer->deleteLater();
-            panel->move(panelX, targetY); // Ensure final position is set
-            return;
-        }
-
-        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
-        // Easing function: Smooth deceleration
-        double easedT = 1 - pow(1 - t, 3);
-
-        // Interpolated Y position
-        int currentY = startY + easedT * (targetY - startY);
-        panel->move(panelX, currentY);
-
-        ++currentStep;
-    });
+    panel->animateIn(trayIcon->geometry());
 }
 
 void QuickSoundSwitcher::hidePanel()
@@ -160,50 +121,14 @@ void QuickSoundSwitcher::hidePanel()
     if (!panel) return;
     hiding = true;
 
-    QRect trayIconGeometry = trayIcon->geometry();
-    QPoint trayIconPos = trayIconGeometry.topLeft();
-    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
-
-    int panelX = trayIconCenterX - panel->width() / 2; // Center horizontally
-    QRect screenGeometry = QApplication::primaryScreen()->geometry();
-    int startY = panel->y();
-    int targetY = screenGeometry.bottom(); // Move to the bottom of the screen
-
-    // Animation parameters
-    const int durationMs = 300;
-    const int refreshRate = 1;
-    const double totalSteps = durationMs / refreshRate;
-
-    int currentStep = 0;
-    QTimer *animationTimer = new QTimer(this);
-
-    animationTimer->start(refreshRate);
-
-    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        if (currentStep >= totalSteps) {
-            animationTimer->stop();
-            animationTimer->deleteLater();
-            delete panel;
-            panel = nullptr;
-            hiding = false;
-            return;
-        }
-
-        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
-        // Easing function: Smooth deceleration
-        double easedT = 1 - pow(1 - t, 3);
-
-        // Interpolated Y position
-        int currentY = startY + easedT * (targetY - startY);
-        panel->move(panelX, currentY);
-
-        ++currentStep;
-    });
+    panel->animateOut(trayIcon->geometry());
 }
 
 void QuickSoundSwitcher::onPanelClosed()
 {
+    delete panel;
     panel = nullptr;
+    hiding = false;
 }
 
 void QuickSoundSwitcher::onVolumeChanged()

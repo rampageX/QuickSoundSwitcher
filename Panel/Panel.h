@@ -20,6 +20,8 @@ public:
     explicit Panel(QWidget *parent = nullptr);
     ~Panel() override;
     static Panel* panelInstance;
+    void animateIn(QRect trayIconGeometry);
+    void animateOut(QRect trayIconGeometry);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -59,6 +61,7 @@ signals:
     void fadeOutFinished();
     void outputMuteChanged();
     void inputMuteChanged();
+    void panelClosed();
 };
 
 #endif // PANEL_H

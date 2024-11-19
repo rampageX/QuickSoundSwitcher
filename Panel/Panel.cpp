@@ -63,6 +63,89 @@ Panel::~Panel()
     delete ui;
 }
 
+void Panel::animateIn(QRect trayIconGeometry)
+{
+    QPoint trayIconPos = trayIconGeometry.topLeft();
+    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
+
+    int panelX = trayIconCenterX - this->width() / 2; // Center horizontally
+    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
+    int startY = screenGeometry.bottom();  // Start from the bottom of the screen
+    int targetY = trayIconGeometry.top() - this->height() - 12; // Final position
+
+    this->move(panelX, startY); // Start at the bottom
+    this->show();
+
+    // Animation parameters
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        if (currentStep >= totalSteps) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            this->move(panelX, targetY); // Ensure final position is set
+            return;
+        }
+
+        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
+        // Easing function: Smooth deceleration
+        double easedT = 1 - pow(1 - t, 3);
+
+        // Interpolated Y position
+        int currentY = startY + easedT * (targetY - startY);
+        this->move(panelX, currentY);
+
+        ++currentStep;
+    });
+}
+
+void Panel::animateOut(QRect trayIconGeometry)
+{
+    QPoint trayIconPos = trayIconGeometry.topLeft();
+    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
+
+    int panelX = trayIconCenterX - this->width() / 2; // Center horizontally
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    int startY = this->y();
+    int targetY = screenGeometry.bottom(); // Move to the bottom of the screen
+
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        if (currentStep >= totalSteps) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+
+            emit panelClosed();
+            return;
+        }
+
+        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
+        // Easing function: Smooth deceleration
+        double easedT = 1 - pow(1 - t, 3);
+
+        // Interpolated Y position
+        int currentY = startY + easedT * (targetY - startY);
+        this->move(panelX, currentY);
+
+        ++currentStep;
+    });
+}
+
 void Panel::installMouseHook()
 {
     if (!mouseHook) {
