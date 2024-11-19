@@ -219,7 +219,14 @@ void Panel::inputAudioMeter() {
 bool Panel::eventFilter(QObject *obj, QEvent *event)
 {
     if (event->type() == QEvent::MouseButtonPress) {
+        qDebug() << "detected";
         if (!this->underMouse()) {
+            emit lostFocus();
+        }
+    }
+    if (event->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->key() == Qt::Key_Escape) {
             emit lostFocus();
         }
     }
