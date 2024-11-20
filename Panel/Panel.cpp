@@ -9,6 +9,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QTimer>
+#include <QFont>
 
 HHOOK Panel::mouseHook = nullptr;
 HWND Panel::hwndPanel = nullptr;
@@ -409,7 +410,11 @@ void Panel::populateApplications()
     if (shouldDisplayLabel) {
         QLabel *label = new QLabel(tr("All quiet for now."), ui->appFrame);
         label->setAlignment(Qt::AlignCenter);
-        label->setStyleSheet("font-style: italic;");
+
+        QFont labelFont = label->font();
+        labelFont.setItalic(true);
+        label->setFont(labelFont);
+
         vBoxLayout->addWidget(label);
 
         totalHeight += label->sizeHint().height() + spacing;
@@ -454,7 +459,10 @@ void Panel::populateApplications()
 
             QLabel *nameLabel = new QLabel(app.executableName, ui->appFrame);
             nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
-            nameLabel->setStyleSheet("font-size: 13px;");
+
+            QFont nameLabelFont = nameLabel->font();
+            nameLabelFont.setPointSize(10);
+            nameLabel->setFont(nameLabelFont);
 
             QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
             slider->setRange(0, 100);
@@ -478,7 +486,7 @@ void Panel::populateApplications()
 
             gridLayout->setColumnStretch(1, 1);
             vBoxLayout->addLayout(gridLayout);
-            totalHeight += muteButton->height() + spacing;
+            totalHeight += muteButton->height();
         }
     }
 
