@@ -69,10 +69,10 @@ void SoundOverlay::animateIn()
     int screenCenterX = screenGeometry.center().x();  // Get the center of the screen
 
     int panelX = screenCenterX - this->width() / 2; // Center the panel horizontally on the screen
-    int startY = screenGeometry.bottom();  // Start from the bottom of the screen
-    int targetY = screenGeometry.bottom() - this->height() - 12; // Final position (above tray icon)
+    int startY = screenGeometry.top();  // Start from the top of the screen
+    int targetY = screenGeometry.top() + this->height() - 12; // Final position (above tray icon)
 
-    this->move(panelX, startY); // Start at the bottom
+    this->move(panelX, startY); // Start at the top
     this->show();
 
     // Animation parameters
@@ -113,8 +113,8 @@ void SoundOverlay::animateOut()
     int screenCenterX = screenGeometry.center().x();  // Get the center of the screen
 
     int panelX = screenCenterX - this->width() / 2; // Center the panel horizontally on the screen
-    int startY = this->y();
-    int targetY = screenGeometry.bottom(); // Move to the bottom of the screen
+    int startY = this->y(); // Start from the current Y position
+    int targetY = screenGeometry.top() - this->height() - 12; // Move to the top of the screen
 
     const int durationMs = 300;
     const int refreshRate = 1;
