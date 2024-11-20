@@ -2,12 +2,8 @@
 #define PANEL_H
 
 #include <QMainWindow>
-#include <QShowEvent>
-#include <QCloseEvent>
-#include <QPoint>
-#include <QPropertyAnimation>
 #include "AudioManager.h"
-#include <Windows.h>
+
 namespace Ui {
 class Panel;
 }

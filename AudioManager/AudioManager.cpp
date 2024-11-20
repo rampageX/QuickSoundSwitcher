@@ -134,7 +134,7 @@ int getVolume(EDataFlow dataFlow) {
     if (SUCCEEDED(hr)) {
         pVolumeControl->GetMasterVolumeLevelScalar(&volume);
     }
-    return static_cast<int>(volume * 100.0f);
+    return static_cast<int>(std::round(volume * 100.0f));
 }
 
 void setMute(EDataFlow dataFlow, bool mute) {

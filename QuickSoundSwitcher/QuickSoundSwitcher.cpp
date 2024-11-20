@@ -7,8 +7,8 @@
 #include <QScreen>
 #include <QRect>
 #include <QTimer>
-#include <windows.h>
 #include <QThread>
+#include <Windows.h>
 
 HHOOK QuickSoundSwitcher::keyboardHook = NULL;
 HHOOK QuickSoundSwitcher::mouseHook = NULL;
@@ -383,14 +383,14 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
         if (newVolume > 100) {
             newVolume = 100;
         }
-        AudioManager::setPlaybackVolume(newVolume);
     } else {
         newVolume = volume - 2;
         if (newVolume < 0) {
             newVolume = 0;
         }
-        AudioManager::setPlaybackVolume(newVolume);
     }
+
+    AudioManager::setPlaybackVolume(newVolume);
 
     int volumeIcon;
     if (AudioManager::getPlaybackMute()) {

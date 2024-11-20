@@ -26,7 +26,6 @@ QString Utils::getTheme()
 QIcon Utils::getIcon(int type, int volume, bool muted)
 {
     QString theme = getTheme();
-    QString variant;
     if (type == 1) {
         QString volumeSymbol;
         if (volume > 66) {

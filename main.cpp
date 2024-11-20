@@ -1,10 +1,8 @@
 #include "QuickSoundSwitcher.h"
+#include "Utils.h"
 #include <QApplication>
-#include <QMessageBox>
-#include <QProcess>
 #include <QTranslator>
 #include <QLocale>
-#include "Utils.h"
 
 int main(int argc, char *argv[])
 {

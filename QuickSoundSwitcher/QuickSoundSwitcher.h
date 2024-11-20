@@ -1,13 +1,13 @@
 #ifndef QUICKSOUNDSWITCHER_H
 #define QUICKSOUNDSWITCHER_H
 
-#include <QMainWindow>
-#include <QSystemTrayIcon>
 #include "Panel.h"
-#include <QSettings>
 #include "OverlaySettings.h"
 #include "OverlayWidget.h"
 #include "SoundOverlay.h"
+#include <QMainWindow>
+#include <QSystemTrayIcon>
+#include <QSettings>
 
 class QuickSoundSwitcher : public QMainWindow
 {

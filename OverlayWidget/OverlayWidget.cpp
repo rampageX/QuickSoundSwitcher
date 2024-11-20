@@ -1,12 +1,11 @@
 #include "OverlayWidget.h"
 #include "utils.h"
 #include <QPainter>
+#include <QPainterPath>
 #include <QApplication>
 #include <QScreen>
 #include <QPixmap>
-#include <QTimer>
 #include <QtMath>
-#include <QPainterPath>
 #include <QMap>
 
 using namespace Utils;

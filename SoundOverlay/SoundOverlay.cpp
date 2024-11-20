@@ -1,12 +1,13 @@
 #include "SoundOverlay.h"
-#include <QScreen>
 #include "ui_SoundOverlay.h"
+#include "Utils.h"
+#include "AudioManager.h"
 #include <QTimer>
 #include <QApplication>
 #include <QPainter>
 #include <QPainterPath>
-#include "Utils.h"
-#include "AudioManager.h"
+#include <QScreen>
+
 
 SoundOverlay::SoundOverlay(QWidget *parent)
     : QWidget(parent)

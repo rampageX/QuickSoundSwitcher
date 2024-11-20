@@ -1,19 +1,14 @@
 #include "Panel.h"
 #include "ui_Panel.h"
-#include "AudioManager.h"
 #include "Utils.h"
+#include "QuickSoundSwitcher.h"
+#include <QKeyEvent>
 #include <QComboBox>
 #include <QList>
-#include <QProcess>
-#include <QRegularExpression>
-#include <QStringList>
-#include <QPropertyAnimation>
 #include <QScreen>
-#include <QGuiApplication>
 #include <QPainter>
-#include <QTimer>
 #include <QPainterPath>
-#include "QuickSoundSwitcher.h"
+#include <QTimer>
 
 HHOOK Panel::mouseHook = nullptr;
 HWND Panel::hwndPanel = nullptr;
