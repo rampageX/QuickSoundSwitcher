@@ -47,34 +47,21 @@ void QuickSoundSwitcher::createTrayIcon()
 
     QMenu *trayMenu = new QMenu(this);
 
-    connect(trayMenu, &QMenu::aboutToShow, this, [trayMenu, this]() {
-        trayMenu->clear();
+    QAction *startupAction = new QAction(tr("Run at startup"), this);
+    startupAction->setCheckable(true);
+    startupAction->setChecked(ShortcutManager::isShortcutPresent());
+    connect(startupAction, &QAction::triggered, this, &QuickSoundSwitcher::onRunAtStartupStateChanged);
 
-        QList<AudioDevice> playbackDevices;
-        AudioManager::enumeratePlaybackDevices(playbackDevices);
+    QAction *settingsAction = new QAction(tr("Settings"), this);
+    connect(settingsAction, &QAction::triggered, this, &QuickSoundSwitcher::showSettings);
 
-        QList<AudioDevice> recordingDevices;
-        AudioManager::enumerateRecordingDevices(recordingDevices);
+    QAction *exitAction = new QAction(tr("Exit"), this);
+    connect(exitAction, &QAction::triggered, this, &QApplication::quit);
 
-        QAction *startupAction = new QAction(tr("Run at startup"), this);
-        startupAction->setCheckable(true);
-        startupAction->setChecked(ShortcutManager::isShortcutPresent());
-        connect(startupAction, &QAction::triggered, this, &QuickSoundSwitcher::onRunAtStartupStateChanged);
-
-        QAction *settingsAction = new QAction(tr("Mute overlay settings"), this);
-        connect(settingsAction, &QAction::triggered, this, &QuickSoundSwitcher::showSettings);
-
-        QAction *exitAction = new QAction(tr("Exit"), this);
-        connect(exitAction, &QAction::triggered, this, &QApplication::quit);
-
-        createDeviceSubMenu(trayMenu, playbackDevices, tr("Output device"));
-        createDeviceSubMenu(trayMenu, recordingDevices, tr("Input device"));
-        trayMenu->addSeparator();
-        trayMenu->addAction(startupAction);
-        trayMenu->addAction(settingsAction);
-        trayMenu->addSeparator();
-        trayMenu->addAction(exitAction);
-    });
+    trayMenu->addAction(startupAction);
+    trayMenu->addAction(settingsAction);
+    trayMenu->addSeparator();
+    trayMenu->addAction(exitAction);
 
     trayIcon->setContextMenu(trayMenu);
     trayIcon->setToolTip("Quick Sound Switcher");
