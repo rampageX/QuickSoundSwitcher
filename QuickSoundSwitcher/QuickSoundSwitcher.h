@@ -17,10 +17,13 @@ public:
     ~QuickSoundSwitcher();
     static QuickSoundSwitcher* instance;
     void adjustOutputVolume(bool up);
+    void toggleMuteWithKey();
 
-private slots:
+public slots:
     void onVolumeChanged();
     void onOutputMuteChanged();
+
+private slots:
     void onInputMuteChanged();
     void onPanelClosed();
     void onRunAtStartupStateChanged();
@@ -39,9 +42,14 @@ private:
     void createDeviceSubMenu(QMenu *parentMenu, const QList<AudioDevice> &devices, const QString &title);
 
     static LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+
     static HHOOK mouseHook;
+    static HHOOK keyboardHook;
     void installGlobalMouseHook();
     void uninstallGlobalMouseHook();
+    void installKeyboardHook();
+    void uninstallKeyboardHook();
 
     static const int HOTKEY_ID = 1;
     bool registerGlobalHotkey();
@@ -60,10 +68,10 @@ private:
     OverlaySettings *overlaySettings;
     QSettings settings;
     QString position;
-    bool isMuted;
 
 signals:
     void muteStateChanged();
+    void outputMuteStateChanged(bool state);
     void volumeChangedWithTray();
 };
 

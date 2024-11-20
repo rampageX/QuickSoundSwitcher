@@ -8,8 +8,9 @@
 #include <QRect>
 #include <QTimer>
 #include <windows.h>
-#include <QPropertyAnimation>
+#include <QThread>
 
+HHOOK QuickSoundSwitcher::keyboardHook = NULL;
 HHOOK QuickSoundSwitcher::mouseHook = NULL;
 QuickSoundSwitcher* QuickSoundSwitcher::instance = nullptr;
 
@@ -28,12 +29,14 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     loadSettings();
     toggleMutedOverlay(AudioManager::getRecordingMute());
     installGlobalMouseHook();
+    installKeyboardHook();
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
 {
     unregisterGlobalHotkey();
     uninstallGlobalMouseHook();
+    uninstallKeyboardHook();
     instance = nullptr;
 }
 
@@ -287,16 +290,33 @@ void QuickSoundSwitcher::onSettingsClosed()
     overlaySettings = nullptr;
 }
 
-void QuickSoundSwitcher::installGlobalMouseHook() {
+void QuickSoundSwitcher::installGlobalMouseHook()
+{
     if (mouseHook == NULL) {
         mouseHook = SetWindowsHookEx(WH_MOUSE_LL, MouseProc, NULL, 0);
     }
 }
 
-void QuickSoundSwitcher::uninstallGlobalMouseHook() {
+void QuickSoundSwitcher::uninstallGlobalMouseHook()
+{
     if (mouseHook != NULL) {
         UnhookWindowsHookEx(mouseHook);
         mouseHook = NULL;
+    }
+}
+
+void QuickSoundSwitcher::installKeyboardHook()
+{
+    if (keyboardHook == NULL) {
+        keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
+    }
+}
+
+void QuickSoundSwitcher::uninstallKeyboardHook()
+{
+    if (keyboardHook != NULL) {
+        UnhookWindowsHookEx(keyboardHook);
+        keyboardHook = NULL;
     }
 }
 
@@ -320,6 +340,31 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
+LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION) {
+        PKBDLLHOOKSTRUCT pKeyboard = reinterpret_cast<PKBDLLHOOKSTRUCT>(lParam);
+
+        if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
+            switch (pKeyboard->vkCode) {
+            case VK_VOLUME_UP:
+                instance->adjustOutputVolume(true);
+                return 1;
+            case VK_VOLUME_DOWN:
+                instance->adjustOutputVolume(false);
+                return 1;
+            case VK_VOLUME_MUTE:
+                instance->toggleMuteWithKey();
+                return 1;
+            default:
+                break;
+            }
+        }
+    }
+
+    return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
+}
+
 void QuickSoundSwitcher::adjustOutputVolume(bool up)
 {
     int volume = AudioManager::getPlaybackVolume();
@@ -339,4 +384,12 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
 
     trayIcon->setIcon(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL));
     emit volumeChangedWithTray();
+}
+
+void QuickSoundSwitcher::toggleMuteWithKey()
+{
+    bool newPlaybackMute = !AudioManager::getPlaybackMute();
+    AudioManager::setPlaybackMute(newPlaybackMute);
+    onOutputMuteChanged();
+    emit outputMuteStateChanged(newPlaybackMute);
 }

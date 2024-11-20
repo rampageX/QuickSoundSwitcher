@@ -54,6 +54,8 @@ Panel::Panel(QWidget *parent)
     connect(ui->inputMuteButton, &QPushButton::pressed, this, &Panel::onInputMuteButtonPressed);
     connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::muteStateChanged,
             this, &Panel::onMuteStateChanged);
+    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::outputMuteStateChanged,
+            this, &Panel::onOutputMuteStateChanged);
     connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::volumeChangedWithTray,
             this, &Panel::onVolumeChangedWithTray);
 }
@@ -348,6 +350,12 @@ void Panel::onMuteStateChanged()
     bool recordingMute = AudioManager::getRecordingMute();
     ui->inputVolumeSlider->setEnabled(!recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
+}
+
+void Panel::onOutputMuteStateChanged(bool state)
+{
+    ui->outputVolumeSlider->setEnabled(!state);
+    ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, state));
 }
 
 void Panel::onVolumeChangedWithTray()
