@@ -18,6 +18,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , panel(nullptr)
+    , soundOverlay(new SoundOverlay)
     , hiding(false)
     , overlayWidget(nullptr)
     , overlaySettings(nullptr)
@@ -37,6 +38,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     unregisterGlobalHotkey();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
+    delete soundOverlay;
     instance = nullptr;
 }
 
@@ -143,7 +145,14 @@ void QuickSoundSwitcher::onPanelClosed()
 
 void QuickSoundSwitcher::onVolumeChanged()
 {
-    trayIcon->setIcon(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL));
+    int volumeIcon;
+    if (AudioManager::getPlaybackMute()) {
+        volumeIcon = 0;
+    } else {
+        volumeIcon = AudioManager::getPlaybackVolume();
+    }
+
+    trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()
@@ -368,28 +377,49 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
 void QuickSoundSwitcher::adjustOutputVolume(bool up)
 {
     int volume = AudioManager::getPlaybackVolume();
+    int newVolume;
     if (up) {
-        int newVolume = volume + 2;
+        newVolume = volume + 2;
         if (newVolume > 100) {
             newVolume = 100;
         }
         AudioManager::setPlaybackVolume(newVolume);
     } else {
-        int newVolume = volume - 2;
+        newVolume = volume - 2;
         if (newVolume < 0) {
             newVolume = 0;
         }
         AudioManager::setPlaybackVolume(newVolume);
     }
 
-    trayIcon->setIcon(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL));
+    int volumeIcon;
+    if (AudioManager::getPlaybackMute()) {
+        volumeIcon = 0;
+    } else {
+        volumeIcon= newVolume;
+    }
+    trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
     emit volumeChangedWithTray();
+    soundOverlay->toggleOverlay();
+    soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, volumeIcon, NULL), newVolume);
 }
 
 void QuickSoundSwitcher::toggleMuteWithKey()
 {
     bool newPlaybackMute = !AudioManager::getPlaybackMute();
     AudioManager::setPlaybackMute(newPlaybackMute);
-    onOutputMuteChanged();
+
+    int volumeIcon;
+    if (AudioManager::getPlaybackMute()) {
+        volumeIcon = 0;
+    } else {
+        volumeIcon = AudioManager::getPlaybackVolume();
+    }
+
+    trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
+
     emit outputMuteStateChanged(newPlaybackMute);
+
+    soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
+    soundOverlay->toggleOverlay();
 }

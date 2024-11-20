@@ -7,6 +7,7 @@
 #include <QSettings>
 #include "OverlaySettings.h"
 #include "OverlayWidget.h"
+#include "SoundOverlay.h"
 
 class QuickSoundSwitcher : public QMainWindow
 {
@@ -34,6 +35,7 @@ protected:
 private:
     QSystemTrayIcon *trayIcon;
     Panel* panel;
+    SoundOverlay* soundOverlay;
     void createTrayIcon();
     void showPanel();
     void hidePanel();

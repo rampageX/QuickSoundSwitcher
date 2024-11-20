@@ -14,8 +14,10 @@ INCLUDEPATH +=                                      \
     ShortcutManager/                                \
     OverlaySettings/                                \
     OverlayWidget/                                  \
+    SoundOverlay/                                   \
 
 SOURCES +=                                          \
+    SoundOverlay/SoundOverlay.cpp                   \
     main.cpp                                        \
     Panel/Panel.cpp                                 \
     QuickSoundSwitcher/QuickSoundSwitcher.cpp       \
@@ -28,6 +30,7 @@ SOURCES +=                                          \
 HEADERS +=                                          \
     Panel/Panel.h                                   \
     QuickSoundSwitcher/QuickSoundSwitcher.h         \
+    SoundOverlay/SoundOverlay.h                     \
     Utils/Utils.h                                   \
     AudioManager/AudioManager.h                     \
     AudioManager/PolicyConfig.h                     \
@@ -38,6 +41,7 @@ HEADERS +=                                          \
 FORMS +=                                            \
     Panel/Panel.ui                                  \
     OverlaySettings/OverlaySettings.ui              \
+    SoundOverlay/SoundOverlay.ui                    \
 
 TRANSLATIONS +=                                     \
     Resources/Tr/QuickSoundSwitcher_fr.ts           \

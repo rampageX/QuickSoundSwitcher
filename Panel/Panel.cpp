@@ -24,7 +24,7 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedWidth(width());
     AudioManager::initialize();
@@ -331,7 +331,7 @@ void Panel::onOutputMuteButtonPressed()
 {
     bool playbackMute = AudioManager::getPlaybackMute();
     AudioManager::setPlaybackMute(!playbackMute);
-    ui->outputVolumeSlider->setEnabled(playbackMute);
+    //ui->outputVolumeSlider->setEnabled(playbackMute);
     ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, !playbackMute));
     emit outputMuteChanged();
 }
@@ -340,7 +340,7 @@ void Panel::onInputMuteButtonPressed()
 {
     bool recordingMute = AudioManager::getRecordingMute();
     AudioManager::setRecordingMute(!recordingMute);
-    ui->inputVolumeSlider->setEnabled(recordingMute);
+    //ui->inputVolumeSlider->setEnabled(recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
     emit inputMuteChanged();
 }
