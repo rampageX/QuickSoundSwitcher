@@ -4,29 +4,49 @@
 <context>
     <name>OverlaySettings</name>
     <message>
-        <location filename="../../OverlaySettings/OverlaySettings.ui" line="14"/>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="55"/>
         <source>Mute overlay settings</source>
         <translation>Paramètres de l&apos;overlay muet</translation>
     </message>
     <message>
-        <location filename="../../OverlaySettings/OverlaySettings.ui" line="253"/>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="299"/>
         <source>Overlay position on screen:</source>
         <translation>Position de l&apos;overlay:</translation>
     </message>
     <message>
-        <location filename="../../OverlaySettings/OverlaySettings.ui" line="41"/>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="42"/>
         <source>Disable overlay</source>
         <translation>Desactiver l&apos;overlay</translation>
     </message>
     <message>
-        <location filename="../../OverlaySettings/OverlaySettings.ui" line="280"/>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="14"/>
+        <source>Settings</source>
+        <translation>Paramètres</translation>
+    </message>
+    <message>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="109"/>
+        <source>Volume increment percentage</source>
+        <translation>Pourcentage d&apos;incrémentation</translation>
+    </message>
+    <message>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="281"/>
         <source>Use static overlay</source>
         <translation>Ne pas animer l&apos;overlay</translation>
     </message>
     <message>
-        <location filename="../../OverlaySettings/OverlaySettings.ui" line="222"/>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="318"/>
+        <source>Volume control settings</source>
+        <translation>Paramètres du contrôle du volume</translation>
+    </message>
+    <message>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="338"/>
+        <source>Disable mute hotkey</source>
+        <translation>Désactiver le raccourci muet</translation>
+    </message>
+    <message>
+        <location filename="../../OverlaySettings/OverlaySettings.ui" line="73"/>
         <source>Disable sound notification</source>
-        <translation>Desactiver la notification audio</translation>
+        <translation>Désactiver la notification audio</translation>
     </message>
     <message>
         <source>Run at startup</source>
@@ -51,7 +71,7 @@
         <translation>Mélangeur de volume</translation>
     </message>
     <message>
-        <location filename="../../Panel/Panel.cpp" line="315"/>
+        <location filename="../../Panel/Panel.cpp" line="410"/>
         <source>All quiet for now.</source>
         <translation>C&apos;est bien calme ici.</translation>
     </message>
@@ -59,29 +79,49 @@
 <context>
     <name>QuickSoundSwitcher</name>
     <message>
-        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="52"/>
         <source>Mute overlay settings</source>
-        <translation>Paramètres de l&apos;overlay muet</translation>
+        <translation type="vanished">Paramètres de l&apos;overlay muet</translation>
     </message>
     <message>
-        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="58"/>
         <source>Output device</source>
-        <translation>Périphérique de sortie</translation>
+        <translation type="vanished">Périphérique de sortie</translation>
     </message>
     <message>
-        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="59"/>
         <source>Input device</source>
-        <translation>Périphérique d&apos;entrée</translation>
+        <translation type="vanished">Périphérique d&apos;entrée</translation>
     </message>
     <message>
-        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="47"/>
+        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="50"/>
         <source>Run at startup</source>
         <translation>Lancer au démarrage</translation>
     </message>
     <message>
         <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="55"/>
+        <source>Settings</source>
+        <translation>Paramètres</translation>
+    </message>
+    <message>
+        <location filename="../../QuickSoundSwitcher/QuickSoundSwitcher.cpp" line="58"/>
         <source>Exit</source>
         <translation>Quitter</translation>
+    </message>
+</context>
+<context>
+    <name>SoundOverlay</name>
+    <message>
+        <location filename="../../SoundOverlay/SoundOverlay.ui" line="14"/>
+        <source>Form</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../SoundOverlay/SoundOverlay.ui" line="20"/>
+        <source>icon</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../../SoundOverlay/SoundOverlay.ui" line="46"/>
+        <source>00</source>
+        <translation></translation>
     </message>
 </context>
 </TS>
