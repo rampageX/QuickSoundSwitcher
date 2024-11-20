@@ -268,8 +268,6 @@ void Panel::setSliders()
 {
     ui->outputVolumeSlider->setValue(AudioManager::getPlaybackVolume());
     ui->inputVolumeSlider->setValue(AudioManager::getRecordingVolume());
-    ui->outputVolumeSlider->setEnabled(!AudioManager::getPlaybackMute());
-    ui->inputVolumeSlider->setEnabled(!AudioManager::getRecordingMute());
 }
 
 void Panel::setButtons()
@@ -313,12 +311,26 @@ void Panel::onInputComboBoxIndexChanged(int index)
 
 void Panel::onOutputValueChanged()
 {
+    bool playbackMute = AudioManager::getPlaybackMute();
+    if (playbackMute) {
+        AudioManager::setPlaybackMute(false);
+        ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, !playbackMute));
+        emit outputMuteChanged();
+    }
+
     AudioManager::setPlaybackVolume(ui->outputVolumeSlider->value());
     emit volumeChanged();
 }
 
 void Panel::onInputValueChanged()
 {
+    bool recordingMute = AudioManager::getRecordingMute();
+    if (recordingMute) {
+        ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
+        AudioManager::setRecordingMute(false);
+        emit inputMuteChanged();
+    }
+
     AudioManager::setRecordingVolume(ui->inputVolumeSlider->value());
 }
 
@@ -326,7 +338,6 @@ void Panel::onOutputMuteButtonPressed()
 {
     bool playbackMute = AudioManager::getPlaybackMute();
     AudioManager::setPlaybackMute(!playbackMute);
-    //ui->outputVolumeSlider->setEnabled(playbackMute);
     ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, !playbackMute));
     emit outputMuteChanged();
 }
@@ -335,7 +346,6 @@ void Panel::onInputMuteButtonPressed()
 {
     bool recordingMute = AudioManager::getRecordingMute();
     AudioManager::setRecordingMute(!recordingMute);
-    //ui->inputVolumeSlider->setEnabled(recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
     emit inputMuteChanged();
 }
@@ -343,13 +353,11 @@ void Panel::onInputMuteButtonPressed()
 void Panel::onMuteStateChanged()
 {
     bool recordingMute = AudioManager::getRecordingMute();
-    ui->inputVolumeSlider->setEnabled(!recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
 }
 
 void Panel::onOutputMuteStateChanged(bool state)
 {
-    ui->outputVolumeSlider->setEnabled(!state);
     ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, state));
 }
 
@@ -380,9 +388,6 @@ void Panel::updateUi()
 
     ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, playbackMute));
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
-
-    ui->outputVolumeSlider->setEnabled(!playbackMute);
-    ui->inputVolumeSlider->setEnabled(!recordingMute);
 }
 
 void Panel::populateApplications()

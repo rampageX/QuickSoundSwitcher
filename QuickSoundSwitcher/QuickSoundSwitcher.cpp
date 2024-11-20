@@ -274,6 +274,7 @@ void QuickSoundSwitcher::loadSettings()
     disableOverlay = settings.value("disableOverlay", true).toBool();
     potatoMode = settings.value("potatoMode", false).toBool();
     disableNotification = settings.value("disableNotification", true).toBool();
+    volumeIncrement = settings.value("volumeIncrement", 2).toInt();
 }
 
 void QuickSoundSwitcher::onSettingsChanged()
@@ -379,12 +380,12 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
     int volume = AudioManager::getPlaybackVolume();
     int newVolume;
     if (up) {
-        newVolume = volume + 2;
+        newVolume = volume + volumeIncrement;
         if (newVolume > 100) {
             newVolume = 100;
         }
     } else {
-        newVolume = volume - 2;
+        newVolume = volume - volumeIncrement;
         if (newVolume < 0) {
             newVolume = 0;
         }
@@ -392,16 +393,14 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
 
     AudioManager::setPlaybackVolume(newVolume);
 
-    int volumeIcon;
     if (AudioManager::getPlaybackMute()) {
-        volumeIcon = 0;
-    } else {
-        volumeIcon= newVolume;
+        AudioManager::setPlaybackMute(false);
+        emit outputMuteStateChanged(false);
     }
-    trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
+    trayIcon->setIcon(Utils::getIcon(1, newVolume, NULL));
     emit volumeChangedWithTray();
     soundOverlay->toggleOverlay();
-    soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, volumeIcon, NULL), newVolume);
+    soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, newVolume, NULL), newVolume);
 }
 
 void QuickSoundSwitcher::toggleMuteWithKey()

@@ -24,7 +24,6 @@ private:
     QSettings settings;
     void loadSettings();
     void saveSettings();
-    void setFramesBackground();
 
 signals:
     void settingsChanged();

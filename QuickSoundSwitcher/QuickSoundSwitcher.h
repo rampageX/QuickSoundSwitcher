@@ -66,6 +66,7 @@ private:
     bool disableNotification;
     bool disableOverlay;
     bool potatoMode;
+    int volumeIncrement;
     OverlayWidget *overlayWidget;
     OverlaySettings *overlaySettings;
     QSettings settings;

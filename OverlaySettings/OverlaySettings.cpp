@@ -18,7 +18,8 @@ OverlaySettings::OverlaySettings(QWidget *parent)
     ui->setupUi(this);
     this->setFixedSize(this->size());
     loadSettings();
-    setFramesBackground();
+    Utils::setFrameColorBasedOnWindow(this, ui->frame);
+
 
     QList<QRadioButton*> radioButtons = {
         ui->topLeftCorner,
@@ -38,20 +39,13 @@ OverlaySettings::OverlaySettings(QWidget *parent)
     connect(ui->overlayCheckBox, &QCheckBox::checkStateChanged, this, &OverlaySettings::onDisableOverlayStateChanged);
     connect(ui->soundCheckBox, &QCheckBox::checkStateChanged, this, &OverlaySettings::saveSettings);
     connect(ui->potatoModeCheckBox, &QCheckBox::checkStateChanged, this, &OverlaySettings::saveSettings);
+    connect(ui->volumeIncrementSpinBox, &QSpinBox::valueChanged, this, &OverlaySettings::saveSettings);
 }
 
 OverlaySettings::~OverlaySettings()
 {
     emit closed();
     delete ui;
-}
-
-void OverlaySettings::setFramesBackground()
-{
-    Utils::setFrameColorBasedOnWindow(this, ui->frame);
-    Utils::setFrameColorBasedOnWindow(this, ui->frame_2);
-    Utils::setFrameColorBasedOnWindow(this, ui->frame_3);
-    Utils::setFrameColorBasedOnWindow(this, ui->frame_4);
 }
 
 void OverlaySettings::loadSettings()
@@ -79,6 +73,7 @@ void OverlaySettings::loadSettings()
     ui->overlayCheckBox->setChecked(settings.value("disableOverlay", false).toBool());
     ui->soundCheckBox->setChecked(settings.value("disableNotification", false).toBool());
     ui->potatoModeCheckBox->setChecked(settings.value("potatoMode", false).toBool());
+    ui->volumeIncrementSpinBox->setValue(settings.value("volumeIncrement", 2).toInt());
 }
 
 void OverlaySettings::saveSettings()
@@ -105,6 +100,7 @@ void OverlaySettings::saveSettings()
     settings.setValue("disableOverlay", ui->overlayCheckBox->isChecked());
     settings.setValue("disableNotification", ui->soundCheckBox->isChecked());
     settings.setValue("potatoMode", ui->potatoModeCheckBox->isChecked());
+    settings.setValue("volumeIncrement", ui->volumeIncrementSpinBox->value());
 
     emit settingsChanged();
 }
