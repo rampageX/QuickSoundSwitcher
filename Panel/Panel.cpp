@@ -24,7 +24,7 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedWidth(width());
     AudioManager::initialize();

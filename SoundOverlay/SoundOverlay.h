@@ -25,6 +25,7 @@ private:
     Ui::SoundOverlay *ui;
     bool shown;
     QTimer *timer;
+    QTimer *raiseTimer;
     void animateIn();
     void animateOut();
 };

@@ -14,7 +14,7 @@ SoundOverlay::SoundOverlay(QWidget *parent)
     , shown(false)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     setAttribute(Qt::WA_TranslucentBackground);
 
     timer = new QTimer(this);
@@ -100,7 +100,6 @@ void SoundOverlay::animateIn()
         // Interpolated Y position
         int currentY = startY + easedT * (targetY - startY);
         this->move(panelX, currentY);
-
         ++currentStep;
     });
 
@@ -131,7 +130,7 @@ void SoundOverlay::animateOut()
             animationTimer->stop();
             animationTimer->deleteLater();
 
-            //emit panelClosed();
+            this->hide();
             return;
         }
 
