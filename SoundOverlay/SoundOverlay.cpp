@@ -132,6 +132,7 @@ void SoundOverlay::animateOut()
             animationTimer->deleteLater();
 
             this->hide();
+            shown = false;
             return;
         }
 
@@ -145,8 +146,6 @@ void SoundOverlay::animateOut()
 
         ++currentStep;
     });
-
-    shown = false;
 }
 
 void SoundOverlay::toggleOverlay()
