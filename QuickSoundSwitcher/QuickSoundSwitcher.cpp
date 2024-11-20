@@ -26,7 +26,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
 {
     instance = this;
     createTrayIcon();
-    registerGlobalHotkey();
     loadSettings();
     toggleMutedOverlay(AudioManager::getRecordingMute());
     installGlobalMouseHook();
@@ -275,6 +274,15 @@ void QuickSoundSwitcher::loadSettings()
     potatoMode = settings.value("potatoMode", false).toBool();
     disableNotification = settings.value("disableNotification", true).toBool();
     volumeIncrement = settings.value("volumeIncrement", 2).toInt();
+    disableMuteHotkey = settings.value("disableMuteHotkey", true).toBool();
+
+    if (!disableMuteHotkey and !hotkeyRegistered) {
+        registerGlobalHotkey();
+        hotkeyRegistered = true;
+    } else {
+        unregisterGlobalHotkey();
+        hotkeyRegistered = false;
+    }
 }
 
 void QuickSoundSwitcher::onSettingsChanged()

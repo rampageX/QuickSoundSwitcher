@@ -66,6 +66,8 @@ private:
     bool disableNotification;
     bool disableOverlay;
     bool potatoMode;
+    bool hotkeyRegistered;
+    bool disableMuteHotkey;
     int volumeIncrement;
     OverlayWidget *overlayWidget;
     OverlaySettings *overlaySettings;
