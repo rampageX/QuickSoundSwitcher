@@ -28,6 +28,8 @@ private:
     QTimer *raiseTimer;
     void animateIn();
     void animateOut();
+    QTimer *animationTimerOut;
+    bool isAnimatingOut;
 };
 
 #endif // SOUNDOVERLAY_H
