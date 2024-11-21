@@ -438,6 +438,7 @@ void Panel::populateApplications()
 
                 QGridLayout *gridLayout = new QGridLayout;
                 gridLayout->setVerticalSpacing(0);
+                gridLayout->setHorizontalSpacing(12);
 
                 QPushButton *muteButton = new QPushButton(ui->appFrame);
                 muteButton->setFixedSize(35, 35);
