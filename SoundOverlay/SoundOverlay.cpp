@@ -41,6 +41,11 @@ void SoundOverlay::paintEvent(QPaintEvent *event)
     // Get the main background color from the widget's palette
     QColor main_bg_color = this->palette().color(QPalette::Window);
 
+    if (Utils::isDarkMode(main_bg_color)) {
+        main_bg_color = main_bg_color.lighter(140);
+    } else {
+        main_bg_color = main_bg_color.darker(110);
+    }
     // Set the brush to fill the rectangle with the background color
     painter.setBrush(main_bg_color);
     painter.setPen(Qt::NoPen); // No border for background fill
@@ -58,11 +63,6 @@ void SoundOverlay::paintEvent(QPaintEvent *event)
     borderPen.setWidth(1);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush); // No fill for border
-
-    // Draw the border around the adjusted rectangle
-    QPainterPath borderPath;
-    borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8); // Full size for outer border
-    painter.drawPath(borderPath);
 }
 
 void SoundOverlay::animateIn()
