@@ -68,6 +68,7 @@ private:
     bool potatoMode;
     bool hotkeyRegistered;
     bool disableMuteHotkey;
+    bool mergeSimilarApps;
     int volumeIncrement;
     OverlayWidget *overlayWidget;
     OverlaySettings *overlaySettings;

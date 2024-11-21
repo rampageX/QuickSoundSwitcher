@@ -30,7 +30,7 @@ Panel::Panel(QWidget *parent)
     installMouseHook();
 
     populateComboBoxes();
-    populateApplications();
+    //populateApplications();
     setSliders();
     setButtons();
     Utils::setFrameColorBasedOnWindow(this, ui->appFrame);
@@ -419,74 +419,165 @@ void Panel::populateApplications()
 
         totalHeight += label->sizeHint().height() + spacing;
     } else {
-        for (const Application& app : applications) {
-            if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
-                continue;
-            }
-            if (app.executableName == "QuickSoundSwitcher") {
-                continue;
-            }
+        if (mergeApps) {
+            QMap<QString, QList<Application>> groupedApps;
 
-            QGridLayout *gridLayout = new QGridLayout;
-            gridLayout->setVerticalSpacing(0);
-
-            QPushButton *muteButton = new QPushButton(ui->appFrame);
-            muteButton->setFixedSize(35, 35);
-
-            QIcon originalIcon = app.icon;
-            QPixmap originalPixmap = originalIcon.pixmap(16, 16);
-
-            if (app.isMuted) {
-                QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
-                muteButton->setIcon(mutedIcon);
-            } else {
-                muteButton->setIcon(originalIcon);
+            // Group applications by executableName if mergeApps is true
+            for (const Application &app : applications) {
+                if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+                    continue;
+                }
+                if (app.executableName == "QuickSoundSwitcher") {
+                    continue;
+                }
+                groupedApps[app.executableName].append(app);
             }
 
-            connect(muteButton, &QPushButton::clicked, [appId = app.id, muteButton, originalPixmap]() mutable {
-                bool newMuteState = !AudioManager::getApplicationMute(appId);
-                AudioManager::setApplicationMute(appId, newMuteState);
+            for (auto it = groupedApps.begin(); it != groupedApps.end(); ++it) {
+                const QList<Application> &apps = it.value();
 
-                if (newMuteState) {
+                QGridLayout *gridLayout = new QGridLayout;
+                gridLayout->setVerticalSpacing(0);
+
+                QPushButton *muteButton = new QPushButton(ui->appFrame);
+                muteButton->setFixedSize(35, 35);
+
+                // Determine if any app in the group is muted
+                bool isGroupMuted = std::any_of(apps.begin(), apps.end(), [](const Application &app) {
+                    return app.isMuted;
+                });
+
+                QIcon originalIcon = apps.first().icon;
+                QPixmap originalPixmap = originalIcon.pixmap(16, 16);
+
+                if (isGroupMuted) {
                     QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
                     muteButton->setIcon(mutedIcon);
                 } else {
-                    muteButton->setIcon(QIcon(originalPixmap));
+                    muteButton->setIcon(originalIcon);
                 }
-            });
 
-            QSpacerItem *spacer1 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+                connect(muteButton, &QPushButton::clicked, [apps, muteButton, originalPixmap]() mutable {
+                    // Toggle mute state for all apps in the group
+                    bool newMuteState = !AudioManager::getApplicationMute(apps.first().id);
+                    for (const Application &app : apps) {
+                        AudioManager::setApplicationMute(app.id, newMuteState);
+                    }
 
-            QLabel *nameLabel = new QLabel(app.executableName, ui->appFrame);
-            nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+                    if (newMuteState) {
+                        QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
+                        muteButton->setIcon(mutedIcon);
+                    } else {
+                        muteButton->setIcon(QIcon(originalPixmap));
+                    }
+                });
 
-            QFont nameLabelFont = nameLabel->font();
-            nameLabelFont.setPointSize(10);
-            nameLabel->setFont(nameLabelFont);
+                QSpacerItem *spacer1 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
 
-            QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
-            slider->setRange(0, 100);
-            slider->setValue(app.volume);
+                QLabel *nameLabel = new QLabel(apps.first().executableName, ui->appFrame);
+                nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
 
-            connect(slider, &QSlider::valueChanged, [appId = app.id](int value) {
-                AudioManager::setApplicationVolume(appId, value);
-            });
+                QFont nameLabelFont = nameLabel->font();
+                nameLabelFont.setPointSize(10);
+                nameLabel->setFont(nameLabelFont);
 
-            QSpacerItem *spacer2 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
-            QSpacerItem *spacer3 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
-            QSpacerItem *spacer4 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+                // Determine the lowest volume in the group
+                int minVolume = std::min_element(apps.begin(), apps.end(), [](const Application &a, const Application &b) {
+                                    return a.volume < b.volume;
+                                })->volume;
 
-            gridLayout->addWidget(muteButton, 0, 0, 6, 1);  // Mute button spans 6 rows (row 0 to row 5)
-            gridLayout->addItem(spacer1, 1, 1);              // Spacer in row 1
-            gridLayout->addWidget(nameLabel, 2, 1, 1, 1);    // Label in row 2
-            gridLayout->addWidget(slider, 3, 1, 1, 1);       // Slider in row 3
-            gridLayout->addItem(spacer2, 4, 1);              // Spacer in row 4
-            gridLayout->addItem(spacer3, 5, 1);              // Spacer in row 5
-            gridLayout->addItem(spacer4, 6, 1);              // Spacer in row 6
+                QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
+                slider->setRange(0, 100);
+                slider->setValue(minVolume);
 
-            gridLayout->setColumnStretch(1, 1);
-            vBoxLayout->addLayout(gridLayout);
-            totalHeight += muteButton->height();
+                connect(slider, &QSlider::valueChanged, [apps](int value) {
+                    for (const Application &app : apps) {
+                        AudioManager::setApplicationVolume(app.id, value);
+                    }
+                });
+
+                QSpacerItem *spacer2 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+                QSpacerItem *spacer3 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+                QSpacerItem *spacer4 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+
+                gridLayout->addWidget(muteButton, 0, 0, 6, 1);  // Mute button spans 6 rows (row 0 to row 5)
+                gridLayout->addItem(spacer1, 1, 1);              // Spacer in row 1
+                gridLayout->addWidget(nameLabel, 2, 1, 1, 1);    // Label in row 2
+                gridLayout->addWidget(slider, 3, 1, 1, 1);       // Slider in row 3
+                gridLayout->addItem(spacer2, 4, 1);              // Spacer in row 4
+                gridLayout->addItem(spacer3, 5, 1);              // Spacer in row 5
+                gridLayout->addItem(spacer4, 6, 1);              // Spacer in row 6
+
+                gridLayout->setColumnStretch(1, 1);
+                vBoxLayout->addLayout(gridLayout);
+                totalHeight += muteButton->height();
+            }
+        } else {
+            // Individual controls for each application
+            for (const Application &app : applications) {
+                if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+                    continue;
+                }
+                if (app.executableName == "QuickSoundSwitcher") {
+                    continue;
+                }
+
+                QGridLayout *gridLayout = new QGridLayout;
+                gridLayout->setVerticalSpacing(0);
+
+                QPushButton *muteButton = new QPushButton(ui->appFrame);
+                muteButton->setFixedSize(35, 35);
+
+                QIcon originalIcon = app.icon;
+                QPixmap originalPixmap = originalIcon.pixmap(16, 16);
+
+                if (app.isMuted) {
+                    QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
+                    muteButton->setIcon(mutedIcon);
+                } else {
+                    muteButton->setIcon(originalIcon);
+                }
+
+                connect(muteButton, &QPushButton::clicked, [appId = app.id, muteButton, originalPixmap]() mutable {
+                    bool newMuteState = !AudioManager::getApplicationMute(appId);
+                    AudioManager::setApplicationMute(appId, newMuteState);
+
+                    if (newMuteState) {
+                        QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
+                        muteButton->setIcon(mutedIcon);
+                    } else {
+                        muteButton->setIcon(QIcon(originalPixmap));
+                    }
+                });
+
+                QLabel *nameLabel = new QLabel(app.executableName, ui->appFrame);
+                nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+
+                QFont nameLabelFont = nameLabel->font();
+                nameLabelFont.setPointSize(10);
+                nameLabel->setFont(nameLabelFont);
+
+                QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
+                slider->setRange(0, 100);
+                slider->setValue(app.volume);
+
+                connect(slider, &QSlider::valueChanged, [appId = app.id](int value) {
+                    AudioManager::setApplicationVolume(appId, value);
+                });
+
+                QSpacerItem *spacer1 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+                QSpacerItem *spacer2 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
+
+                gridLayout->addWidget(muteButton, 0, 0, 4, 1);  // Mute button spans 4 rows (row 0 to row 3)
+                gridLayout->addItem(spacer1, 1, 1);              // Spacer in row 1
+                gridLayout->addWidget(nameLabel, 2, 1, 1, 1);    // Label in row 2
+                gridLayout->addWidget(slider, 3, 1, 1, 1);       // Slider in row 3
+                gridLayout->addItem(spacer2, 4, 1);              // Spacer in row 4
+
+                gridLayout->setColumnStretch(1, 1);
+                vBoxLayout->addLayout(gridLayout);
+                totalHeight += muteButton->height();
+            }
         }
     }
 

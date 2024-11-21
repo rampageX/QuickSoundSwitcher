@@ -104,6 +104,8 @@ void QuickSoundSwitcher::showPanel()
     }
 
     panel = new Panel(this);
+    panel->mergeApps = mergeSimilarApps;
+    panel->populateApplications();
 
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
@@ -262,6 +264,8 @@ void QuickSoundSwitcher::loadSettings()
     disableNotification = settings.value("disableNotification", true).toBool();
     volumeIncrement = settings.value("volumeIncrement", 2).toInt();
     disableMuteHotkey = settings.value("disableMuteHotkey", true).toBool();
+    mergeSimilarApps = settings.value("mergeSimilarApps", true).toBool();
+
 
     if (!disableMuteHotkey and !hotkeyRegistered) {
         registerGlobalHotkey();

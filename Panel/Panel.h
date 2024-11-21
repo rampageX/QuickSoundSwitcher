@@ -18,6 +18,8 @@ public:
     static Panel* panelInstance;
     void animateIn(QRect trayIconGeometry);
     void animateOut(QRect trayIconGeometry);
+    bool mergeApps;
+    void populateApplications();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -27,7 +29,7 @@ private:
     Ui::Panel *ui;
     QList<AudioDevice> playbackDevices;
     QList<AudioDevice> recordingDevices;
-    static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);  // Mouse hook callback
+    static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
     static HHOOK mouseHook;
     static HWND hwndPanel;
 
@@ -38,7 +40,6 @@ private:
     void setButtons();
     void setFrames();
     void updateUi();
-    void populateApplications();
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);

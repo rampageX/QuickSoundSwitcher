@@ -41,6 +41,7 @@ OverlaySettings::OverlaySettings(QWidget *parent)
     connect(ui->potatoModeCheckBox, &QCheckBox::checkStateChanged, this, &OverlaySettings::saveSettings);
     connect(ui->volumeIncrementSpinBox, &QSpinBox::valueChanged, this, &OverlaySettings::saveSettings);
     connect(ui->disableMuteHotkeyCheckBox, &QCheckBox::checkStateChanged, this, &OverlaySettings::saveSettings);
+    connect(ui->mergeSimilarCheckBox, &QCheckBox::checkStateChanged, this, &OverlaySettings::saveSettings);
 
 }
 
@@ -77,6 +78,7 @@ void OverlaySettings::loadSettings()
     ui->potatoModeCheckBox->setChecked(settings.value("potatoMode", false).toBool());
     ui->volumeIncrementSpinBox->setValue(settings.value("volumeIncrement", 2).toInt());
     ui->disableMuteHotkeyCheckBox->setChecked(settings.value("disableMuteHotkey", true).toBool());
+    ui->mergeSimilarCheckBox->setChecked(settings.value("mergeSimilarApps", true).toBool());
 }
 
 void OverlaySettings::saveSettings()
@@ -105,6 +107,7 @@ void OverlaySettings::saveSettings()
     settings.setValue("potatoMode", ui->potatoModeCheckBox->isChecked());
     settings.setValue("volumeIncrement", ui->volumeIncrementSpinBox->value());
     settings.setValue("disableMuteHotkey", ui->disableMuteHotkeyCheckBox->isChecked());
+    settings.setValue("mergeSimilarApps", ui->mergeSimilarCheckBox->isChecked());
 
     emit settingsChanged();
 }
