@@ -18,14 +18,15 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , panel(nullptr)
-    , soundOverlay(new SoundOverlay)
+    , soundOverlay(nullptr)
     , hiding(false)
     , overlayWidget(nullptr)
     , overlaySettings(nullptr)
     , settings("Odizinne", "QuickSoundSwitcher")
-{
+{    
     instance = this;
     createTrayIcon();
+    updateApplicationColorScheme();
     loadSettings();
     toggleMutedOverlay(AudioManager::getRecordingMute());
     installGlobalMouseHook();
@@ -38,6 +39,9 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
     delete soundOverlay;
+    delete panel;
+    delete overlaySettings;
+    delete overlayWidget;
     instance = nullptr;
 }
 
@@ -86,6 +90,34 @@ void QuickSoundSwitcher::createDeviceSubMenu(QMenu *parentMenu, const QList<Audi
     }
 }
 
+bool QuickSoundSwitcher::event(QEvent *event)
+{
+    if (event->type() == QEvent::ApplicationPaletteChange) {
+        updateApplicationColorScheme();
+        onOutputMuteChanged();
+        return true;
+    }
+    return QMainWindow::event(event);
+}
+
+void QuickSoundSwitcher::updateApplicationColorScheme()
+{
+    QString mode = Utils::getTheme();
+    QString color;
+    QPalette palette = QApplication::palette();
+
+    if (mode == "light") {
+        color = Utils::getAccentColor("light1");
+    } else {
+        color = Utils::getAccentColor("dark1");
+    }
+
+    QColor highlightColor(color);
+
+    palette.setColor(QPalette::Highlight, highlightColor);
+    qApp->setPalette(palette);
+}
+
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::Trigger) {
@@ -129,6 +161,12 @@ void QuickSoundSwitcher::onPanelClosed()
     delete panel;
     panel = nullptr;
     hiding = false;
+}
+
+void QuickSoundSwitcher::onSoundOverlayClosed()
+{
+    delete soundOverlay;
+    soundOverlay = nullptr;
 }
 
 void QuickSoundSwitcher::onVolumeChanged()
@@ -398,6 +436,14 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
     }
     trayIcon->setIcon(Utils::getIcon(1, newVolume, NULL));
     emit volumeChangedWithTray();
+
+    if (!soundOverlay) {
+        qDebug() << "pass";
+        soundOverlay = new SoundOverlay(this);
+        connect(soundOverlay, &SoundOverlay::overlayClosed, this, &QuickSoundSwitcher::onSoundOverlayClosed);
+    }
+    qDebug() << "pass2";
+
     soundOverlay->toggleOverlay();
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, newVolume, NULL), newVolume);
 }

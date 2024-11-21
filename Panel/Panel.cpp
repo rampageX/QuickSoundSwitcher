@@ -24,13 +24,16 @@ Panel::Panel(QWidget *parent)
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedWidth(width());
     AudioManager::initialize();
+    if (Utils::getTheme() == "light") {
+        borderColor = QColor(255, 255, 255, 32);
+    } else {
+        borderColor = QColor(0, 0, 0, 52);
+    }
 
     panelInstance = this;
     hwndPanel = reinterpret_cast<HWND>(this->winId());
     installMouseHook();
-
     populateComboBoxes();
-    //populateApplications();
     setSliders();
     setButtons();
     Utils::setFrameColorBasedOnWindow(this, ui->appFrame);
@@ -184,39 +187,28 @@ LRESULT CALLBACK Panel::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lPara
         }
     }
 
-    // Pass the event to the next hook in the chain
     return CallNextHookEx(mouseHook, nCode, wParam, lParam);
 }
 
 void Panel::paintEvent(QPaintEvent *event)
 {
-    Q_UNUSED(event);  // Prevent unused parameter warning
+    Q_UNUSED(event);
     QPainter painter(this);
 
-    // Get the main background color from the widget's palette
-    QColor main_bg_color = this->palette().color(QPalette::Window);
+    painter.setBrush(this->palette().color(QPalette::Window));
+    painter.setPen(Qt::NoPen);
 
-    // Set the brush to fill the rectangle with the background color
-    painter.setBrush(main_bg_color);
-    painter.setPen(Qt::NoPen); // No border for background fill
-
-    // Create a rounded rectangle path
     QPainterPath path;
-    path.addRoundedRect(this->rect().adjusted(1, 1, -1, -1), 8, 8); // Adjusted for inner fill
-
-    // Draw the filled rounded rectangle
+    path.addRoundedRect(this->rect().adjusted(1, 1, -1, -1), 8, 8);
     painter.drawPath(path);
 
-    // Now set the pen for the border with 30% alpha
-    QColor borderColor = QColor(255, 255, 255, 32); // White with 30% alpha (255 * 0.3 = 77)
     QPen borderPen(borderColor);
     borderPen.setWidth(1);
     painter.setPen(borderPen);
-    painter.setBrush(Qt::NoBrush); // No fill for border
+    painter.setBrush(Qt::NoBrush);
 
-    // Draw the border around the adjusted rectangle
     QPainterPath borderPath;
-    borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8); // Full size for outer border
+    borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8);
     painter.drawPath(borderPath);
 }
 

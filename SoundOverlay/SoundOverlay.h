@@ -30,6 +30,9 @@ private:
     void animateOut();
     QTimer *animationTimerOut;
     bool isAnimatingOut;
+
+signals:
+    void overlayClosed();
 };
 
 #endif // SOUNDOVERLAY_H

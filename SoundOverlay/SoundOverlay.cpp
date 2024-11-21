@@ -35,34 +35,24 @@ SoundOverlay::~SoundOverlay()
 
 void SoundOverlay::paintEvent(QPaintEvent *event)
 {
-    Q_UNUSED(event);  // Prevent unused parameter warning
+    Q_UNUSED(event);
     QPainter painter(this);
 
-    // Get the main background color from the widget's palette
-    QColor main_bg_color = this->palette().color(QPalette::Window);
+    painter.setBrush(this->palette().color(QPalette::Window));
+    painter.setPen(Qt::NoPen);
 
-    if (Utils::isDarkMode(main_bg_color)) {
-        main_bg_color = main_bg_color.lighter(140);
-    } else {
-        main_bg_color = main_bg_color.darker(110);
-    }
-    // Set the brush to fill the rectangle with the background color
-    painter.setBrush(main_bg_color);
-    painter.setPen(Qt::NoPen); // No border for background fill
-
-    // Create a rounded rectangle path
     QPainterPath path;
-    path.addRoundedRect(this->rect().adjusted(1, 1, -1, -1), 8, 8); // Adjusted for inner fill
-
-    // Draw the filled rounded rectangle
+    path.addRoundedRect(this->rect().adjusted(1, 1, -1, -1), 8, 8);
     painter.drawPath(path);
 
-    // Now set the pen for the border with 30% alpha
-    QColor borderColor = QColor(255, 255, 255, 32); // White with 30% alpha (255 * 0.3 = 77)
-    QPen borderPen(borderColor);
+    QPen borderPen(QColor(0, 0, 0, 37));
     borderPen.setWidth(1);
     painter.setPen(borderPen);
-    painter.setBrush(Qt::NoBrush); // No fill for border
+    painter.setBrush(Qt::NoBrush);
+
+    QPainterPath borderPath;
+    borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8);
+    painter.drawPath(borderPath);
 }
 
 void SoundOverlay::animateIn()
@@ -156,6 +146,7 @@ void SoundOverlay::animateOut()
             this->hide();
             isAnimatingOut = false;
             shown = false;
+            emit overlayClosed();
             return;
         }
 

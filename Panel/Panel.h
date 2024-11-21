@@ -40,6 +40,7 @@ private:
     void setButtons();
     void setFrames();
     void updateUi();
+    QColor borderColor;
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);

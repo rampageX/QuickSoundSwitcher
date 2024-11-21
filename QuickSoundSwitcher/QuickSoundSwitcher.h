@@ -27,10 +27,12 @@ public slots:
 private slots:
     void onInputMuteChanged();
     void onPanelClosed();
+    void onSoundOverlayClosed();
     void onRunAtStartupStateChanged();
 
 protected:
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
+    bool event(QEvent *event) override;
 
 private:
     QSystemTrayIcon *trayIcon;
@@ -63,6 +65,7 @@ private:
     void onSettingsChanged();
     void onSettingsClosed();
     void showSettings();
+    void updateApplicationColorScheme();
     bool disableNotification;
     bool disableOverlay;
     bool potatoMode;
