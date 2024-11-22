@@ -73,23 +73,6 @@ void QuickSoundSwitcher::createTrayIcon()
     connect(trayIcon, &QSystemTrayIcon::activated, this, &QuickSoundSwitcher::trayIconActivated);
 }
 
-void QuickSoundSwitcher::createDeviceSubMenu(QMenu *parentMenu, const QList<AudioDevice> &devices, const QString &title)
-{
-    QMenu *subMenu = parentMenu->addMenu(title);
-
-    for (const AudioDevice &device : devices) {
-        QAction *deviceAction = new QAction(device.shortName, subMenu);
-        deviceAction->setCheckable(true);
-        deviceAction->setChecked(device.isDefault);
-
-        connect(deviceAction, &QAction::triggered, this, [device]() {
-            AudioManager::setDefaultEndpoint(device.id);
-        });
-
-        subMenu->addAction(deviceAction);
-    }
-}
-
 bool QuickSoundSwitcher::event(QEvent *event)
 {
     if (event->type() == QEvent::ApplicationPaletteChange) {
