@@ -384,7 +384,10 @@ void Panel::addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Applicat
 
     QPushButton *muteButton = new QPushButton(ui->appFrame);
     muteButton->setFixedSize(35, 35);
-    muteButton->setToolTip(isGroup ? apps.first().executableName : apps.first().name);
+
+    // Tooltip logic: use app.name if it's not empty, otherwise use executableName
+    QString tooltip = apps.first().name.isEmpty() ? apps.first().executableName : apps.first().name;
+    muteButton->setToolTip(tooltip);
 
     QIcon originalIcon = apps.first().icon;
     QPixmap originalPixmap = originalIcon.pixmap(16, 16);
@@ -458,15 +461,33 @@ void Panel::populateApplications()
 
         vBoxLayout->addWidget(label);
     } else {
+        // Handle "Windows system sounds" first
+        QList<Application> systemSoundsApps;
+        for (const Application &app : applications) {
+            if (app.name == "Windows system sounds") {
+                systemSoundsApps.append(app);
+            }
+        }
+        if (!systemSoundsApps.isEmpty()) {
+            addApplicationControls(vBoxLayout, systemSoundsApps, false);
+        }
+
+        // Grouping and adding other applications
         if (mergeApps) {
             QMap<QString, QList<Application>> groupedApps;
 
             for (int i = 0; i < applications.size(); ++i) {
                 const Application &app = applications[i];
-                if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202" || app.executableName == "QuickSoundSwitcher") {
+                if (app.executableName == "QuickSoundSwitcher") {
+                    continue;
+                }
+                // Skip "Windows system sounds" as it has been handled already
+                if (app.name == "Windows system sounds") {
                     continue;
                 }
                 groupedApps[app.executableName].append(app);
+                qDebug() << app.name;
+                qDebug() << app.executableName;
             }
 
             for (QMap<QString, QList<Application>>::iterator it = groupedApps.begin(); it != groupedApps.end(); ++it) {
@@ -475,7 +496,7 @@ void Panel::populateApplications()
         } else {
             for (int i = 0; i < applications.size(); ++i) {
                 const Application &app = applications[i];
-                if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202" || app.executableName == "QuickSoundSwitcher") {
+                if (app.executableName == "QuickSoundSwitcher" || app.name == "Windows system sounds") {
                     continue;
                 }
                 QList<Application> singleApp;

@@ -452,6 +452,13 @@ QList<Application> AudioManager::enumerateAudioApplications() {
             CloseHandle(hProcess);
         }
 
+        // Override executable name and icon if the app is the audio service
+        if (appName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+            appName = "Windows system sounds";
+            executableName = "Windows system sounds";  // Override with custom name
+            appIcon = QIcon(":/icons/w11_icon.png");  // Set a custom icon, ensure you have the resource
+        }
+
         // Create an Application struct and populate fields
         Application app;
         app.id = appId;
@@ -459,7 +466,7 @@ QList<Application> AudioManager::enumerateAudioApplications() {
         app.executableName = executableName;
         app.isMuted = isMuted;
         app.volume = static_cast<int>(volumeLevel * 100);
-        app.icon = appIcon; // Assign the extracted icon
+        app.icon = appIcon; // Assign the extracted (or overridden) icon
 
         applications.append(app);
     }

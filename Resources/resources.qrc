@@ -19,5 +19,6 @@
         <file>icons/muted_layer.png</file>
         <file>icons/overlay_dark.png</file>
         <file>icons/overlay_light.png</file>
+        <file>icons/w11_icon.png</file>
     </qresource>
 </RCC>
