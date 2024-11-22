@@ -20,16 +20,12 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
-    setAttribute(Qt::WA_TranslucentBackground);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
+    this->setAttribute(Qt::WA_TranslucentBackground);
+    this->setAttribute(Qt::WA_AlwaysShowToolTips);
     setFixedWidth(width());
     AudioManager::initialize();
-    if (Utils::getTheme() == "light") {
-        borderColor = QColor(255, 255, 255, 32);
-    } else {
-        borderColor = QColor(0, 0, 0, 52);
-    }
-
+    borderColor = Utils::getTheme() == "light" ? QColor(255, 255, 255, 32) : QColor(0, 0, 0, 52);
     panelInstance = this;
     hwndPanel = reinterpret_cast<HWND>(this->winId());
     installMouseHook();
@@ -280,9 +276,8 @@ void Panel::setFrames()
 
 void Panel::onOutputComboBoxIndexChanged(int index)
 {
-    if (index < 0 || index >= playbackDevices.size()) {
-        return;
-    }
+    if (index < 0 || index >= playbackDevices.size()) return;
+
 
     const AudioDevice &selectedDevice = playbackDevices[index];
     AudioManager::setDefaultEndpoint(selectedDevice.id);
@@ -292,9 +287,7 @@ void Panel::onOutputComboBoxIndexChanged(int index)
 
 void Panel::onInputComboBoxIndexChanged(int index)
 {
-    if (index < 0 || index >= recordingDevices.size()) {
-        return;
-    }
+    if (index < 0 || index >= recordingDevices.size()) return;
 
     const AudioDevice &selectedDevice = recordingDevices[index];
     AudioManager::setDefaultEndpoint(selectedDevice.id);
@@ -385,17 +378,8 @@ void Panel::updateUi()
 
 void Panel::populateApplications()
 {
-    if (!ui->appFrame->layout()) {
-        ui->appFrame->setLayout(new QVBoxLayout);
-    }
-
     QVBoxLayout *vBoxLayout = qobject_cast<QVBoxLayout *>(ui->appFrame->layout());
     QList<Application> applications = AudioManager::enumerateAudioApplications();
-
-    int marginLeft, marginTop, marginRight, marginBottom;
-    vBoxLayout->getContentsMargins(&marginLeft, &marginTop, &marginRight, &marginBottom);
-    int spacing = vBoxLayout->spacing();
-    int totalHeight = marginTop + marginBottom;
 
     bool shouldDisplayLabel = applications.isEmpty() || (applications.size() == 1 && applications[0].name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202");
 
@@ -409,7 +393,6 @@ void Panel::populateApplications()
 
         vBoxLayout->addWidget(label);
 
-        totalHeight += label->sizeHint().height() + spacing;
     } else {
         if (mergeApps) {
             QMap<QString, QList<Application>> groupedApps;
@@ -434,6 +417,7 @@ void Panel::populateApplications()
 
                 QPushButton *muteButton = new QPushButton(ui->appFrame);
                 muteButton->setFixedSize(35, 35);
+                muteButton->setToolTip(apps.first().executableName);
 
                 // Determine if any app in the group is muted
                 bool isGroupMuted = std::any_of(apps.begin(), apps.end(), [](const Application &app) {
@@ -465,15 +449,6 @@ void Panel::populateApplications()
                     }
                 });
 
-                QSpacerItem *spacer1 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
-
-                QLabel *nameLabel = new QLabel(apps.first().executableName, ui->appFrame);
-                nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
-
-                QFont nameLabelFont = nameLabel->font();
-                nameLabelFont.setPointSize(10);
-                nameLabel->setFont(nameLabelFont);
-
                 // Determine the lowest volume in the group
                 int minVolume = std::min_element(apps.begin(), apps.end(), [](const Application &a, const Application &b) {
                                     return a.volume < b.volume;
@@ -489,21 +464,11 @@ void Panel::populateApplications()
                     }
                 });
 
-                QSpacerItem *spacer2 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
-                QSpacerItem *spacer3 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
-                QSpacerItem *spacer4 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
-
-                gridLayout->addWidget(muteButton, 0, 0, 6, 1);  // Mute button spans 6 rows (row 0 to row 5)
-                gridLayout->addItem(spacer1, 1, 1);              // Spacer in row 1
-                gridLayout->addWidget(nameLabel, 2, 1, 1, 1);    // Label in row 2
-                gridLayout->addWidget(slider, 3, 1, 1, 1);       // Slider in row 3
-                gridLayout->addItem(spacer2, 4, 1);              // Spacer in row 4
-                gridLayout->addItem(spacer3, 5, 1);              // Spacer in row 5
-                gridLayout->addItem(spacer4, 6, 1);              // Spacer in row 6
+                gridLayout->addWidget(muteButton, 0, 0, 1, 1);
+                gridLayout->addWidget(slider, 0, 1, 1, 1);
 
                 gridLayout->setColumnStretch(1, 1);
                 vBoxLayout->addLayout(gridLayout);
-                totalHeight += muteButton->height();
             }
         } else {
             // Individual controls for each application
@@ -520,6 +485,7 @@ void Panel::populateApplications()
 
                 QPushButton *muteButton = new QPushButton(ui->appFrame);
                 muteButton->setFixedSize(35, 35);
+                muteButton->setToolTip(app.executableName);
 
                 QIcon originalIcon = app.icon;
                 QPixmap originalPixmap = originalIcon.pixmap(16, 16);
@@ -543,13 +509,6 @@ void Panel::populateApplications()
                     }
                 });
 
-                QLabel *nameLabel = new QLabel(app.executableName, ui->appFrame);
-                nameLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
-
-                QFont nameLabelFont = nameLabel->font();
-                nameLabelFont.setPointSize(10);
-                nameLabel->setFont(nameLabelFont);
-
                 QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
                 slider->setRange(0, 100);
                 slider->setValue(app.volume);
@@ -558,25 +517,14 @@ void Panel::populateApplications()
                     AudioManager::setApplicationVolume(appId, value);
                 });
 
-                QSpacerItem *spacer1 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
-                QSpacerItem *spacer2 = new QSpacerItem(10, 10, QSizePolicy::Fixed, QSizePolicy::Expanding);
-
-                gridLayout->addWidget(muteButton, 0, 0, 4, 1);  // Mute button spans 4 rows (row 0 to row 3)
-                gridLayout->addItem(spacer1, 1, 1);              // Spacer in row 1
-                gridLayout->addWidget(nameLabel, 2, 1, 1, 1);    // Label in row 2
-                gridLayout->addWidget(slider, 3, 1, 1, 1);       // Slider in row 3
-                gridLayout->addItem(spacer2, 4, 1);              // Spacer in row 4
+                gridLayout->addWidget(muteButton, 0, 0, 1, 1);
+                gridLayout->addWidget(slider, 0, 1, 1, 1);
 
                 gridLayout->setColumnStretch(1, 1);
                 vBoxLayout->addLayout(gridLayout);
-                totalHeight += muteButton->height();
             }
         }
     }
 
-    // Adjust total height by subtracting the last spacing (no spacing after the last row)
-    totalHeight -= spacing;
-
-    ui->appFrame->setMinimumHeight(totalHeight);
-    setMinimumHeight(height() + 12 + ui->appFrame->height());
+    this->adjustSize();
 }

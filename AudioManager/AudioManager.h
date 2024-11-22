@@ -23,7 +23,7 @@ struct Application {
     QString executableName;
     bool isMuted;
     int volume;
-    QIcon icon; // Add an icon field to store the application icon
+    QIcon icon;
 };
 
 namespace AudioManager
