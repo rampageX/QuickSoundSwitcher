@@ -1,8 +1,9 @@
 #ifndef PANEL_H
 #define PANEL_H
 
-#include <QMainWindow>
 #include "AudioManager.h"
+#include <QVBoxLayout>
+#include <QMainWindow>
 
 namespace Ui {
 class Panel;
@@ -40,6 +41,7 @@ private:
     void setButtons();
     void setFrames();
     void updateUi();
+    void addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps, bool isGroup);
     QColor borderColor;
 
 private slots:

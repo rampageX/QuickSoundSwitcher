@@ -376,10 +376,75 @@ void Panel::updateUi()
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
 }
 
+void Panel::addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps, bool isGroup)
+{
+    QGridLayout *gridLayout = new QGridLayout;
+    gridLayout->setVerticalSpacing(0);
+    gridLayout->setHorizontalSpacing(12);
+
+    QPushButton *muteButton = new QPushButton(ui->appFrame);
+    muteButton->setFixedSize(35, 35);
+    muteButton->setToolTip(isGroup ? apps.first().executableName : apps.first().name);
+
+    QIcon originalIcon = apps.first().icon;
+    QPixmap originalPixmap = originalIcon.pixmap(16, 16);
+
+    // Determine if any app in the group is muted
+    bool isMuted = std::any_of(apps.begin(), apps.end(), [](const Application &app) {
+        return app.isMuted;
+    });
+
+    if (isMuted) {
+        QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
+        muteButton->setIcon(mutedIcon);
+    } else {
+        muteButton->setIcon(originalIcon);
+    }
+
+    connect(muteButton, &QPushButton::clicked, [apps, muteButton, originalPixmap]() mutable {
+        bool newMuteState = !AudioManager::getApplicationMute(apps.first().id);
+        for (int i = 0; i < apps.size(); ++i) {
+            AudioManager::setApplicationMute(apps[i].id, newMuteState);
+        }
+
+        if (newMuteState) {
+            QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
+            muteButton->setIcon(mutedIcon);
+        } else {
+            muteButton->setIcon(QIcon(originalPixmap));
+        }
+    });
+
+    // Determine the lowest volume in the group
+    int minVolume = std::min_element(apps.begin(), apps.end(), [](const Application &a, const Application &b) {
+                        return a.volume < b.volume;
+                    })->volume;
+
+    QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
+    slider->setRange(0, 100);
+    slider->setValue(minVolume);
+
+    connect(slider, &QSlider::valueChanged, [apps](int value) {
+        for (int i = 0; i < apps.size(); ++i) {
+            AudioManager::setApplicationVolume(apps[i].id, value);
+        }
+    });
+
+    gridLayout->addWidget(muteButton, 0, 0, 1, 1);
+    gridLayout->addWidget(slider, 0, 1, 1, 1);
+
+    gridLayout->setColumnStretch(1, 1);
+    vBoxLayout->addLayout(gridLayout);
+}
+
 void Panel::populateApplications()
 {
     QVBoxLayout *vBoxLayout = qobject_cast<QVBoxLayout *>(ui->appFrame->layout());
     QList<Application> applications = AudioManager::enumerateAudioApplications();
+
+    std::sort(applications.begin(), applications.end(), [](const Application &a, const Application &b) {
+        return a.executableName.toLower() < b.executableName.toLower(); // Case-insensitive comparison
+    });
 
     bool shouldDisplayLabel = applications.isEmpty() || (applications.size() == 1 && applications[0].name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202");
 
@@ -392,136 +457,30 @@ void Panel::populateApplications()
         label->setFont(labelFont);
 
         vBoxLayout->addWidget(label);
-
     } else {
         if (mergeApps) {
             QMap<QString, QList<Application>> groupedApps;
 
-            // Group applications by executableName if mergeApps is true
-            for (const Application &app : applications) {
-                if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
-                    continue;
-                }
-                if (app.executableName == "QuickSoundSwitcher") {
+            for (int i = 0; i < applications.size(); ++i) {
+                const Application &app = applications[i];
+                if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202" || app.executableName == "QuickSoundSwitcher") {
                     continue;
                 }
                 groupedApps[app.executableName].append(app);
             }
 
-            for (auto it = groupedApps.begin(); it != groupedApps.end(); ++it) {
-                const QList<Application> &apps = it.value();
-
-                QGridLayout *gridLayout = new QGridLayout;
-                gridLayout->setVerticalSpacing(0);
-                gridLayout->setHorizontalSpacing(12);
-
-                QPushButton *muteButton = new QPushButton(ui->appFrame);
-                muteButton->setFixedSize(35, 35);
-                muteButton->setToolTip(apps.first().executableName);
-
-                // Determine if any app in the group is muted
-                bool isGroupMuted = std::any_of(apps.begin(), apps.end(), [](const Application &app) {
-                    return app.isMuted;
-                });
-
-                QIcon originalIcon = apps.first().icon;
-                QPixmap originalPixmap = originalIcon.pixmap(16, 16);
-
-                if (isGroupMuted) {
-                    QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
-                    muteButton->setIcon(mutedIcon);
-                } else {
-                    muteButton->setIcon(originalIcon);
-                }
-
-                connect(muteButton, &QPushButton::clicked, [apps, muteButton, originalPixmap]() mutable {
-                    // Toggle mute state for all apps in the group
-                    bool newMuteState = !AudioManager::getApplicationMute(apps.first().id);
-                    for (const Application &app : apps) {
-                        AudioManager::setApplicationMute(app.id, newMuteState);
-                    }
-
-                    if (newMuteState) {
-                        QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
-                        muteButton->setIcon(mutedIcon);
-                    } else {
-                        muteButton->setIcon(QIcon(originalPixmap));
-                    }
-                });
-
-                // Determine the lowest volume in the group
-                int minVolume = std::min_element(apps.begin(), apps.end(), [](const Application &a, const Application &b) {
-                                    return a.volume < b.volume;
-                                })->volume;
-
-                QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
-                slider->setRange(0, 100);
-                slider->setValue(minVolume);
-
-                connect(slider, &QSlider::valueChanged, [apps](int value) {
-                    for (const Application &app : apps) {
-                        AudioManager::setApplicationVolume(app.id, value);
-                    }
-                });
-
-                gridLayout->addWidget(muteButton, 0, 0, 1, 1);
-                gridLayout->addWidget(slider, 0, 1, 1, 1);
-
-                gridLayout->setColumnStretch(1, 1);
-                vBoxLayout->addLayout(gridLayout);
+            for (QMap<QString, QList<Application>>::iterator it = groupedApps.begin(); it != groupedApps.end(); ++it) {
+                addApplicationControls(vBoxLayout, it.value(), true);
             }
         } else {
-            // Individual controls for each application
-            for (const Application &app : applications) {
-                if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+            for (int i = 0; i < applications.size(); ++i) {
+                const Application &app = applications[i];
+                if (app.name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202" || app.executableName == "QuickSoundSwitcher") {
                     continue;
                 }
-                if (app.executableName == "QuickSoundSwitcher") {
-                    continue;
-                }
-
-                QGridLayout *gridLayout = new QGridLayout;
-                gridLayout->setVerticalSpacing(0);
-
-                QPushButton *muteButton = new QPushButton(ui->appFrame);
-                muteButton->setFixedSize(35, 35);
-                muteButton->setToolTip(app.executableName);
-
-                QIcon originalIcon = app.icon;
-                QPixmap originalPixmap = originalIcon.pixmap(16, 16);
-
-                if (app.isMuted) {
-                    QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
-                    muteButton->setIcon(mutedIcon);
-                } else {
-                    muteButton->setIcon(originalIcon);
-                }
-
-                connect(muteButton, &QPushButton::clicked, [appId = app.id, muteButton, originalPixmap]() mutable {
-                    bool newMuteState = !AudioManager::getApplicationMute(appId);
-                    AudioManager::setApplicationMute(appId, newMuteState);
-
-                    if (newMuteState) {
-                        QIcon mutedIcon = Utils::generateMutedIcon(originalPixmap);
-                        muteButton->setIcon(mutedIcon);
-                    } else {
-                        muteButton->setIcon(QIcon(originalPixmap));
-                    }
-                });
-
-                QSlider *slider = new QSlider(Qt::Horizontal, ui->appFrame);
-                slider->setRange(0, 100);
-                slider->setValue(app.volume);
-
-                connect(slider, &QSlider::valueChanged, [appId = app.id](int value) {
-                    AudioManager::setApplicationVolume(appId, value);
-                });
-
-                gridLayout->addWidget(muteButton, 0, 0, 1, 1);
-                gridLayout->addWidget(slider, 0, 1, 1, 1);
-
-                gridLayout->setColumnStretch(1, 1);
-                vBoxLayout->addLayout(gridLayout);
+                QList<Application> singleApp;
+                singleApp.append(app);
+                addApplicationControls(vBoxLayout, singleApp, false);
             }
         }
     }
