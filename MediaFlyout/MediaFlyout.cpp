@@ -13,7 +13,7 @@ MediaFlyout::MediaFlyout(QWidget* parent)
     , ui(new Ui::MediaFlyout)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
     this->setAttribute(Qt::WA_TranslucentBackground);
     setFixedWidth(width());
     borderColor = Utils::getTheme() == "light" ? QColor(255, 255, 255, 32) : QColor(0, 0, 0, 52);
@@ -54,18 +54,14 @@ void MediaFlyout::paintEvent(QPaintEvent *event)
     painter.drawPath(borderPath);
 }
 
-void MediaFlyout::animateIn(QRect trayIconGeometry, int panelHeight)
+void MediaFlyout::animateIn()
 {
-    QPoint trayIconPos = trayIconGeometry.topLeft();
-    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
-
-    int panelX = trayIconCenterX - this->width() / 2;
     QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
-    int startY = screenGeometry.bottom();
-    int targetY = trayIconGeometry.top() - this->height() - 12 - 12 - panelHeight;
+    int screenCenterX = screenGeometry.center().x();
 
-    this->move(panelX, startY);
-    this->show();
+    int panelX = screenCenterX - this->width() / 2;
+    int startY = this->y() - 90; // Start from the current position
+    int targetY = screenGeometry.top() + this->height() - 90;
 
     const int durationMs = 300;
     const int refreshRate = 1;
@@ -84,33 +80,30 @@ void MediaFlyout::animateIn(QRect trayIconGeometry, int panelHeight)
             return;
         }
 
-        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
-        // Easing function: Smooth deceleration
+        double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
-
-        // Interpolated Y position
         int currentY = startY + easedT * (targetY - startY);
         this->move(panelX, currentY);
-
+        this->show();
         ++currentStep;
     });
 }
 
 void MediaFlyout::animateOut(QRect trayIconGeometry)
 {
-    QPoint trayIconPos = trayIconGeometry.topLeft();
-    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
-
-    int panelX = trayIconCenterX - this->width() / 2; // Center horizontally
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    int screenCenterX = screenGeometry.center().x();
+
+    int panelX = screenCenterX - this->width() / 2;
     int startY = this->y();
-    int targetY = screenGeometry.bottom(); // Move to the bottom of the screen
+    int targetY = screenGeometry.top() - this->height() - 12;
 
     const int durationMs = 300;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
 
     int currentStep = 0;
+
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
@@ -123,14 +116,10 @@ void MediaFlyout::animateOut(QRect trayIconGeometry)
             return;
         }
 
-        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
-        // Easing function: Smooth deceleration
+        double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
-
-        // Interpolated Y position
         int currentY = startY + easedT * (targetY - startY);
         this->move(panelX, currentY);
-
         ++currentStep;
     });
 }

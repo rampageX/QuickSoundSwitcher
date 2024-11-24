@@ -469,7 +469,11 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
         connect(soundOverlay, &SoundOverlay::overlayClosed, this, &QuickSoundSwitcher::onSoundOverlayClosed);
     }
 
-    soundOverlay->toggleOverlay();
+    int mediaFlyoutHeight = 0;
+    if (mediaFlyout) {
+        mediaFlyoutHeight = mediaFlyout->height();
+    }
+    soundOverlay->toggleOverlay(mediaFlyoutHeight);
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, newVolume, NULL), newVolume);
 }
 
@@ -490,7 +494,13 @@ void QuickSoundSwitcher::toggleMuteWithKey()
     emit outputMuteStateChanged(newPlaybackMute);
 
     soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
-    soundOverlay->toggleOverlay();
+
+    int mediaFlyoutHeight = 0;
+    if (mediaFlyout) {
+        mediaFlyoutHeight = mediaFlyout->height();
+    }
+
+    soundOverlay->toggleOverlay(mediaFlyoutHeight);
 }
 
 void QuickSoundSwitcher::startMonitoringMediaSession()
@@ -542,7 +552,6 @@ void QuickSoundSwitcher::getMediaSession()
 
 void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
 {
-
     workerThread->quit();
     workerThread->wait();
 
@@ -550,7 +559,10 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
 
     if (mediaFlyout) {
         if (!mediaFlyout->isVisible()){
-            mediaFlyout->animateIn(trayIcon->geometry(), panel->height());
+            mediaFlyout->animateIn();
+        }
+        if (soundOverlay && !soundOverlay->movedToPosition) {
+            soundOverlay->moveToPosition(mediaFlyout->height());
         }
         startMonitoringMediaSession();
         mediaFlyout->updateUi(mediaSession);

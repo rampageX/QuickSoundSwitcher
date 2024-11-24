@@ -17,7 +17,7 @@ class MediaFlyout : public QWidget
 public:
     explicit MediaFlyout(QWidget* parent = nullptr);
     ~MediaFlyout() override;
-    void animateIn(QRect trayIconGeometry, int panelHeight);
+    void animateIn();
     void animateOut(QRect trayIconGeometry);
     void updateUi(MediaSession session);
 

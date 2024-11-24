@@ -17,7 +17,7 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
     this->setAttribute(Qt::WA_TranslucentBackground);
     this->setAttribute(Qt::WA_AlwaysShowToolTips);
     setFixedWidth(width());

@@ -14,9 +14,11 @@ class SoundOverlay : public QWidget
 public:
     explicit SoundOverlay(QWidget *parent = nullptr);
     ~SoundOverlay();
-    void toggleOverlay();
+    void toggleOverlay(int mediaFlyoutHeight);
     void updateVolumeIconAndLabel(QIcon icon, int volume);
     void updateMuteIcon(QIcon icon);
+    void moveToPosition(int mediaFlyoutHeight);
+    bool movedToPosition;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -26,10 +28,14 @@ private:
     bool shown;
     QTimer *timer;
     QTimer *raiseTimer;
-    void animateIn();
+    void animateIn(int mediaFlyoutHeight);
     void animateOut();
     QTimer *animationTimerOut;
     bool isAnimatingOut;
+
+    int remainingTime;
+    void pauseExpireTimer();
+    void resumeExpireTimer();
 
 signals:
     void overlayClosed();

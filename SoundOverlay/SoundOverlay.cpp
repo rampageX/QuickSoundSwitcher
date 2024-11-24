@@ -11,6 +11,7 @@
 
 SoundOverlay::SoundOverlay(QWidget *parent)
     : QWidget(parent)
+    , movedToPosition(false)
     , ui(new Ui::SoundOverlay)
     , shown(false)
     , animationTimerOut(nullptr)
@@ -21,7 +22,6 @@ SoundOverlay::SoundOverlay(QWidget *parent)
     setAttribute(Qt::WA_TranslucentBackground);
 
     timer = new QTimer(this);
-    timer->setSingleShot(true);
     connect(timer, &QTimer::timeout, this, &SoundOverlay::animateOut);
     int playbackVolume = AudioManager::getPlaybackVolume();
     ui->progressBar->setValue(playbackVolume);
@@ -55,7 +55,7 @@ void SoundOverlay::paintEvent(QPaintEvent *event)
     painter.drawPath(borderPath);
 }
 
-void SoundOverlay::animateIn()
+void SoundOverlay::animateIn(int mediaFlyoutHeight)
 {
     // Stop the out animation if it's running
     if (isAnimatingOut) {
@@ -67,15 +67,17 @@ void SoundOverlay::animateIn()
         }
     }
 
+    if (mediaFlyoutHeight != 0)
+    {
+        movedToPosition = true;
+    }
     shown = true;
     QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
     int screenCenterX = screenGeometry.center().x();
 
     int panelX = screenCenterX - this->width() / 2;
     int startY = this->y(); // Start from the current position
-    int targetY = screenGeometry.top() + this->height() - 12;
-
-    this->show();
+    int targetY = screenGeometry.top() + this->height() - 12 + mediaFlyoutHeight;
 
     const int durationMs = 300;
     const int refreshRate = 1;
@@ -86,7 +88,7 @@ void SoundOverlay::animateIn()
 
     animationTimerIn->start(refreshRate);
 
-    connect(animationTimerIn, &QTimer::timeout, this, [=]() mutable {
+    connect(animationTimerIn, &QTimer::timeout, this, [=, this]() mutable {
         if (currentStep >= totalSteps) {
             animationTimerIn->stop();
             animationTimerIn->deleteLater();
@@ -98,6 +100,7 @@ void SoundOverlay::animateIn()
         double easedT = 1 - pow(1 - t, 3);
         int currentY = startY + easedT * (targetY - startY);
         this->move(panelX, currentY);
+        this->show();
         ++currentStep;
     });
 
@@ -129,7 +132,7 @@ void SoundOverlay::animateOut()
     animationTimerOut->start(refreshRate);
     isAnimatingOut = true;
 
-    connect(animationTimerOut, &QTimer::timeout, this, [=]() mutable {
+    connect(animationTimerOut, &QTimer::timeout, this, [=, this]() mutable {
         // If animateIn is called, stop the current animation
         if (!isAnimatingOut) {
             animationTimerOut->stop();
@@ -158,10 +161,52 @@ void SoundOverlay::animateOut()
     });
 }
 
-void SoundOverlay::toggleOverlay()
+void SoundOverlay::moveToPosition(int mediaFlyoutHeight)
+{
+    if (isAnimatingOut) {
+        return;
+    }
+
+    pauseExpireTimer();
+
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    int screenCenterX = screenGeometry.center().x();
+
+    int panelX = screenCenterX - this->width() / 2;
+    int startY = screenGeometry.top() + this->height() - 12;
+    int targetY = startY + mediaFlyoutHeight;
+
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+
+    int currentStep = 0;
+
+    QTimer *animationTimer = new QTimer(this);
+    animationTimer->start(refreshRate);
+
+    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
+        if (currentStep >= totalSteps) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            animationTimer = nullptr;
+            resumeExpireTimer();
+            movedToPosition = true;
+            return;
+        }
+
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY - easedT * (startY - targetY);
+        this->move(panelX, currentY);
+        ++currentStep;
+    });
+}
+
+void SoundOverlay::toggleOverlay(int mediaFlyoutHeight)
 {
     if (!shown) {
-        animateIn();
+        animateIn(mediaFlyoutHeight);
     } else {
         if (isAnimatingOut) {
             isAnimatingOut = false;
@@ -170,7 +215,7 @@ void SoundOverlay::toggleOverlay()
                 animationTimerOut->deleteLater();
                 animationTimerOut = nullptr;
             }
-            animateIn();
+            animateIn(mediaFlyoutHeight);
         } else {
             timer->start(2000);
         }
@@ -187,4 +232,15 @@ void SoundOverlay::updateVolumeIconAndLabel(QIcon icon, int volume)
 void SoundOverlay::updateMuteIcon(QIcon icon)
 {
     ui->iconLabel->setPixmap(icon.pixmap(16, 16));
+}
+
+void SoundOverlay::pauseExpireTimer()
+{
+    remainingTime = timer->remainingTime();
+    timer->stop();
+}
+
+void SoundOverlay::resumeExpireTimer()
+{
+    timer->start(remainingTime);
 }
