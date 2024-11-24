@@ -1,6 +1,8 @@
 #ifndef QUICKSOUNDSWITCHER_H
 #define QUICKSOUNDSWITCHER_H
 
+#include "MediaFlyout.h"
+#include "MediaSessionWorker.h"
 #include "Panel.h"
 #include "OverlaySettings.h"
 #include "OverlayWidget.h"
@@ -30,6 +32,12 @@ private slots:
     void onSoundOverlayClosed();
     void onRunAtStartupStateChanged();
 
+    void onRequestNext();
+    void onRequestPrev();
+    void onRequestPause();
+    void onSessionReady(const MediaSession& session);
+    void onSessionError(const QString& error);
+
 protected:
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
     bool event(QEvent *event) override;
@@ -37,6 +45,7 @@ protected:
 private:
     QSystemTrayIcon *trayIcon;
     Panel* panel;
+    MediaFlyout* mediaFlyout;
     SoundOverlay* soundOverlay;
     void createTrayIcon();
     void showPanel();
@@ -77,6 +86,13 @@ private:
     OverlaySettings *overlaySettings;
     QSettings settings;
     QString position;
+
+    QThread* workerThread;
+    MediaSessionWorker* worker;
+    QTimer* mediaSessionTimer;
+    void startMonitoringMediaSession();
+    void stopMonitoringMediaSession();
+    void getMediaSession();
 
 signals:
     void muteStateChanged();

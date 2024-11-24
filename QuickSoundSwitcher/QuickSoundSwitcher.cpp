@@ -18,11 +18,15 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , panel(nullptr)
+    , mediaFlyout(nullptr)
     , soundOverlay(nullptr)
     , hiding(false)
     , overlayWidget(nullptr)
     , overlaySettings(nullptr)
     , settings("Odizinne", "QuickSoundSwitcher")
+    , workerThread(nullptr)
+    , worker(nullptr)
+    , mediaSessionTimer(nullptr)
 {    
     instance = this;
     createTrayIcon();
@@ -42,6 +46,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     delete panel;
     delete overlaySettings;
     delete overlayWidget;
+    stopMonitoringMediaSession();
     instance = nullptr;
 }
 
@@ -129,6 +134,13 @@ void QuickSoundSwitcher::showPanel()
     connect(panel, &Panel::panelClosed, this, &QuickSoundSwitcher::onPanelClosed);
 
     panel->animateIn(trayIcon->geometry());
+
+    mediaFlyout = new MediaFlyout(this);
+    connect(mediaFlyout, &MediaFlyout::requestNext, this, &QuickSoundSwitcher::onRequestNext);
+    connect(mediaFlyout, &MediaFlyout::requestPrev, this, &QuickSoundSwitcher::onRequestPrev);
+    connect(mediaFlyout, &MediaFlyout::requestPause, this, &QuickSoundSwitcher::onRequestPause);
+
+    getMediaSession();
 }
 
 void QuickSoundSwitcher::hidePanel()
@@ -137,6 +149,9 @@ void QuickSoundSwitcher::hidePanel()
     hiding = true;
 
     panel->animateOut(trayIcon->geometry());
+    if (mediaFlyout) {
+        mediaFlyout->animateOut(trayIcon->geometry());
+    }
 }
 
 void QuickSoundSwitcher::onPanelClosed()
@@ -144,6 +159,13 @@ void QuickSoundSwitcher::onPanelClosed()
     delete panel;
     panel = nullptr;
     hiding = false;
+
+    if (mediaFlyout) {
+        delete mediaFlyout;
+        mediaFlyout = nullptr;
+    }
+
+    stopMonitoringMediaSession();
 }
 
 void QuickSoundSwitcher::onSoundOverlayClosed()
@@ -353,6 +375,8 @@ void QuickSoundSwitcher::uninstallKeyboardHook()
 LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
         MSLLHOOKSTRUCT *hookStruct = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
+
+        // Mouse Wheel Detection (previous logic)
         if (wParam == WM_MOUSEWHEEL) {
             int zDelta = GET_WHEEL_DELTA_WPARAM(hookStruct->mouseData);  // Check the scroll direction
             QPoint cursorPos = QCursor::pos();  // Get current cursor position
@@ -366,7 +390,27 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
                 }
             }
         }
+
+        // Mouse Click Detection (added logic)
+        if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {  // Check for left or right mouse click
+            QPoint cursorPos = QCursor::pos();  // Get current cursor position
+
+            // Get the bounding rectangles for the panel and mediaFlyout
+            QRect panelRect = instance->panel ? instance->panel->geometry() : QRect();
+            QRect mediaFlyoutRect = instance->mediaFlyout ? instance->mediaFlyout->geometry() : QRect();
+
+            // Check if the click is outside both the panel and mediaFlyout
+            if (!panelRect.contains(cursorPos) && !mediaFlyoutRect.contains(cursorPos)) {
+                if (instance->panel) {
+                    emit instance->panel->lostFocus();
+                }
+                //if (instance->mediaFlyout) {
+                //    instance->onMediaSessionInactive();  // Or handle flyout visibility
+                //}
+            }
+        }
     }
+
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
@@ -421,11 +465,9 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
     emit volumeChangedWithTray();
 
     if (!soundOverlay) {
-        qDebug() << "pass";
         soundOverlay = new SoundOverlay(this);
         connect(soundOverlay, &SoundOverlay::overlayClosed, this, &QuickSoundSwitcher::onSoundOverlayClosed);
     }
-    qDebug() << "pass2";
 
     soundOverlay->toggleOverlay();
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, newVolume, NULL), newVolume);
@@ -449,4 +491,121 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
     soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
     soundOverlay->toggleOverlay();
+}
+
+void QuickSoundSwitcher::startMonitoringMediaSession()
+{
+    if (!mediaSessionTimer) {
+        mediaSessionTimer = new QTimer(this);
+        connect(mediaSessionTimer, &QTimer::timeout, this, &QuickSoundSwitcher::getMediaSession);
+        mediaSessionTimer->start(500);
+        qDebug() << "Started media session monitoring.";
+    }
+}
+
+void QuickSoundSwitcher::stopMonitoringMediaSession()
+{
+    // Stop the timer and delete it if it's not null
+    if (mediaSessionTimer) {
+        mediaSessionTimer->stop();
+        delete mediaSessionTimer;  // Timer will be deleted
+        mediaSessionTimer = nullptr;  // Set to null to avoid dangling pointer
+        qDebug() << "Stopped media session monitoring.";
+    }
+
+    if (worker) {
+        workerThread->quit();
+        workerThread->wait();
+        delete worker;
+        worker = nullptr;
+    }
+
+    if (workerThread) {
+        delete workerThread;
+        workerThread = nullptr;
+    }
+}
+
+void QuickSoundSwitcher::getMediaSession()
+{
+
+    if (!workerThread) workerThread = new QThread(this);
+    if (!worker) {
+        worker = new MediaSessionWorker();
+        worker->moveToThread(workerThread);
+
+        connect(workerThread, &QThread::started, worker, &MediaSessionWorker::process);
+        connect(worker, &MediaSessionWorker::sessionReady, this, &QuickSoundSwitcher::onSessionReady);
+        connect(worker, &MediaSessionWorker::sessionError, this, &QuickSoundSwitcher::onSessionError);
+    }
+
+    workerThread->start();
+}
+
+void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
+{
+    qDebug() << "pass";
+
+    workerThread->quit();
+    workerThread->wait();
+
+    MediaSession mediaSession = session;
+    qDebug() << session.playbackState;
+    qDebug() << session.title;
+
+    if (mediaFlyout) {
+        if (!mediaFlyout->isVisible()){
+            mediaFlyout->animateIn(trayIcon->geometry(), panel->height());
+        }
+        startMonitoringMediaSession();
+        mediaFlyout->updateUi(mediaSession);
+    }
+}
+
+void QuickSoundSwitcher::onSessionError(const QString& error)
+{
+    workerThread->quit();
+    workerThread->wait();
+
+    if (worker) {
+        workerThread->quit();
+        workerThread->wait();
+        delete worker;
+        worker = nullptr;
+    }
+
+    if (workerThread) {
+        delete workerThread;
+        workerThread = nullptr;
+    }
+
+    delete mediaFlyout;
+    mediaFlyout = nullptr;
+}
+
+void QuickSoundSwitcher::onRequestNext()
+{
+    stopMonitoringMediaSession();
+
+    CoInitialize(nullptr);
+    Utils::sendNextKey();
+    startMonitoringMediaSession();
+}
+
+void QuickSoundSwitcher::onRequestPrev()
+{
+    stopMonitoringMediaSession();
+
+    CoInitialize(nullptr);
+    Utils::sendPrevKey();
+    startMonitoringMediaSession();
+}
+
+void QuickSoundSwitcher::onRequestPause()
+{
+    stopMonitoringMediaSession();
+
+    CoInitialize(nullptr);
+    Utils::sendPlayPauseKey();
+    startMonitoringMediaSession();
 }
