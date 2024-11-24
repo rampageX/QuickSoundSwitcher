@@ -16,7 +16,6 @@ class Panel : public QWidget
 public:
     explicit Panel(QWidget *parent = nullptr);
     ~Panel() override;
-    static Panel* panelInstance;
     void animateIn(QRect trayIconGeometry);
     void animateOut(QRect trayIconGeometry);
     bool mergeApps;
@@ -30,12 +29,7 @@ private:
     Ui::Panel *ui;
     QList<AudioDevice> playbackDevices;
     QList<AudioDevice> recordingDevices;
-    static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
-    static HHOOK mouseHook;
-    static HWND hwndPanel;
 
-    void installMouseHook();
-    void uninstallMouseHook();
     void populateComboBoxes();
     void setSliders();
     void setButtons();

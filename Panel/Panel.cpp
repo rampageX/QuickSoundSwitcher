@@ -10,10 +10,7 @@
 #include <QPainterPath>
 #include <QTimer>
 #include <QFont>
-
-HHOOK Panel::mouseHook = nullptr;
-HWND Panel::hwndPanel = nullptr;
-Panel* Panel::panelInstance = nullptr;
+#include <QLabel>
 
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
@@ -26,9 +23,6 @@ Panel::Panel(QWidget *parent)
     setFixedWidth(width());
     AudioManager::initialize();
     borderColor = Utils::getTheme() == "light" ? QColor(255, 255, 255, 32) : QColor(0, 0, 0, 52);
-    panelInstance = this;
-    hwndPanel = reinterpret_cast<HWND>(this->winId());
-    //installMouseHook();
     populateComboBoxes();
     setSliders();
     setButtons();
@@ -58,7 +52,6 @@ Panel::Panel(QWidget *parent)
 Panel::~Panel()
 {
     AudioManager::cleanup();
-    uninstallMouseHook();
     delete ui;
 }
 
@@ -145,46 +138,7 @@ void Panel::animateOut(QRect trayIconGeometry)
     });
 }
 
-void Panel::installMouseHook()
-{
-    if (!mouseHook) {
-        mouseHook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, NULL, 0);
-    }
-}
 
-void Panel::uninstallMouseHook()
-{
-    if (mouseHook) {
-        UnhookWindowsHookEx(mouseHook);
-        mouseHook = nullptr;
-    }
-}
-
-// Low-level mouse hook callback
-LRESULT CALLBACK Panel::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    if (nCode == HC_ACTION) {
-        // Only process mouse click events (left or right click)
-        if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {
-            // Get the current position of the mouse
-            MSLLHOOKSTRUCT *pMouseStruct = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
-            POINT mousePos = pMouseStruct->pt;
-
-            // Get the window's position and size
-            RECT rect;
-            GetWindowRect(hwndPanel, &rect);  // Use stored HWND
-
-            if (!PtInRect(&rect, mousePos)) {
-                // Use the static panelInstance to emit the lostFocus signal
-                if (panelInstance) {
-                    emit panelInstance->lostFocus();
-                }
-            }
-        }
-    }
-
-    return CallNextHookEx(mouseHook, nCode, wParam, lParam);
-}
 
 void Panel::paintEvent(QPaintEvent *event)
 {

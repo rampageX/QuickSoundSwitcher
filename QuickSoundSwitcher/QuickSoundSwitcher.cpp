@@ -499,7 +499,6 @@ void QuickSoundSwitcher::startMonitoringMediaSession()
         mediaSessionTimer = new QTimer(this);
         connect(mediaSessionTimer, &QTimer::timeout, this, &QuickSoundSwitcher::getMediaSession);
         mediaSessionTimer->start(500);
-        qDebug() << "Started media session monitoring.";
     }
 }
 
@@ -510,7 +509,6 @@ void QuickSoundSwitcher::stopMonitoringMediaSession()
         mediaSessionTimer->stop();
         delete mediaSessionTimer;  // Timer will be deleted
         mediaSessionTimer = nullptr;  // Set to null to avoid dangling pointer
-        qDebug() << "Stopped media session monitoring.";
     }
 
     if (worker) {
@@ -544,14 +542,11 @@ void QuickSoundSwitcher::getMediaSession()
 
 void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
 {
-    qDebug() << "pass";
 
     workerThread->quit();
     workerThread->wait();
 
     MediaSession mediaSession = session;
-    qDebug() << session.playbackState;
-    qDebug() << session.title;
 
     if (mediaFlyout) {
         if (!mediaFlyout->isVisible()){

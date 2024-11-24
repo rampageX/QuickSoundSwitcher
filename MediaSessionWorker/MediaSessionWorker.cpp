@@ -17,11 +17,9 @@ MediaSessionWorker::MediaSessionWorker(QObject* parent)
 
 MediaSessionWorker::~MediaSessionWorker()
 {
-    qDebug() << "pass dest";
-    // Deinitialize the COM apartment when the object is destroyed
     try
     {
-        winrt::uninit_apartment();  // Clean up the COM apartment
+        winrt::uninit_apartment();
     }
     catch (const std::exception& ex)
     {
