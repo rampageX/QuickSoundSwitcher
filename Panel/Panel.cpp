@@ -380,10 +380,10 @@ void Panel::addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Applicat
 {
     QGridLayout *gridLayout = new QGridLayout;
     gridLayout->setVerticalSpacing(0);
-    gridLayout->setHorizontalSpacing(12);
+    gridLayout->setHorizontalSpacing(6);
 
     QPushButton *muteButton = new QPushButton(ui->appFrame);
-    muteButton->setFixedSize(35, 35);
+    muteButton->setFixedSize(30, 30);
 
     // Tooltip logic: use app.name if it's not empty, otherwise use executableName
     QString tooltip = apps.first().name.isEmpty() ? apps.first().executableName : apps.first().name;

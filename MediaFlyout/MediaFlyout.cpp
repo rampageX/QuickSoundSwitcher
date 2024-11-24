@@ -199,7 +199,7 @@ void MediaFlyout::updateUi(MediaSession session)
     ui->pause->setEnabled(true);
 
     // Update media icon
-    QPixmap originalIcon = session.icon.pixmap(64, 64);
+    QPixmap originalIcon = session.icon.pixmap(96, 96);
     QPixmap roundedIcon = roundPixmap(originalIcon, 8);
     ui->icon->setPixmap(roundedIcon);
 

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>330</width>
-    <height>313</height>
+    <height>278</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,19 +18,19 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
-    <number>14</number>
+    <number>12</number>
    </property>
    <property name="topMargin">
-    <number>14</number>
+    <number>12</number>
    </property>
    <property name="rightMargin">
-    <number>14</number>
+    <number>12</number>
    </property>
    <property name="bottomMargin">
-    <number>14</number>
+    <number>12</number>
    </property>
    <property name="spacing">
-    <number>12</number>
+    <number>9</number>
    </property>
    <item row="0" column="0">
     <widget class="QFrame" name="frame">
@@ -54,7 +54,7 @@
        <number>0</number>
       </property>
       <property name="spacing">
-       <number>12</number>
+       <number>9</number>
       </property>
       <item row="0" column="0">
        <widget class="QLabel" name="label_2">
@@ -107,7 +107,7 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
          <property name="spacing">
-          <number>12</number>
+          <number>9</number>
          </property>
          <item row="1" column="0">
           <widget class="QPushButton" name="outputMuteButton">
@@ -119,14 +119,14 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>35</width>
-             <height>35</height>
+             <width>30</width>
+             <height>30</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>35</width>
-             <height>35</height>
+             <width>30</width>
+             <height>30</height>
             </size>
            </property>
            <property name="text">
@@ -145,7 +145,7 @@
            <property name="minimumSize">
             <size>
              <width>0</width>
-             <height>35</height>
+             <height>30</height>
             </size>
            </property>
            <property name="font">
@@ -234,20 +234,20 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
          <property name="spacing">
-          <number>12</number>
+          <number>9</number>
          </property>
          <item row="1" column="0">
           <widget class="QPushButton" name="inputMuteButton">
            <property name="minimumSize">
             <size>
-             <width>35</width>
-             <height>35</height>
+             <width>30</width>
+             <height>30</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>35</width>
-             <height>35</height>
+             <width>30</width>
+             <height>30</height>
             </size>
            </property>
            <property name="text">
@@ -260,7 +260,7 @@
            <property name="minimumSize">
             <size>
              <width>0</width>
-             <height>35</height>
+             <height>30</height>
             </size>
            </property>
            <property name="font">
