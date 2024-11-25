@@ -24,8 +24,6 @@ MediaSessionWorker::~MediaSessionWorker()
     {
         qDebug() << "Error during COM deinitialization:" << ex.what();
     }
-
-    //CoUninitialize();
 }
 
 void MediaSessionWorker::process()

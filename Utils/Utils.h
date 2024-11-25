@@ -16,9 +16,6 @@ namespace Utils {
     QPixmap createIconWithAccentBackground();
     QIcon getPlaceholderIcon();
     QIcon getButtonsIcon(QString button);
-    void sendPlayPauseKey();
-    void sendNextKey();
-    void sendPrevKey();
 }
 
 #endif // UTILS_H
