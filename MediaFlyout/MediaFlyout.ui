@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>332</width>
-    <height>141</height>
+    <width>330</width>
+    <height>147</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,16 +15,16 @@
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
-    <number>9</number>
+    <number>12</number>
    </property>
    <property name="topMargin">
-    <number>9</number>
+    <number>12</number>
    </property>
    <property name="rightMargin">
-    <number>9</number>
+    <number>12</number>
    </property>
    <property name="bottomMargin">
-    <number>9</number>
+    <number>12</number>
    </property>
    <property name="spacing">
     <number>9</number>
@@ -72,7 +72,7 @@
      </property>
      <property name="minimumSize">
       <size>
-       <width>200</width>
+       <width>192</width>
        <height>0</height>
       </size>
      </property>
