@@ -1,11 +1,6 @@
 #include "MediaSessionWorker.h"
 #include "Utils.h"
 #include <QDebug>
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Media.Control.h>
-#include <windows.h>
-
-#pragma comment(lib, "runtimeobject.lib")
 
 MediaSessionWorker::MediaSessionWorker(QObject* parent)
     : QObject(parent)
