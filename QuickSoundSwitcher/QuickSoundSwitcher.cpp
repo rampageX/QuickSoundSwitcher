@@ -500,7 +500,9 @@ void QuickSoundSwitcher::toggleMuteWithKey()
     if (!soundOverlay) {
         soundOverlay = new SoundOverlay(this);
     }
+
     soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
+    soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, volumeIcon, NULL), AudioManager::getPlaybackVolume());
     soundOverlay->toggleOverlay(mediaFlyoutHeight);
 }
 

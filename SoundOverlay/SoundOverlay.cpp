@@ -23,9 +23,6 @@ SoundOverlay::SoundOverlay(QWidget *parent)
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &SoundOverlay::animateOut);
-    int playbackVolume = AudioManager::getPlaybackVolume();
-    ui->progressBar->setValue(playbackVolume);
-    ui->iconLabel->setPixmap(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL).pixmap(16, 16));
 }
 
 SoundOverlay::~SoundOverlay()
@@ -250,6 +247,7 @@ void SoundOverlay::toggleOverlay(int mediaFlyoutHeight)
     if (!shown) {
         animateIn(mediaFlyoutHeight);
     } else {
+
         if (isAnimatingOut) {
             isAnimatingOut = false;
             if (animationTimerOut) {
