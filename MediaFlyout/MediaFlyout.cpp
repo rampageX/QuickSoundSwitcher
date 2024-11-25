@@ -2,11 +2,11 @@
 #include "ui_MediaFlyout.h"
 #include "Utils.h"
 #include <QMessageBox>
-#include <QTimer>
 #include <QDebug>
 #include <QPainter>
 #include <QPainterPath>
 #include <QScreen>
+#include <QTimer>
 
 MediaFlyout::MediaFlyout(QWidget* parent)
     : QWidget(parent)
@@ -248,3 +248,21 @@ void MediaFlyout::updateControls(bool prev, bool next)
     ui->next->setEnabled(next);
     ui->prev->setEnabled(prev);
 }
+
+void MediaFlyout::updateProgress(int current, int total)
+{
+    ui->progressBar->setRange(0, total);
+    ui->progressBar->setValue(current);
+
+    int currentMinutes = current / 60;
+    int currentSeconds = current % 60;
+    QString currentTimeText = QString::asprintf("%02d:%02d", currentMinutes, currentSeconds);
+
+    int totalMinutes = total / 60;
+    int totalSeconds = total % 60;
+    QString totalTimeText = QString::asprintf("%02d:%02d", totalMinutes, totalSeconds);
+
+    ui->currentTime->setText(currentTimeText);
+    ui->totalTime->setText(totalTimeText);
+}
+

@@ -33,8 +33,8 @@ signals:
 
     void sessionMediaPropertiesChanged(const QString& title, const QString& artist);
     void sessionPlaybackStateChanged(const QString& state);
-    void sessionTimelineChanged(qint64 position, qint64 duration);
     void sessionIconChanged(QIcon icon);
+    void sessionTimeInfoUpdated(int currentTime, int totalTime);
 };
 
 #endif // MEDIASESSIONWORKER_H

@@ -406,9 +406,6 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
                 if (instance->panel) {
                     emit instance->panel->lostFocus();
                 }
-                //if (instance->mediaFlyout) {
-                //    instance->onMediaSessionInactive();  // Or handle flyout visibility
-                //}
             }
         }
     }
@@ -507,7 +504,6 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
 void QuickSoundSwitcher::startMonitoringMediaSession()
 {
-    qDebug() << "only one";
 
 }
 
@@ -557,6 +553,7 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
         connect(worker, &MediaSessionWorker::sessionMediaPropertiesChanged, this, &QuickSoundSwitcher::updateFlyoutTitleAndArtist);
         connect(worker, &MediaSessionWorker::sessionIconChanged, this, &QuickSoundSwitcher::updateFlyoutIcon);
         connect(worker, &MediaSessionWorker::sessionPlaybackStateChanged, this, &QuickSoundSwitcher::updateFlyoutPlayPause);
+        connect(worker, &MediaSessionWorker::sessionTimeInfoUpdated, this, &QuickSoundSwitcher::updateFlyoutProgress);
         monitoringEnabled = true;
     }
     MediaSession mediaSession = session;
@@ -569,6 +566,7 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
             mediaFlyout->updateIcon(mediaSession.icon);
             mediaFlyout->updatePauseButton(mediaSession.playbackState);
             mediaFlyout->updateControls(mediaSession.canGoPrevious, mediaSession.canGoNext);
+            mediaFlyout->updateProgress(mediaSession.currentTime, mediaSession.duration);
             if (mediaSession.playbackState == "Playing") {
                 currentlyPlaying = true;
             } else {
@@ -606,8 +604,15 @@ void QuickSoundSwitcher::updateFlyoutPlayPause(const QString &state)
         currentlyPlaying = false;
     }
 
-    if (mediaFlyout){
+    if (mediaFlyout) {
         mediaFlyout->updatePauseButton(state);
+    }
+}
+
+void QuickSoundSwitcher::updateFlyoutProgress(int currentTime, int totalTime)
+{
+    if (mediaFlyout) {
+        mediaFlyout->updateProgress(currentTime, totalTime);
     }
 }
 

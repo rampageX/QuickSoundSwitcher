@@ -41,6 +41,7 @@ private slots:
     void updateFlyoutTitleAndArtist(const QString& title, const QString& artist);
     void updateFlyoutIcon(QIcon icon);
     void updateFlyoutPlayPause(const QString& state);
+    void updateFlyoutProgress(int currentTime, int totalTime);
 
 protected:
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;

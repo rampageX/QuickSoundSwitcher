@@ -3,8 +3,6 @@
 
 #include <QWidget>
 #include <QThread>
-#include <QTimer>
-#include "MediaSession.h"
 
 namespace Ui {
 class MediaFlyout;
@@ -24,6 +22,7 @@ public:
     void updateIcon(QIcon icon);
     void updatePauseButton(QString playbackState);
     void updateControls(bool prev, bool next);
+    void updateProgress(int current, int total);
 
 public slots:
     void onPrevClicked();
@@ -37,6 +36,9 @@ private:
     Ui::MediaFlyout *ui;
     QColor borderColor;
     QPixmap roundPixmap(const QPixmap &src, int radius);
+    void updateCurrentTime();
+    int currentTime;
+    int totalTime;
 
 signals:
     void requestPrev();
