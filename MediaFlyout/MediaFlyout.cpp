@@ -20,7 +20,13 @@ MediaFlyout::MediaFlyout(QWidget* parent)
 
     ui->prev->setIcon(Utils::getButtonsIcon("prev"));
     ui->next->setIcon(Utils::getButtonsIcon("next"));
-    ui->pause->setIcon(Utils::getButtonsIcon("pause"));
+    ui->pause->setIcon(Utils::getButtonsIcon("play"));
+    updateIcon(Utils::getPlaceholderIcon());
+    updateTitle("No song is currently playing.");
+    updateArtist("");
+    updateProgress(0, 0);
+    ui->progressBar->setRange(0, 100);
+    ui->pause->setEnabled(false);
 
     connect(ui->next, &QToolButton::clicked, this, &MediaFlyout::onNextClicked);
     connect(ui->prev, &QToolButton::clicked, this, &MediaFlyout::onPrevClicked);
@@ -234,6 +240,7 @@ void MediaFlyout::updateIcon(QIcon icon)
 
 void MediaFlyout::updatePauseButton(QString playbackState)
 {
+    ui->pause->setEnabled(true);
     QString playPause;
     if (playbackState == "Playing") {
         playPause = "pause";

@@ -25,7 +25,7 @@ SoundOverlay::SoundOverlay(QWidget *parent)
     connect(timer, &QTimer::timeout, this, &SoundOverlay::animateOut);
     int playbackVolume = AudioManager::getPlaybackVolume();
     ui->progressBar->setValue(playbackVolume);
-    ui->valueLabel->setPixmap(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL).pixmap(16, 16));
+    ui->iconLabel->setPixmap(Utils::getIcon(1, AudioManager::getPlaybackVolume(), NULL).pixmap(16, 16));
 }
 
 SoundOverlay::~SoundOverlay()

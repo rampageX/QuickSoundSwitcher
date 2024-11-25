@@ -614,8 +614,14 @@ void QuickSoundSwitcher::updateFlyoutProgress(int currentTime, int totalTime)
 
 void QuickSoundSwitcher::onSessionError(const QString& error)
 {
-    delete mediaFlyout;
-    mediaFlyout = nullptr;
+    if (mediaFlyout) {
+        if (!mediaFlyout->isVisible()){
+            mediaFlyout->animateIn();
+        }
+        if (soundOverlay && !soundOverlay->movedToPosition) {
+            soundOverlay->moveToPosition(mediaFlyout->height());
+        }
+    }
 }
 
 void QuickSoundSwitcher::onRequestNext()
