@@ -95,7 +95,6 @@ private:
     QThread* workerThread;
     MediaSessionWorker* worker;
     QTimer* mediaSessionTimer;
-    void startMonitoringMediaSession();
     void stopMonitoringMediaSession();
     void getMediaSession();
     bool currentlyPlaying;

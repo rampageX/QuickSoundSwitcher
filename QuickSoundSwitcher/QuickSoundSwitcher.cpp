@@ -492,28 +492,24 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
     emit outputMuteStateChanged(newPlaybackMute);
 
-    soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
-
     int mediaFlyoutHeight = 0;
     if (mediaFlyout) {
         mediaFlyoutHeight = mediaFlyout->height();
     }
 
+    if (!soundOverlay) {
+        soundOverlay = new SoundOverlay(this);
+    }
+    soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
     soundOverlay->toggleOverlay(mediaFlyoutHeight);
-}
-
-void QuickSoundSwitcher::startMonitoringMediaSession()
-{
-
 }
 
 void QuickSoundSwitcher::stopMonitoringMediaSession()
 {
-    // Stop the timer and delete it if it's not null
     if (mediaSessionTimer) {
         mediaSessionTimer->stop();
-        delete mediaSessionTimer;  // Timer will be deleted
-        mediaSessionTimer = nullptr;  // Set to null to avoid dangling pointer
+        delete mediaSessionTimer;
+        mediaSessionTimer = nullptr;
     }
 
     if (worker) {
