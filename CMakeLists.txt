@@ -3,8 +3,6 @@ project(QuickSoundSwitcher VERSION 1.0 LANGUAGES C CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt5 Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Gui)
@@ -26,7 +24,9 @@ qt_add_executable(QuickSoundSwitcher WIN32
     SoundOverlay/SoundOverlay.cpp SoundOverlay/SoundOverlay.h SoundOverlay/SoundOverlay.ui
     Utils/Utils.cpp Utils/Utils.h
     main.cpp
+    Resources/appicon.rc
 )
+
 target_include_directories(QuickSoundSwitcher PRIVATE
     AudioManager
     MediaFlyout

@@ -88,7 +88,7 @@ void SoundOverlay::animateIn(int mediaFlyoutHeight)
 
     animationTimerIn->start(refreshRate);
 
-    connect(animationTimerIn, &QTimer::timeout, this, [=, this]() mutable {
+    connect(animationTimerIn, &QTimer::timeout, this, [=]() mutable {
         if (currentStep >= totalSteps) {
             animationTimerIn->stop();
             animationTimerIn->deleteLater();
@@ -132,7 +132,7 @@ void SoundOverlay::animateOut()
     animationTimerOut->start(refreshRate);
     isAnimatingOut = true;
 
-    connect(animationTimerOut, &QTimer::timeout, this, [=, this]() mutable {
+    connect(animationTimerOut, &QTimer::timeout, this, [=]() mutable {
         // If animateIn is called, stop the current animation
         if (!isAnimatingOut) {
             animationTimerOut->stop();
@@ -185,7 +185,7 @@ void SoundOverlay::moveToPosition(int mediaFlyoutHeight)
     QTimer *animationTimer = new QTimer(this);
     animationTimer->start(refreshRate);
 
-    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         if (currentStep >= totalSteps) {
             animationTimer->stop();
             animationTimer->deleteLater();
@@ -227,7 +227,7 @@ void SoundOverlay::moveBackToOriginalPosition(int mediaFlyoutHeight)
     QTimer *animationTimer = new QTimer(this);
     animationTimer->start(refreshRate);
 
-    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         if (currentStep >= totalSteps) {
             animationTimer->stop();
             animationTimer->deleteLater();

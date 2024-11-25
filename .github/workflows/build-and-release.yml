@@ -19,56 +19,23 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.2'
+          version: '6.8.0'
           add-tools-to-path: true
           cache: true
 
-      - name: Install jom
-        id: jom-setup
-        shell: pwsh
-        run: |
-          $url = "https://download.qt.io/official_releases/jom/jom_1_1_4.zip"
-          $outputPath = "jom_1_1_4.zip"
-          Invoke-WebRequest -Uri $url -OutFile $outputPath
-          $extractPath = "jom"
-          if (-not (Test-Path $extractPath)) {
-            New-Item -ItemType Directory -Path $extractPath | Out-Null
-          }
-          Expand-Archive -Path $outputPath -DestinationPath $extractPath
-          $jomDir = "$(pwd)\jom"
-          $jomExe = "$jomDir\jom.exe"
-          if (Test-Path $jomExe) {
-            Write-Output "JOM Path: $jomDir"
-            Write-Output "::set-output name=jom_path::$jomDir"
-          } else {
-            Write-Error "jom.exe not found in $jomDir"
-            exit 1
-          }
-
-      - name: Build with qmake and jom
+      - name: Configure and build with CMake
         shell: pwsh
         run: |
           mkdir build
           cd build
-          qmake ..\QuickSoundSwitcher.pro CONFIG+=release
-          $jomPath = "${{ steps.jom-setup.outputs.jom_path }}"
-          & "$jomPath\jom.exe"
-          
-      - name: Remove source and object files
-        shell: pwsh
-        run: |
-          $buildDir = "build/release"
-          if (Test-Path $buildDir) {
-              Get-ChildItem -Path $buildDir -Include *.cpp, *.h, *.obj, *.res, *.qm -Recurse | Remove-Item -Force
-          } else {
-              Write-Host "Directory not found: $buildDir"
-          }
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build . --config Release
 
       - name: Deploy Qt
         shell: pwsh
         run: |
           cd build
-          $windeployqtPath = "D:\a\QuickSoundSwitcher\Qt\6.7.2\msvc2019_64\bin\windeployqt6.exe"
+          $windeployqtPath = "D:\a\QuickSoundSwitcher\Qt\6.8.0\msvc2022_64\bin\windeployqt6.exe"
           if (Test-Path $windeployqtPath) {
               & $windeployqtPath `
                   --exclude-plugins qmodernwindowsstyle,qsvgicon,qsvg,qico,qjpeg,qgif,qnetworklistmanager,qtuiotouchplugin `
