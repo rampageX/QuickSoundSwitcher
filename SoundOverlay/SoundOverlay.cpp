@@ -104,7 +104,7 @@ void SoundOverlay::animateIn(int mediaFlyoutHeight)
         ++currentStep;
     });
 
-    timer->start(2000);
+    timer->start(3000);
 }
 
 void SoundOverlay::animateOut()
@@ -259,7 +259,7 @@ void SoundOverlay::toggleOverlay(int mediaFlyoutHeight)
             }
             animateIn(mediaFlyoutHeight);
         } else {
-            timer->start(2000);
+            timer->start(3000);
         }
     }
 }

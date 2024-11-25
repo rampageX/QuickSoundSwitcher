@@ -60,8 +60,8 @@ void MediaFlyout::animateIn()
     int screenCenterX = screenGeometry.center().x();
 
     int panelX = screenCenterX - this->width() / 2;
-    int startY = this->y() - 90; // Start from the current position
-    int targetY = screenGeometry.top() + this->height() - 90;
+    int startY = this->y() - 120; // Start from the current position
+    int targetY = screenGeometry.top() + this->height() - 120;
 
     const int durationMs = 300;
     const int refreshRate = 1;
