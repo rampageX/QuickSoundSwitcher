@@ -19,6 +19,7 @@ public:
     void updateMuteIcon(QIcon icon);
     void moveToPosition(int mediaFlyoutHeight);
     bool movedToPosition;
+    void moveBackToOriginalPosition(int mediaFlyoutHeight);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

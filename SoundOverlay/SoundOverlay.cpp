@@ -203,6 +203,48 @@ void SoundOverlay::moveToPosition(int mediaFlyoutHeight)
     });
 }
 
+void SoundOverlay::moveBackToOriginalPosition(int mediaFlyoutHeight)
+{
+    if (isAnimatingOut) {
+        return;
+    }
+
+    pauseExpireTimer();
+
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    int screenCenterX = screenGeometry.center().x();
+
+    int panelX = screenCenterX - this->width() / 2;
+    int startY = screenGeometry.top() + this->height() - 12 + mediaFlyoutHeight;  // Use the stored start position
+    int targetY = screenGeometry.top() + this->height() - 12; // Original position (reset)
+
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+
+    int currentStep = 0;
+
+    QTimer *animationTimer = new QTimer(this);
+    animationTimer->start(refreshRate);
+
+    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
+        if (currentStep >= totalSteps) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            animationTimer = nullptr;
+            resumeExpireTimer();
+            movedToPosition = false;
+            return;
+        }
+
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);  // Move back to the original position
+        this->move(panelX, currentY);
+        ++currentStep;
+    });
+}
+
 void SoundOverlay::toggleOverlay(int mediaFlyoutHeight)
 {
     if (!shown) {

@@ -152,6 +152,9 @@ void QuickSoundSwitcher::hidePanel()
     panel->animateOut(trayIcon->geometry());
     if (mediaFlyout) {
         mediaFlyout->animateOut(trayIcon->geometry());
+        if (soundOverlay) {
+            soundOverlay->moveBackToOriginalPosition(mediaFlyout->height());
+        }
     }
 }
 
