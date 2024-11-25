@@ -38,6 +38,10 @@ private slots:
     void onSessionReady(const MediaSession& session);
     void onSessionError(const QString& error);
 
+    void updateFlyoutTitleAndArtist(const QString& title, const QString& artist);
+    void updateFlyoutIcon(QIcon icon);
+    void updateFlyoutPlayPause(const QString& state);
+
 protected:
     bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
     bool event(QEvent *event) override;
@@ -93,6 +97,9 @@ private:
     void startMonitoringMediaSession();
     void stopMonitoringMediaSession();
     void getMediaSession();
+    bool currentlyPlaying;
+    bool monitoringEnabled;
+
 
 signals:
     void muteStateChanged();

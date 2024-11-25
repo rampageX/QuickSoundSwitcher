@@ -124,13 +124,51 @@ void MediaFlyout::animateOut(QRect trayIconGeometry)
     });
 }
 
-void MediaFlyout::updateUi(MediaSession session)
+QPixmap MediaFlyout::roundPixmap(const QPixmap &src, int radius) {
+    if (src.isNull()) {
+        return QPixmap();
+    }
+
+    QPixmap dest(src.size());
+    dest.fill(Qt::transparent);
+
+    QPainter painter(&dest);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    QPainterPath path;
+    path.addRoundedRect(QRectF(0, 0, src.width(), src.height()), radius, radius);
+
+    painter.setClipPath(path);
+    painter.drawPixmap(0, 0, src);
+    painter.end();
+
+    return dest;
+}
+
+void MediaFlyout::onPrevClicked()
+{
+    emit requestPrev();
+}
+
+void MediaFlyout::onNextClicked()
+{
+    emit requestNext();
+}
+
+void MediaFlyout::onPauseClicked()
+{
+    emit requestPause();
+
+}
+
+void MediaFlyout::updateTitle(QString title)
 {
     // Enable word wrap for the title QLabel
     ui->title->setWordWrap(true);
 
     // Limit the title to 2 lines
-    QString fullTitle = session.title;
+    QString fullTitle = title;
     QFontMetrics metrics(ui->title->font());
     int maxLines = 2;
     int lineHeight = metrics.lineSpacing(); // Height of a single line of text
@@ -180,74 +218,33 @@ void MediaFlyout::updateUi(MediaSession session)
 
     // Set the processed title text
     ui->title->setText(truncatedTitle);
+}
 
-    // Update other UI elements
-    ui->artist->setText(session.artist);
-    ui->prev->setEnabled(session.canGoPrevious);
-    ui->next->setEnabled(session.canGoNext);
-    ui->pause->setEnabled(true);
+void MediaFlyout::updateArtist(QString artist)
+{
+    ui->artist->setText(artist);
+}
 
-    // Update media icon
-    QPixmap originalIcon = session.icon.pixmap(96, 96);
+void MediaFlyout::updateIcon(QIcon icon)
+{
+    QPixmap originalIcon = icon.pixmap(96, 96);
     QPixmap roundedIcon = roundPixmap(originalIcon, 8);
     ui->icon->setPixmap(roundedIcon);
+}
 
-    // Set play/pause icon
+void MediaFlyout::updatePauseButton(QString playbackState)
+{
     QString playPause;
-    if (session.playbackState == "Playing") {
+    if (playbackState == "Playing") {
         playPause = "pause";
     } else {
         playPause = "play";
     }
     ui->pause->setIcon(Utils::getButtonsIcon(playPause));
-
-    // Adjust size of the widget
-    this->adjustSize();
 }
 
-QPixmap MediaFlyout::roundPixmap(const QPixmap &src, int radius) {
-    if (src.isNull()) {
-        return QPixmap();
-    }
-
-    QPixmap dest(src.size());
-    dest.fill(Qt::transparent);
-
-    QPainter painter(&dest);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-
-    QPainterPath path;
-    path.addRoundedRect(QRectF(0, 0, src.width(), src.height()), radius, radius);
-
-    painter.setClipPath(path);
-    painter.drawPixmap(0, 0, src);
-    painter.end();
-
-    return dest;
-}
-
-void MediaFlyout::onPrevClicked()
+void MediaFlyout::updateControls(bool prev, bool next)
 {
-    emit requestPrev();
-    ui->next->setEnabled(false);
-    ui->prev->setEnabled(false);
-    ui->pause->setEnabled(false);
+    ui->next->setEnabled(next);
+    ui->prev->setEnabled(prev);
 }
-
-void MediaFlyout::onNextClicked()
-{
-    emit requestNext();
-    ui->next->setEnabled(false);
-    ui->prev->setEnabled(false);
-    ui->pause->setEnabled(false);
-}
-
-void MediaFlyout::onPauseClicked()
-{
-    emit requestPause();
-    ui->next->setEnabled(false);
-    ui->prev->setEnabled(false);
-    ui->pause->setEnabled(false);
-}
-

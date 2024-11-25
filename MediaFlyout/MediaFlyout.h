@@ -19,7 +19,11 @@ public:
     ~MediaFlyout() override;
     void animateIn();
     void animateOut(QRect trayIconGeometry);
-    void updateUi(MediaSession session);
+    void updateTitle(QString title);
+    void updateArtist(QString artist);
+    void updateIcon(QIcon icon);
+    void updatePauseButton(QString playbackState);
+    void updateControls(bool prev, bool next);
 
 public slots:
     void onPrevClicked();
