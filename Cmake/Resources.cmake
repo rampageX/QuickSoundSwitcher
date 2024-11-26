@@ -1,0 +1,41 @@
+set(resources_resource_files
+    "Resources/icons/headset_dark.png"
+    "Resources/icons/headset_dark_muted.png"
+    "Resources/icons/headset_light.png"
+    "Resources/icons/headset_light_muted.png"
+    "Resources/icons/mic_dark.png"
+    "Resources/icons/mic_dark_muted.png"
+    "Resources/icons/mic_light.png"
+    "Resources/icons/mic_light_muted.png"
+    "Resources/icons/muted_layer.png"
+    "Resources/icons/next_dark.png"
+    "Resources/icons/next_light.png"
+    "Resources/icons/overlay_dark.png"
+    "Resources/icons/overlay_light.png"
+    "Resources/icons/pause_dark.png"
+    "Resources/icons/pause_light.png"
+    "Resources/icons/placeholder_dark.png"
+    "Resources/icons/placeholder_light.png"
+    "Resources/icons/play_dark.png"
+    "Resources/icons/play_light.png"
+    "Resources/icons/prev_dark.png"
+    "Resources/icons/prev_light.png"
+    "Resources/icons/tray_dark_0.png"
+    "Resources/icons/tray_dark_100.png"
+    "Resources/icons/tray_dark_33.png"
+    "Resources/icons/tray_dark_66.png"
+    "Resources/icons/tray_light_0.png"
+    "Resources/icons/tray_light_100.png"
+    "Resources/icons/tray_light_33.png"
+    "Resources/icons/tray_light_66.png"
+    "Resources/icons/w11_icon.png"
+)
+
+qt_add_resources(QuickSoundSwitcher "resources"
+    PREFIX
+        "/"
+    BASE
+        "Resources"
+    FILES
+        ${resources_resource_files}
+)

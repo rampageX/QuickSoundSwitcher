@@ -58,42 +58,36 @@ Panel::~Panel()
 void Panel::animateIn(QRect trayIconGeometry)
 {
     QPoint trayIconPos = trayIconGeometry.topLeft();
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
+    int margin = 12;
+    int panelX = trayIconCenterX - this->width() / 2;
+    int startY = screenGeometry.bottom();
+    int targetY = screenGeometry.bottom() - this->height() - trayIconGeometry.height() - margin;
 
-    int panelX = trayIconCenterX - this->width() / 2; // Center horizontally
-    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
-    int startY = screenGeometry.bottom();  // Start from the bottom of the screen
-    int targetY = trayIconGeometry.top() - this->height() - 12; // Final position
-
-    this->move(panelX, startY); // Start at the bottom
+    this->move(panelX, startY);
     this->show();
 
-    // Animation parameters
     const int durationMs = 300;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
-
     int currentStep = 0;
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
 
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        if (currentStep >= totalSteps) {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            this->move(panelX, targetY); // Ensure final position is set
             return;
         }
 
-        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
-        // Easing function: Smooth deceleration
-        double easedT = 1 - pow(1 - t, 3);
-
-        // Interpolated Y position
-        int currentY = startY + easedT * (targetY - startY);
         this->move(panelX, currentY);
-
         ++currentStep;
     });
 }

@@ -62,12 +62,15 @@ void MediaFlyout::paintEvent(QPaintEvent *event)
 
 void MediaFlyout::animateIn()
 {
-    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int screenCenterX = screenGeometry.center().x();
-
+    int margin = 12;
     int panelX = screenCenterX - this->width() / 2;
-    int startY = this->y() - 120; // Start from the current position
-    int targetY = screenGeometry.top() + this->height() - 120;
+    int startY = screenGeometry.top() - this->height() - margin;
+    int targetY = screenGeometry.top() + 12;
+
+    this->move(panelX, startY);
+    this->show();
 
     const int durationMs = 300;
     const int refreshRate = 1;
@@ -79,18 +82,17 @@ void MediaFlyout::animateIn()
     animationTimer->start(refreshRate);
 
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        if (currentStep >= totalSteps) {
-            animationTimer->stop();
-            animationTimer->deleteLater();
-            this->move(panelX, targetY); // Ensure final position is set
-            return;
-        }
-
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
         int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            return;
+        }
+
         this->move(panelX, currentY);
-        this->show();
         ++currentStep;
     });
 }
