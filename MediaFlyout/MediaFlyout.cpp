@@ -65,11 +65,11 @@ void MediaFlyout::animateIn()
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
-    int panelX = screenCenterX - this->width() / 2;
+    int mediaFlyoutX = screenCenterX - this->width() / 2;
     int startY = screenGeometry.top() - this->height() - margin;
     int targetY = screenGeometry.top() + 12;
 
-    this->move(panelX, startY);
+    this->move(mediaFlyoutX, startY);
     this->show();
 
     const int durationMs = 300;
@@ -80,7 +80,6 @@ void MediaFlyout::animateIn()
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
-
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
@@ -92,7 +91,7 @@ void MediaFlyout::animateIn()
             return;
         }
 
-        this->move(panelX, currentY);
+        this->move(mediaFlyoutX, currentY);
         ++currentStep;
     });
 }
@@ -111,22 +110,20 @@ void MediaFlyout::animateOut(QRect trayIconGeometry)
     const double totalSteps = durationMs / refreshRate;
 
     int currentStep = 0;
-
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
-
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        if (currentStep >= totalSteps) {
-            animationTimer->stop();
-            animationTimer->deleteLater();
-
-            return;
-        }
-
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
         int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            return;
+        }
+
         this->move(panelX, currentY);
         ++currentStep;
     });

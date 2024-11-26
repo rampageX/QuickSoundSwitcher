@@ -152,9 +152,6 @@ void QuickSoundSwitcher::hidePanel()
     panel->animateOut(trayIcon->geometry());
     if (mediaFlyout) {
         mediaFlyout->animateOut(trayIcon->geometry());
-        if (soundOverlay) {
-            soundOverlay->moveBackToOriginalPosition(mediaFlyout->height());
-        }
     }
 }
 
@@ -472,7 +469,7 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
     if (mediaFlyout) {
         mediaFlyoutHeight = mediaFlyout->height();
     }
-    soundOverlay->toggleOverlay(mediaFlyoutHeight);
+    soundOverlay->animateIn();
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, newVolume, NULL), newVolume);
 }
 
@@ -503,7 +500,7 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
     soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, volumeIcon, NULL), AudioManager::getPlaybackVolume());
-    soundOverlay->toggleOverlay(mediaFlyoutHeight);
+    soundOverlay->animateIn();
 }
 
 void QuickSoundSwitcher::stopMonitoringMediaSession()
@@ -571,9 +568,6 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
                 currentlyPlaying = false;
             }
         }
-        if (soundOverlay && !soundOverlay->movedToPosition) {
-            soundOverlay->moveToPosition(mediaFlyout->height());
-        }
     }
 
     worker->initializeSessionMonitoring();
@@ -619,9 +613,6 @@ void QuickSoundSwitcher::onSessionError(const QString& error)
     if (mediaFlyout) {
         if (!mediaFlyout->isVisible()){
             mediaFlyout->animateIn();
-        }
-        if (soundOverlay && !soundOverlay->movedToPosition) {
-            soundOverlay->moveToPosition(mediaFlyout->height());
         }
     }
 }

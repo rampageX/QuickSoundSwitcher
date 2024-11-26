@@ -75,7 +75,6 @@ void Panel::animateIn(QRect trayIconGeometry)
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
-
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
