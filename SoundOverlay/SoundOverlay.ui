@@ -19,8 +19,14 @@
    </property>
    <item row="0" column="0">
     <widget class="QLabel" name="iconLabel">
+     <property name="minimumSize">
+      <size>
+       <width>18</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="text">
-      <string>icon</string>
+      <string>i</string>
      </property>
     </widget>
    </item>
@@ -29,7 +35,7 @@
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>10</height>
+       <height>8</height>
       </size>
      </property>
      <property name="value">
@@ -45,8 +51,17 @@
    </item>
    <item row="0" column="2">
     <widget class="QLabel" name="valueLabel">
+     <property name="minimumSize">
+      <size>
+       <width>18</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="text">
-      <string>00</string>
+      <string>100</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignCenter</set>
      </property>
     </widget>
    </item>
