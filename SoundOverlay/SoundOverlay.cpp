@@ -66,7 +66,6 @@ void SoundOverlay::animateIn()
 
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     QRect availableScreenGeometry = QApplication::primaryScreen()->availableGeometry();
-
     int taskbarHeight = screenGeometry.height() - availableScreenGeometry.height();
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
@@ -109,11 +108,9 @@ void SoundOverlay::animateOut()
     isAnimatingOut = true;
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     QRect availableScreenGeometry = QApplication::primaryScreen()->availableGeometry();
-
     int taskbarHeight = screenGeometry.height() - availableScreenGeometry.height();
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
-
     int soundOverlayX = screenCenterX - this->width() / 2;
     int startY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
     int targetY = screenGeometry.bottom() + taskbarHeight;
@@ -126,7 +123,6 @@ void SoundOverlay::animateOut()
 
     animationTimerOut = new QTimer(this);
     animationTimerOut->start(refreshRate);
-
     connect(animationTimerOut, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
@@ -136,13 +132,11 @@ void SoundOverlay::animateOut()
             animationTimerOut->stop();
             animationTimerOut->deleteLater();
             animationTimerOut = nullptr;
-
-            this->hide();
             isAnimatingOut = false;
+            this->hide();
             emit overlayClosed();
             return;
         }
-
 
         this->move(soundOverlayX, currentY);
         ++currentStep;

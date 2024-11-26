@@ -94,11 +94,11 @@ void Panel::animateIn(QRect trayIconGeometry)
 void Panel::animateOut(QRect trayIconGeometry)
 {
     QPoint trayIconPos = trayIconGeometry.topLeft();
-    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
-
-    int panelX = trayIconCenterX - this->width() / 2; // Center horizontally
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
-    int startY = this->y();
+    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
+    int margin = 12;
+    int panelX = trayIconCenterX - this->width() / 2;
+    int startY = screenGeometry.bottom() - this->height() - trayIconGeometry.height() - margin;
     int targetY = screenGeometry.bottom(); // Move to the bottom of the screen
 
     const int durationMs = 300;
@@ -109,29 +109,23 @@ void Panel::animateOut(QRect trayIconGeometry)
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
-
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        if (currentStep >= totalSteps) {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-
+            this->hide();
             emit panelClosed();
             return;
         }
 
-        double t = static_cast<double>(currentStep) / totalSteps; // Normalized time (0 to 1)
-        // Easing function: Smooth deceleration
-        double easedT = 1 - pow(1 - t, 3);
-
-        // Interpolated Y position
-        int currentY = startY + easedT * (targetY - startY);
         this->move(panelX, currentY);
-
         ++currentStep;
     });
 }
-
-
 
 void Panel::paintEvent(QPaintEvent *event)
 {

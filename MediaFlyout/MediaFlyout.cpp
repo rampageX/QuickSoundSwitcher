@@ -100,7 +100,6 @@ void MediaFlyout::animateOut(QRect trayIconGeometry)
 {
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int screenCenterX = screenGeometry.center().x();
-
     int panelX = screenCenterX - this->width() / 2;
     int startY = this->y();
     int targetY = screenGeometry.top() - this->height() - 12;
