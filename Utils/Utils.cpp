@@ -53,27 +53,6 @@ QIcon Utils::getIcon(int type, int volume, bool muted)
     }
 }
 
-int getBuildNumber()
-{
-    QSettings registry("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", QSettings::NativeFormat);
-    QVariant buildVariant = registry.value("CurrentBuild");
-
-    if (!buildVariant.isValid()) {
-        buildVariant = registry.value("CurrentBuildNumber");
-    }
-
-    if (buildVariant.isValid() && buildVariant.canConvert<QString>()) {
-        bool ok;
-        int buildNumber = buildVariant.toString().toInt(&ok);
-        if (ok) {
-            return buildNumber;
-        }
-    }
-
-    qDebug() << "Failed to retrieve build number from the registry.";
-    return -1;
-}
-
 QColor Utils::adjustColor(const QColor &color, double factor)
 {
     int r = color.red();

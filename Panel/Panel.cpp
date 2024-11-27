@@ -26,9 +26,7 @@ Panel::Panel(QWidget *parent)
     populateComboBoxes();
     setSliders();
     setButtons();
-    Utils::setFrameColorBasedOnWindow(this, ui->appFrame);
-    Utils::setFrameColorBasedOnWindow(this, ui->inputFrame);
-    Utils::setFrameColorBasedOnWindow(this, ui->outputFrame);
+    setFrames();
 
     QTimer *audioMeterTimer = new QTimer(this);
     connect(audioMeterTimer, &QTimer::timeout, this, &Panel::outputAudioMeter);
