@@ -264,9 +264,6 @@ void MediaFlyout::updateControls(bool prev, bool next)
 
 void MediaFlyout::updateProgress(int current, int total)
 {
-    ui->progressBar->setRange(0, total);
-    ui->progressBar->setValue(current);
-
     int currentMinutes = current / 60;
     int currentSeconds = current % 60;
     QString currentTimeText = QString::asprintf("%02d:%02d", currentMinutes, currentSeconds);
@@ -277,5 +274,7 @@ void MediaFlyout::updateProgress(int current, int total)
 
     ui->currentTime->setText(currentTimeText);
     ui->totalTime->setText(totalTimeText);
+    ui->progressBar->setRange(0, total);
+    ui->progressBar->setValue(current);
 }
 

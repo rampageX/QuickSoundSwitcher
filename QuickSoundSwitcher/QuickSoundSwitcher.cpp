@@ -25,7 +25,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , workerThread(nullptr)
     , worker(nullptr)
     , mediaSessionTimer(nullptr)
-    , monitoringEnabled(false)
 {    
     instance = this;
     createTrayIcon();
@@ -111,7 +110,7 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 
 void QuickSoundSwitcher::showPanel()
 {
-    if (panel) {
+    if (panel && mediaFlyout) {
         hidePanel();
         return;
     }
@@ -119,7 +118,6 @@ void QuickSoundSwitcher::showPanel()
     panel = new Panel(this);
     panel->mergeApps = mergeSimilarApps;
     panel->populateApplications();
-
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
     connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
@@ -127,16 +125,12 @@ void QuickSoundSwitcher::showPanel()
 
     panel->animateIn(trayIcon->geometry());
 
-    mediaFlyout = new MediaFlyout(this);
-    connect(mediaFlyout, &MediaFlyout::requestNext, this, &QuickSoundSwitcher::onRequestNext);
-    connect(mediaFlyout, &MediaFlyout::requestPrev, this, &QuickSoundSwitcher::onRequestPrev);
-    connect(mediaFlyout, &MediaFlyout::requestPause, this, &QuickSoundSwitcher::onRequestPause);
-
     getMediaSession();
 }
 
 void QuickSoundSwitcher::hidePanel()
 {
+    stopMonitoringMediaSession();
     panel->animateOut(trayIcon->geometry());
     mediaFlyout->animateOut(trayIcon->geometry());
 }
@@ -290,10 +284,13 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
 
         if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {
             QPoint cursorPos = QCursor::pos();
+            QRect trayIconRect = instance->trayIcon->geometry();
             QRect panelRect = instance->panel ? instance->panel->geometry() : QRect();
             QRect mediaFlyoutRect = instance->mediaFlyout ? instance->mediaFlyout->geometry() : QRect();
 
-            if (!panelRect.contains(cursorPos) && !mediaFlyoutRect.contains(cursorPos)) {
+            if (!trayIconRect.contains(cursorPos) &&
+                !panelRect.contains(cursorPos) &&
+                !mediaFlyoutRect.contains(cursorPos)) {
                 if (instance->panel) {
                     emit instance->panel->lostFocus();
                 }
@@ -331,7 +328,6 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
 
 void QuickSoundSwitcher::adjustOutputVolume(bool up)
 {
-    qDebug() << volumeIncrement;
     int volume = AudioManager::getPlaybackVolume();
     int newVolume;
     if (up) {
@@ -430,13 +426,10 @@ void QuickSoundSwitcher::getMediaSession()
 
 void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
 {
-    if (!monitoringEnabled){
-        connect(worker, &MediaSessionWorker::sessionMediaPropertiesChanged, this, &QuickSoundSwitcher::updateFlyoutTitleAndArtist);
-        connect(worker, &MediaSessionWorker::sessionIconChanged, this, &QuickSoundSwitcher::updateFlyoutIcon);
-        connect(worker, &MediaSessionWorker::sessionPlaybackStateChanged, this, &QuickSoundSwitcher::updateFlyoutPlayPause);
-        connect(worker, &MediaSessionWorker::sessionTimeInfoUpdated, this, &QuickSoundSwitcher::updateFlyoutProgress);
-        monitoringEnabled = true;
-    }
+    mediaFlyout = new MediaFlyout(this);
+    connect(mediaFlyout, &MediaFlyout::requestNext, this, &QuickSoundSwitcher::onRequestNext);
+    connect(mediaFlyout, &MediaFlyout::requestPrev, this, &QuickSoundSwitcher::onRequestPrev);
+    connect(mediaFlyout, &MediaFlyout::requestPause, this, &QuickSoundSwitcher::onRequestPause);
 
     mediaFlyout->animateIn();
     mediaFlyout->updateTitle(session.title);
@@ -452,10 +445,20 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
     }
 
     worker->initializeSessionMonitoring();
+
+    connect(worker, &MediaSessionWorker::sessionMediaPropertiesChanged, this, &QuickSoundSwitcher::updateFlyoutTitleAndArtist);
+    connect(worker, &MediaSessionWorker::sessionIconChanged, this, &QuickSoundSwitcher::updateFlyoutIcon);
+    connect(worker, &MediaSessionWorker::sessionPlaybackStateChanged, this, &QuickSoundSwitcher::updateFlyoutPlayPause);
+    connect(worker, &MediaSessionWorker::sessionTimeInfoUpdated, this, &QuickSoundSwitcher::updateFlyoutProgress);
 }
 
 void QuickSoundSwitcher::onSessionError()
 {
+    mediaFlyout = new MediaFlyout(this);
+    connect(mediaFlyout, &MediaFlyout::requestNext, this, &QuickSoundSwitcher::onRequestNext);
+    connect(mediaFlyout, &MediaFlyout::requestPrev, this, &QuickSoundSwitcher::onRequestPrev);
+    connect(mediaFlyout, &MediaFlyout::requestPause, this, &QuickSoundSwitcher::onRequestPause);
+
     mediaFlyout->animateIn();
 }
 

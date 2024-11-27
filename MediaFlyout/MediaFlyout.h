@@ -23,6 +23,7 @@ public:
     void updatePauseButton(QString playbackState);
     void updateControls(bool prev, bool next);
     void updateProgress(int current, int total);
+    bool isAnimating;
 
 public slots:
     void onPrevClicked();
@@ -38,7 +39,6 @@ private:
     QPixmap roundPixmap(const QPixmap &src, int radius);
     int currentTime;
     int totalTime;
-    bool isAnimating;
 
 signals:
     void requestPrev();

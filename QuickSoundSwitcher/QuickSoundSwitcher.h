@@ -87,7 +87,6 @@ private:
     void stopMonitoringMediaSession();
     void getMediaSession();
     bool currentlyPlaying;
-    bool monitoringEnabled;
 
 signals:
     void muteStateChanged();

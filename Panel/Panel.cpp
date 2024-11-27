@@ -14,8 +14,8 @@
 
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
-    , ui(new Ui::Panel)
     , isAnimating(false)
+    , ui(new Ui::Panel)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);

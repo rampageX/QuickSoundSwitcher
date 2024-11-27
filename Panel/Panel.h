@@ -20,6 +20,7 @@ public:
     void animateOut(QRect trayIconGeometry);
     bool mergeApps;
     void populateApplications();
+    bool isAnimating;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -37,7 +38,6 @@ private:
     void updateUi();
     void addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps, bool isGroup);
     QColor borderColor;
-    bool isAnimating;
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);
