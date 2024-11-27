@@ -15,6 +15,7 @@
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Panel)
+    , isAnimating(false)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
@@ -55,6 +56,9 @@ Panel::~Panel()
 
 void Panel::animateIn(QRect trayIconGeometry)
 {
+    if (isAnimating) return;
+
+    isAnimating = true;
     QPoint trayIconPos = trayIconGeometry.topLeft();
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
@@ -81,6 +85,7 @@ void Panel::animateIn(QRect trayIconGeometry)
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
+            isAnimating = false;
             return;
         }
 
@@ -91,6 +96,9 @@ void Panel::animateIn(QRect trayIconGeometry)
 
 void Panel::animateOut(QRect trayIconGeometry)
 {
+    if (isAnimating) return;
+
+    isAnimating = true;
     QPoint trayIconPos = trayIconGeometry.topLeft();
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
@@ -253,7 +261,6 @@ void Panel::onInputValueChanged()
     if (recordingMute) {
         ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
         AudioManager::setRecordingMute(false);
-        emit inputMuteChanged();
     }
 
     AudioManager::setRecordingVolume(ui->inputVolumeSlider->value());
@@ -272,7 +279,6 @@ void Panel::onInputMuteButtonPressed()
     bool recordingMute = AudioManager::getRecordingMute();
     AudioManager::setRecordingMute(!recordingMute);
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
-    emit inputMuteChanged();
 }
 
 void Panel::onMuteStateChanged()

@@ -11,6 +11,7 @@
 MediaFlyout::MediaFlyout(QWidget* parent)
     : QWidget(parent)
     , ui(new Ui::MediaFlyout)
+    , isAnimating(false)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
@@ -62,6 +63,9 @@ void MediaFlyout::paintEvent(QPaintEvent *event)
 
 void MediaFlyout::animateIn()
 {
+    if (isAnimating) return;
+
+    isAnimating = true;
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
@@ -88,6 +92,7 @@ void MediaFlyout::animateIn()
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
+            isAnimating = false;
             return;
         }
 
@@ -98,6 +103,9 @@ void MediaFlyout::animateIn()
 
 void MediaFlyout::animateOut(QRect trayIconGeometry)
 {
+    if (isAnimating) return;
+
+    isAnimating = true;
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int screenCenterX = screenGeometry.center().x();
     int panelX = screenCenterX - this->width() / 2;

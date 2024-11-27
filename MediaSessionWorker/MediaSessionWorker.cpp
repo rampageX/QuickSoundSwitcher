@@ -132,23 +132,23 @@ void MediaSessionWorker::process()
                                    }
                                    else
                                    {
-                                       emit sessionError("No active media session found.");
+                                       emit sessionError();
                                    }
                                }
                                catch (const std::exception& ex)
                                {
-                                   emit sessionError(QString("Error during session handling: %1").arg(ex.what()));
+                                   emit sessionError();
                                }
                            }
                            else
                            {
-                               emit sessionError("Failed to request media session.");
+                               emit sessionError();
                            }
                        });
     }
     catch (const std::exception& ex)
     {
-        emit sessionError(QString("Error initializing COM: %1").arg(ex.what()));
+        emit sessionError();
     }
 }
 
@@ -156,14 +156,7 @@ void MediaSessionWorker::play()
 {
     if (currentSession)
     {
-        try
-        {
-            currentSession.TryPlayAsync();
-        }
-        catch (const std::exception& ex)
-        {
-            emit sessionError(QString("Failed to send play command: %1").arg(ex.what()));
-        }
+        currentSession.TryPlayAsync();
     }
 }
 
@@ -171,14 +164,7 @@ void MediaSessionWorker::pause()
 {
     if (currentSession)
     {
-        try
-        {
-            currentSession.TryPauseAsync();
-        }
-        catch (const std::exception& ex)
-        {
-            emit sessionError(QString("Failed to send pause command: %1").arg(ex.what()));
-        }
+        currentSession.TryPauseAsync();
     }
 }
 
@@ -186,14 +172,7 @@ void MediaSessionWorker::next()
 {
     if (currentSession)
     {
-        try
-        {
-            currentSession.TrySkipNextAsync();
-        }
-        catch (const std::exception& ex)
-        {
-            emit sessionError(QString("Failed to send next command: %1").arg(ex.what()));
-        }
+        currentSession.TrySkipNextAsync();
     }
 }
 
@@ -201,14 +180,7 @@ void MediaSessionWorker::previous()
 {
     if (currentSession)
     {
-        try
-        {
-            currentSession.TrySkipPreviousAsync();
-        }
-        catch (const std::exception& ex)
-        {
-            emit sessionError(QString("Failed to send previous command: %1").arg(ex.what()));
-        }
+        currentSession.TrySkipPreviousAsync();
     }
 }
 

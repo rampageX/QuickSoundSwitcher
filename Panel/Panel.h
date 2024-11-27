@@ -37,6 +37,7 @@ private:
     void updateUi();
     void addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps, bool isGroup);
     QColor borderColor;
+    bool isAnimating;
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);
@@ -56,7 +57,6 @@ signals:
     void lostFocus();
     void fadeOutFinished();
     void outputMuteChanged();
-    void inputMuteChanged();
     void panelClosed();
 };
 

@@ -12,8 +12,6 @@ namespace Utils {
     QIcon generateMutedIcon(QPixmap originalPixmap);
     QString getAccentColor(const QString &accentKey);
     QString getTheme();
-    void playSoundNotification(bool enabled);
-    QPixmap createIconWithAccentBackground();
     QIcon getPlaceholderIcon();
     QIcon getButtonsIcon(QString button);
 }

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SettingsPage</class>
+ <widget class="QMainWindow" name="SettingsPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>333</width>
+    <height>74</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Settings</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_9">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>25</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Merge similar applications</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <spacer name="horizontalSpacer_3">
+      <property name="orientation">
+       <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="2">
+     <widget class="QSpinBox" name="volumeIncrementSpinBox">
+      <property name="maximum">
+       <number>20</number>
+      </property>
+      <property name="value">
+       <number>2</number>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_8">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>25</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Volume increment percentage</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="QCheckBox" name="mergeSimilarCheckBox">
+      <property name="layoutDirection">
+       <enum>Qt::LayoutDirection::RightToLeft</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

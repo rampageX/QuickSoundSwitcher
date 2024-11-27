@@ -154,47 +154,6 @@ QString Utils::getAccentColor(const QString &accentKey)
     return "#FFFFFF";
 }
 
-void Utils::playSoundNotification(bool enabled)
-{
-    const wchar_t* soundFile;
-
-    if (enabled) {
-        soundFile = L"C:\\Windows\\Media\\Speech On.wav";
-    } else {
-        soundFile = L"C:\\Windows\\Media\\Speech Off.wav";
-    }
-
-    PlaySound(soundFile, NULL, SND_FILENAME | SND_ASYNC);
-}
-
-QPixmap Utils::createIconWithAccentBackground()
-{
-    QString theme = Utils::getTheme();
-    QString accentColorStr;
-    if (theme == "light") {
-        accentColorStr = Utils::getAccentColor("light2");
-    } else {
-        accentColorStr = Utils::getAccentColor("dark1");
-    }
-
-    QColor accentColor(accentColorStr);
-    QPixmap background(80, 80);
-    background.fill(accentColor);
-    QPainter painter(&background);
-    int brightness = (accentColor.red() * 0.299) + (accentColor.green() * 0.587) + (accentColor.blue() * 0.114);
-    QString iconTheme = (brightness > 127) ? ":/icons/overlay_dark.png" : ":/icons/overlay_light.png";  // Bright background -> dark icon, dark background -> light icon
-
-    QPixmap icon(iconTheme);
-
-    int x = (background.width() - icon.width()) / 2;
-    int y = (background.height() - icon.height()) / 2;
-
-    painter.drawPixmap(x, y, icon);
-    painter.end();
-
-    return background;
-}
-
 QIcon Utils::getPlaceholderIcon()
 {
     QString theme = Utils::getTheme();

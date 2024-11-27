@@ -10,8 +10,7 @@ INCLUDEPATH += \
     AudioManager \
     MediaFlyout \
     MediaSessionWorker \
-    OverlaySettings \
-    OverlayWidget \
+    SettingsPage \
     Panel \
     QuickSoundSwitcher \
     ShortcutManager \
@@ -22,8 +21,7 @@ SOURCES += \
     AudioManager/AudioManager.cpp \
     MediaFlyout/MediaFlyout.cpp \
     MediaSessionWorker/MediaSessionWorker.cpp \
-    OverlaySettings/OverlaySettings.cpp \
-    OverlayWidget/OverlayWidget.cpp \
+    SettingsPage/SettingsPage.cpp \
     Panel/Panel.cpp \
     QuickSoundSwitcher/QuickSoundSwitcher.cpp \
     ShortcutManager/ShortcutManager.cpp \
@@ -37,8 +35,7 @@ HEADERS += \
     MediaFlyout/MediaFlyout.h \
     MediaSessionWorker/MediaSession.h \
     MediaSessionWorker/MediaSessionWorker.h \
-    OverlaySettings/OverlaySettings.h \
-    OverlayWidget/OverlayWidget.h \
+    SettingsPage/SettingsPage.h \
     Panel/Panel.h \
     QuickSoundSwitcher/QuickSoundSwitcher.h \
     ShortcutManager/ShortcutManager.h \
@@ -47,7 +44,7 @@ HEADERS += \
 
 FORMS += \
     MediaFlyout/MediaFlyout.ui \
-    OverlaySettings/OverlaySettings.ui \
+    SettingsPage/SettingsPage.ui \
     Panel/Panel.ui \
     SoundOverlay/SoundOverlay.ui
 

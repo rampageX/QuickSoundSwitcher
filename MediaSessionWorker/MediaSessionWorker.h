@@ -29,7 +29,7 @@ private:
 
 signals:
     void sessionReady(const MediaSession& session);
-    void sessionError(const QString& error);
+    void sessionError();
 
     void sessionMediaPropertiesChanged(const QString& title, const QString& artist);
     void sessionPlaybackStateChanged(const QString& state);

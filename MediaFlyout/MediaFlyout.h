@@ -36,9 +36,9 @@ private:
     Ui::MediaFlyout *ui;
     QColor borderColor;
     QPixmap roundPixmap(const QPixmap &src, int radius);
-    void updateCurrentTime();
     int currentTime;
     int totalTime;
+    bool isAnimating;
 
 signals:
     void requestPrev();

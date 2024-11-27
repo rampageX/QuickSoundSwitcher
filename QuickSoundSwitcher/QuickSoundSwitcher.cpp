@@ -17,13 +17,11 @@ QuickSoundSwitcher* QuickSoundSwitcher::instance = nullptr;
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
+    , settings("Odizinne", "QuickSoundSwitcher")
     , panel(nullptr)
     , mediaFlyout(nullptr)
     , soundOverlay(nullptr)
-    , hiding(false)
-    , overlayWidget(nullptr)
-    , overlaySettings(nullptr)
-    , settings("Odizinne", "QuickSoundSwitcher")
+    , settingsPage(nullptr)
     , workerThread(nullptr)
     , worker(nullptr)
     , mediaSessionTimer(nullptr)
@@ -33,20 +31,17 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     createTrayIcon();
     updateApplicationColorScheme();
     loadSettings();
-    toggleMutedOverlay(AudioManager::getRecordingMute());
     installGlobalMouseHook();
     installKeyboardHook();
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
 {
-    unregisterGlobalHotkey();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
     delete soundOverlay;
     delete panel;
-    delete overlaySettings;
-    delete overlayWidget;
+    delete settingsPage;
     stopMonitoringMediaSession();
     instance = nullptr;
 }
@@ -59,7 +54,7 @@ void QuickSoundSwitcher::createTrayIcon()
 
     QAction *startupAction = new QAction(tr("Run at startup"), this);
     startupAction->setCheckable(true);
-    startupAction->setChecked(ShortcutManager::isShortcutPresent());
+    startupAction->setChecked(ShortcutManager::isShortcutPresent("QuickSoundSwitcher.lnk"));
     connect(startupAction, &QAction::triggered, this, &QuickSoundSwitcher::onRunAtStartupStateChanged);
 
     QAction *settingsAction = new QAction(tr("Settings"), this);
@@ -116,9 +111,6 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 
 void QuickSoundSwitcher::showPanel()
 {
-    if (hiding) {
-        return;
-    }
     if (panel) {
         hidePanel();
         return;
@@ -130,7 +122,6 @@ void QuickSoundSwitcher::showPanel()
 
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
-    connect(panel, &Panel::inputMuteChanged, this, &QuickSoundSwitcher::onInputMuteChanged);
     connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
     connect(panel, &Panel::panelClosed, this, &QuickSoundSwitcher::onPanelClosed);
 
@@ -146,25 +137,16 @@ void QuickSoundSwitcher::showPanel()
 
 void QuickSoundSwitcher::hidePanel()
 {
-    if (!panel) return;
-    hiding = true;
-
     panel->animateOut(trayIcon->geometry());
-    if (mediaFlyout) {
-        mediaFlyout->animateOut(trayIcon->geometry());
-    }
+    mediaFlyout->animateOut(trayIcon->geometry());
 }
 
 void QuickSoundSwitcher::onPanelClosed()
 {
     delete panel;
     panel = nullptr;
-    hiding = false;
-
-    if (mediaFlyout) {
-        delete mediaFlyout;
-        mediaFlyout = nullptr;
-    }
+    delete mediaFlyout;
+    mediaFlyout = nullptr;
 }
 
 void QuickSoundSwitcher::onSoundOverlayClosed()
@@ -197,16 +179,10 @@ void QuickSoundSwitcher::onOutputMuteChanged()
     trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
 }
 
-void QuickSoundSwitcher::onInputMuteChanged()
-{
-    toggleMutedOverlay(AudioManager::getRecordingMute());
-    sendNotification(AudioManager::getRecordingMute());
-}
-
 void QuickSoundSwitcher::onRunAtStartupStateChanged()
 {
     QAction *action = qobject_cast<QAction *>(sender());
-    ShortcutManager::manageShortcut(action->isChecked());
+    ShortcutManager::manageShortcut(action->isChecked(), "QuickSoundSwitcher.lnk");
 }
 
 bool QuickSoundSwitcher::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
@@ -221,124 +197,47 @@ bool QuickSoundSwitcher::nativeEvent(const QByteArray &eventType, void *message,
     return QWidget::nativeEvent(eventType, message, result);
 }
 
-bool QuickSoundSwitcher::registerGlobalHotkey() {
-    return RegisterHotKey((HWND)this->winId(), HOTKEY_ID, MOD_CONTROL | MOD_ALT, 0x4D);
-}
-
-void QuickSoundSwitcher::unregisterGlobalHotkey() {
-    UnregisterHotKey((HWND)this->winId(), HOTKEY_ID);
-}
-
 void QuickSoundSwitcher::toggleMicMute()
 {
     AudioManager::setRecordingMute(!AudioManager::getRecordingMute());
-
-    if (AudioManager::getRecordingMute()) {
-        sendNotification(true);
-        toggleMutedOverlay(true);
-    } else {
-        sendNotification(false);
-        toggleMutedOverlay(false);
-    }
 
     if (panel) {
         emit muteStateChanged();
     }
 }
 
-void QuickSoundSwitcher::toggleMutedOverlay(bool enabled)
-{
-    if (disableOverlay) {
-        if (overlayWidget != nullptr) {
-            overlayWidget->hide();
-            delete overlayWidget;
-            overlayWidget = nullptr;
-        }
-        return;
-    }
-
-    if (enabled) {
-        if (overlayWidget == nullptr) {
-            overlayWidget = new OverlayWidget(position, potatoMode, this);
-        }
-        overlayWidget->show();
-    } else {
-        if (overlayWidget != nullptr) {
-            overlayWidget->hide();
-        }
-    }
-}
-
-void QuickSoundSwitcher::sendNotification(bool enabled)
-{
-    if (disableNotification) {
-        return;
-    }
-
-    if (enabled) {
-        Utils::playSoundNotification(false);
-    } else {
-        Utils::playSoundNotification(true);
-    }
-}
-
 void QuickSoundSwitcher::showSettings()
 {
-    if (overlaySettings) {
-        overlaySettings->showNormal();
-        overlaySettings->raise();
-        overlaySettings->activateWindow();
+    if (settingsPage) {
+        settingsPage->showNormal();
+        settingsPage->raise();
+        settingsPage->activateWindow();
         return;
     }
 
-    overlaySettings = new OverlaySettings;
-    overlaySettings->setAttribute(Qt::WA_DeleteOnClose);
-    connect(overlaySettings, &OverlaySettings::closed, this, &QuickSoundSwitcher::onSettingsClosed);
-    connect(overlaySettings, &OverlaySettings::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
-    overlaySettings->show();
+    settingsPage = new SettingsPage;
+    settingsPage->setAttribute(Qt::WA_DeleteOnClose);
+    connect(settingsPage, &SettingsPage::closed, this, &QuickSoundSwitcher::onSettingsClosed);
+    connect(settingsPage, &SettingsPage::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
+    settingsPage->show();
 }
 
 void QuickSoundSwitcher::loadSettings()
 {
-    position = settings.value("overlayPosition", "topRightCorner").toString();
-    disableOverlay = settings.value("disableOverlay", true).toBool();
-    potatoMode = settings.value("potatoMode", false).toBool();
-    disableNotification = settings.value("disableNotification", true).toBool();
     volumeIncrement = settings.value("volumeIncrement", 2).toInt();
-    disableMuteHotkey = settings.value("disableMuteHotkey", true).toBool();
     mergeSimilarApps = settings.value("mergeSimilarApps", true).toBool();
-
-
-    if (!disableMuteHotkey and !hotkeyRegistered) {
-        registerGlobalHotkey();
-        hotkeyRegistered = true;
-    } else {
-        unregisterGlobalHotkey();
-        hotkeyRegistered = false;
-    }
 }
 
 void QuickSoundSwitcher::onSettingsChanged()
 {
     loadSettings();
-
-    if (AudioManager::getRecordingMute()) {
-        toggleMutedOverlay(!disableOverlay);
-    }
-
-    if (!disableOverlay) {
-        if (!overlayWidget) {
-            overlayWidget = new OverlayWidget(position, potatoMode, this);
-        }
-        overlayWidget->moveOverlayToPosition(position);
-    }
 }
 
 void QuickSoundSwitcher::onSettingsClosed()
 {
-    disconnect(overlaySettings, &OverlaySettings::closed, this, &QuickSoundSwitcher::onSettingsClosed);
-    disconnect(overlaySettings, &OverlaySettings::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
-    overlaySettings = nullptr;
+    disconnect(settingsPage, &SettingsPage::closed, this, &QuickSoundSwitcher::onSettingsClosed);
+    disconnect(settingsPage, &SettingsPage::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
+    settingsPage = nullptr;
 }
 
 void QuickSoundSwitcher::installGlobalMouseHook()
@@ -375,13 +274,12 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
     if (nCode == HC_ACTION) {
         MSLLHOOKSTRUCT *hookStruct = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
 
-        // Mouse Wheel Detection (previous logic)
         if (wParam == WM_MOUSEWHEEL) {
-            int zDelta = GET_WHEEL_DELTA_WPARAM(hookStruct->mouseData);  // Check the scroll direction
-            QPoint cursorPos = QCursor::pos();  // Get current cursor position
+            int zDelta = GET_WHEEL_DELTA_WPARAM(hookStruct->mouseData);
+            QPoint cursorPos = QCursor::pos();
 
-            QRect trayIconRect = instance->trayIcon->geometry();  // Get tray icon position
-            if (trayIconRect.contains(cursorPos)) {  // Check if the cursor is over the tray icon
+            QRect trayIconRect = instance->trayIcon->geometry();
+            if (trayIconRect.contains(cursorPos)) {
                 if (zDelta > 0) {
                     instance->adjustOutputVolume(true);
                 } else {
@@ -390,15 +288,11 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
             }
         }
 
-        // Mouse Click Detection (added logic)
-        if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {  // Check for left or right mouse click
-            QPoint cursorPos = QCursor::pos();  // Get current cursor position
-
-            // Get the bounding rectangles for the panel and mediaFlyout
+        if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {
+            QPoint cursorPos = QCursor::pos();
             QRect panelRect = instance->panel ? instance->panel->geometry() : QRect();
             QRect mediaFlyoutRect = instance->mediaFlyout ? instance->mediaFlyout->geometry() : QRect();
 
-            // Check if the click is outside both the panel and mediaFlyout
             if (!panelRect.contains(cursorPos) && !mediaFlyoutRect.contains(cursorPos)) {
                 if (instance->panel) {
                     emit instance->panel->lostFocus();
@@ -437,6 +331,7 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
 
 void QuickSoundSwitcher::adjustOutputVolume(bool up)
 {
+    qDebug() << volumeIncrement;
     int volume = AudioManager::getPlaybackVolume();
     int newVolume;
     if (up) {
@@ -465,10 +360,6 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
         connect(soundOverlay, &SoundOverlay::overlayClosed, this, &QuickSoundSwitcher::onSoundOverlayClosed);
     }
 
-    int mediaFlyoutHeight = 0;
-    if (mediaFlyout) {
-        mediaFlyoutHeight = mediaFlyout->height();
-    }
     soundOverlay->animateIn();
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, newVolume, NULL), newVolume);
 }
@@ -488,11 +379,6 @@ void QuickSoundSwitcher::toggleMuteWithKey()
     trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
 
     emit outputMuteStateChanged(newPlaybackMute);
-
-    int mediaFlyoutHeight = 0;
-    if (mediaFlyout) {
-        mediaFlyoutHeight = mediaFlyout->height();
-    }
 
     if (!soundOverlay) {
         soundOverlay = new SoundOverlay(this);
@@ -551,26 +437,26 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
         connect(worker, &MediaSessionWorker::sessionTimeInfoUpdated, this, &QuickSoundSwitcher::updateFlyoutProgress);
         monitoringEnabled = true;
     }
-    MediaSession mediaSession = session;
 
-    if (mediaFlyout) {
-        if (!mediaFlyout->isVisible()){
-            mediaFlyout->animateIn();
-            mediaFlyout->updateTitle(mediaSession.title);
-            mediaFlyout->updateArtist(mediaSession.artist);
-            mediaFlyout->updateIcon(mediaSession.icon);
-            mediaFlyout->updatePauseButton(mediaSession.playbackState);
-            mediaFlyout->updateControls(mediaSession.canGoPrevious, mediaSession.canGoNext);
-            mediaFlyout->updateProgress(mediaSession.currentTime, mediaSession.duration);
-            if (mediaSession.playbackState == "Playing") {
-                currentlyPlaying = true;
-            } else {
-                currentlyPlaying = false;
-            }
-        }
+    mediaFlyout->animateIn();
+    mediaFlyout->updateTitle(session.title);
+    mediaFlyout->updateArtist(session.artist);
+    mediaFlyout->updateIcon(session.icon);
+    mediaFlyout->updatePauseButton(session.playbackState);
+    mediaFlyout->updateControls(session.canGoPrevious, session.canGoNext);
+    mediaFlyout->updateProgress(session.currentTime, session.duration);
+    if (session.playbackState == "Playing") {
+        currentlyPlaying = true;
+    } else {
+        currentlyPlaying = false;
     }
 
     worker->initializeSessionMonitoring();
+}
+
+void QuickSoundSwitcher::onSessionError()
+{
+    mediaFlyout->animateIn();
 }
 
 void QuickSoundSwitcher::updateFlyoutTitleAndArtist(const QString& title, const QString& artist)
@@ -596,25 +482,12 @@ void QuickSoundSwitcher::updateFlyoutPlayPause(const QString &state)
         currentlyPlaying = false;
     }
 
-    if (mediaFlyout) {
-        mediaFlyout->updatePauseButton(state);
-    }
+    mediaFlyout->updatePauseButton(state);
 }
 
 void QuickSoundSwitcher::updateFlyoutProgress(int currentTime, int totalTime)
 {
-    if (mediaFlyout) {
-        mediaFlyout->updateProgress(currentTime, totalTime);
-    }
-}
-
-void QuickSoundSwitcher::onSessionError(const QString& error)
-{
-    if (mediaFlyout) {
-        if (!mediaFlyout->isVisible()){
-            mediaFlyout->animateIn();
-        }
-    }
+    mediaFlyout->updateProgress(currentTime, totalTime);
 }
 
 void QuickSoundSwitcher::onRequestNext()
