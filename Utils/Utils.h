@@ -14,6 +14,7 @@ namespace Utils {
     QString getTheme();
     QIcon getPlaceholderIcon();
     QIcon getButtonsIcon(QString button);
+    void setAlwaysOnTopState(QWidget *widget, bool state);
 }
 
 #endif // UTILS_H

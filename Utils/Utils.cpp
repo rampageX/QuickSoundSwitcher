@@ -165,3 +165,10 @@ QIcon Utils::getButtonsIcon(QString button)
     QString theme = Utils::getTheme();
     return QIcon(QString(":/icons/%1_%2.png").arg(button, theme));
 }
+
+void Utils::setAlwaysOnTopState(QWidget *widget, bool state) {
+    HWND hwnd = (HWND)widget->winId();
+    HWND position = state ? HWND_TOPMOST : HWND_NOTOPMOST;
+
+    SetWindowPos(hwnd, position, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+}

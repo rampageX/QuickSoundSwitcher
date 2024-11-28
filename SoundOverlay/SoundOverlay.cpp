@@ -1,5 +1,6 @@
 #include "SoundOverlay.h"
 #include "ui_SoundOverlay.h"
+#include "Utils.h"
 #include <QTimer>
 #include <QApplication>
 #include <QPainter>
@@ -14,7 +15,7 @@ SoundOverlay::SoundOverlay(QWidget *parent)
     , isAnimatingOut(false)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     setAttribute(Qt::WA_TranslucentBackground);
 
     expireTimer = new QTimer(this);
@@ -84,10 +85,14 @@ void SoundOverlay::animateIn()
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
-    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
         int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY - targetY == 12) {
+            Utils::setAlwaysOnTopState(this, true);
+        }
 
         if (currentY == targetY) {
             animationTimer->stop();
@@ -106,6 +111,8 @@ void SoundOverlay::animateIn()
 void SoundOverlay::animateOut()
 {
     isAnimatingOut = true;
+    Utils::setAlwaysOnTopState(this, false);
+
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     QRect availableScreenGeometry = QApplication::primaryScreen()->availableGeometry();
     int taskbarHeight = screenGeometry.height() - availableScreenGeometry.height();

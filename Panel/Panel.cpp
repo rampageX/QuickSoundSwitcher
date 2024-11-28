@@ -18,7 +18,7 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     this->setAttribute(Qt::WA_TranslucentBackground);
     this->setAttribute(Qt::WA_AlwaysShowToolTips);
     setFixedWidth(width());
@@ -82,6 +82,10 @@ void Panel::animateIn(QRect trayIconGeometry)
         double easedT = 1 - pow(1 - t, 3);
         int currentY = startY + easedT * (targetY - startY);
 
+        if (currentY - targetY == 12) {
+            Utils::setAlwaysOnTopState(this, true);
+        }
+
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
@@ -99,13 +103,15 @@ void Panel::animateOut(QRect trayIconGeometry)
     if (isAnimating) return;
 
     isAnimating = true;
+    Utils::setAlwaysOnTopState(this, false);
+
     QPoint trayIconPos = trayIconGeometry.topLeft();
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
     int margin = 12;
     int panelX = trayIconCenterX - this->width() / 2;
     int startY = screenGeometry.bottom() - this->height() - trayIconGeometry.height() - margin;
-    int targetY = screenGeometry.bottom(); // Move to the bottom of the screen
+    int targetY = screenGeometry.bottom();
 
     const int durationMs = 300;
     const int refreshRate = 1;
