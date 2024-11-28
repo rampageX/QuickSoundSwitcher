@@ -282,7 +282,7 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
             }
         }
 
-        if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {
+        if (wParam == WM_LBUTTONUP || wParam == WM_RBUTTONUP) {
             QPoint cursorPos = QCursor::pos();
             QRect trayIconRect = instance->trayIcon->geometry();
             QRect panelRect = instance->panel ? instance->panel->geometry() : QRect();
