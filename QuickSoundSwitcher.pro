@@ -2,7 +2,7 @@ QT += core gui widgets
 
 TEMPLATE = app
 TARGET = QuickSoundSwitcher
-CONFIG += c++20 lrelease embed_translations
+CONFIG += c++20 lrelease embed_translations silent
 
 QM_FILES_RESOURCE_PREFIX=/translations/tr
 
