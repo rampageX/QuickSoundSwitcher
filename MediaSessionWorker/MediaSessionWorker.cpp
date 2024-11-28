@@ -230,7 +230,8 @@ void MediaSessionWorker::initializeSessionMonitoring()
                                                       }
                                                   }
 
-                                                  emit sessionMediaPropertiesChanged(title, artist);
+                                                  emit titleChanged(title);
+                                                  emit artistChanged(artist);
                                                   emit sessionIconChanged(icon); // Emit the QIcon
                                               }
                                               catch (const std::exception& ex)

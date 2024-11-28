@@ -31,7 +31,8 @@ signals:
     void sessionReady(const MediaSession& session);
     void sessionError();
 
-    void sessionMediaPropertiesChanged(const QString& title, const QString& artist);
+    void titleChanged(const QString& title);
+    void artistChanged(const QString& artist);
     void sessionPlaybackStateChanged(const QString& state);
     void sessionIconChanged(QIcon icon);
     void sessionTimeInfoUpdated(int currentTime, int totalTime);

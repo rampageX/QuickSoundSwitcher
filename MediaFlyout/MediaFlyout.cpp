@@ -8,10 +8,12 @@
 #include <QScreen>
 #include <QTimer>
 
-MediaFlyout::MediaFlyout(QWidget* parent)
+MediaFlyout::MediaFlyout(QWidget* parent, MediaSessionWorker *worker)
     : QWidget(parent)
-    , ui(new Ui::MediaFlyout)
     , isAnimating(false)
+    , ui(new Ui::MediaFlyout)
+    , worker(worker)
+    , currentlyPlaying(false)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
@@ -32,6 +34,13 @@ MediaFlyout::MediaFlyout(QWidget* parent)
     connect(ui->next, &QToolButton::clicked, this, &MediaFlyout::onNextClicked);
     connect(ui->prev, &QToolButton::clicked, this, &MediaFlyout::onPrevClicked);
     connect(ui->pause, &QToolButton::clicked, this, &MediaFlyout::onPauseClicked);
+
+    connect(worker, &MediaSessionWorker::titleChanged, this, &MediaFlyout::updateTitle);
+    connect(worker, &MediaSessionWorker::artistChanged, this, &MediaFlyout::updateArtist);
+    connect(worker, &MediaSessionWorker::sessionIconChanged, this, &MediaFlyout::updateIcon);
+    connect(worker, &MediaSessionWorker::sessionPlaybackStateChanged, this, &MediaFlyout::updatePauseButton);
+    connect(worker, &MediaSessionWorker::sessionTimeInfoUpdated, this, &MediaFlyout::updateProgress);
+
 }
 
 MediaFlyout::~MediaFlyout()
@@ -160,18 +169,21 @@ QPixmap MediaFlyout::roundPixmap(const QPixmap &src, int radius) {
 
 void MediaFlyout::onPrevClicked()
 {
-    emit requestPrev();
+    worker->previous();
 }
 
 void MediaFlyout::onNextClicked()
 {
-    emit requestNext();
+    worker->next();
 }
 
 void MediaFlyout::onPauseClicked()
 {
-    emit requestPause();
-
+    if (!currentlyPlaying) {
+        worker->play();
+    } else {
+        worker->pause();
+    }
 }
 
 void MediaFlyout::updateTitle(QString title)
@@ -244,14 +256,16 @@ void MediaFlyout::updateIcon(QIcon icon)
     ui->icon->setPixmap(roundedIcon);
 }
 
-void MediaFlyout::updatePauseButton(QString playbackState)
+void MediaFlyout::updatePauseButton(QString state)
 {
     ui->pause->setEnabled(true);
     QString playPause;
-    if (playbackState == "Playing") {
+    if (state == "Playing") {
         playPause = "pause";
+        currentlyPlaying = true;
     } else {
         playPause = "play";
+        currentlyPlaying = false;
     }
     ui->pause->setIcon(Utils::getButtonsIcon(playPause));
 }
@@ -262,19 +276,19 @@ void MediaFlyout::updateControls(bool prev, bool next)
     ui->prev->setEnabled(prev);
 }
 
-void MediaFlyout::updateProgress(int current, int total)
+void MediaFlyout::updateProgress(int currentTime, int totalTime)
 {
-    int currentMinutes = current / 60;
-    int currentSeconds = current % 60;
+    int currentMinutes = currentTime / 60;
+    int currentSeconds = currentTime % 60;
     QString currentTimeText = QString::asprintf("%02d:%02d", currentMinutes, currentSeconds);
 
-    int totalMinutes = total / 60;
-    int totalSeconds = total % 60;
+    int totalMinutes = totalTime / 60;
+    int totalSeconds = totalTime % 60;
     QString totalTimeText = QString::asprintf("%02d:%02d", totalMinutes, totalSeconds);
 
     ui->currentTime->setText(currentTimeText);
     ui->totalTime->setText(totalTimeText);
-    ui->progressBar->setRange(0, total);
-    ui->progressBar->setValue(current);
+    ui->progressBar->setRange(0, totalTime);
+    ui->progressBar->setValue(currentTime);
 }
 

@@ -24,7 +24,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , settingsPage(nullptr)
     , workerThread(nullptr)
     , worker(nullptr)
-    , mediaSessionTimer(nullptr)
 {    
     instance = this;
     createTrayIcon();
@@ -177,27 +176,6 @@ void QuickSoundSwitcher::onRunAtStartupStateChanged()
 {
     QAction *action = qobject_cast<QAction *>(sender());
     ShortcutManager::manageShortcut(action->isChecked(), "QuickSoundSwitcher.lnk");
-}
-
-bool QuickSoundSwitcher::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
-{
-    MSG *msg = static_cast<MSG *>(message);
-    if (msg->message == WM_HOTKEY) {
-        if (msg->wParam == HOTKEY_ID) {
-            toggleMicMute();
-            return true;
-        }
-    }
-    return QWidget::nativeEvent(eventType, message, result);
-}
-
-void QuickSoundSwitcher::toggleMicMute()
-{
-    AudioManager::setRecordingMute(!AudioManager::getRecordingMute());
-
-    if (panel) {
-        emit muteStateChanged();
-    }
 }
 
 void QuickSoundSwitcher::showSettings()
@@ -387,12 +365,6 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
 void QuickSoundSwitcher::stopMonitoringMediaSession()
 {
-    if (mediaSessionTimer) {
-        mediaSessionTimer->stop();
-        delete mediaSessionTimer;
-        mediaSessionTimer = nullptr;
-    }
-
     if (worker) {
         workerThread->quit();
         workerThread->wait();
@@ -426,10 +398,7 @@ void QuickSoundSwitcher::getMediaSession()
 
 void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
 {
-    mediaFlyout = new MediaFlyout(this);
-    connect(mediaFlyout, &MediaFlyout::requestNext, this, &QuickSoundSwitcher::onRequestNext);
-    connect(mediaFlyout, &MediaFlyout::requestPrev, this, &QuickSoundSwitcher::onRequestPrev);
-    connect(mediaFlyout, &MediaFlyout::requestPause, this, &QuickSoundSwitcher::onRequestPause);
+    mediaFlyout = new MediaFlyout(this, worker);
 
     mediaFlyout->animateIn();
     mediaFlyout->updateTitle(session.title);
@@ -438,76 +407,13 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
     mediaFlyout->updatePauseButton(session.playbackState);
     mediaFlyout->updateControls(session.canGoPrevious, session.canGoNext);
     mediaFlyout->updateProgress(session.currentTime, session.duration);
-    if (session.playbackState == "Playing") {
-        currentlyPlaying = true;
-    } else {
-        currentlyPlaying = false;
-    }
 
     worker->initializeSessionMonitoring();
-
-    connect(worker, &MediaSessionWorker::sessionMediaPropertiesChanged, this, &QuickSoundSwitcher::updateFlyoutTitleAndArtist);
-    connect(worker, &MediaSessionWorker::sessionIconChanged, this, &QuickSoundSwitcher::updateFlyoutIcon);
-    connect(worker, &MediaSessionWorker::sessionPlaybackStateChanged, this, &QuickSoundSwitcher::updateFlyoutPlayPause);
-    connect(worker, &MediaSessionWorker::sessionTimeInfoUpdated, this, &QuickSoundSwitcher::updateFlyoutProgress);
 }
 
 void QuickSoundSwitcher::onSessionError()
 {
-    mediaFlyout = new MediaFlyout(this);
-    connect(mediaFlyout, &MediaFlyout::requestNext, this, &QuickSoundSwitcher::onRequestNext);
-    connect(mediaFlyout, &MediaFlyout::requestPrev, this, &QuickSoundSwitcher::onRequestPrev);
-    connect(mediaFlyout, &MediaFlyout::requestPause, this, &QuickSoundSwitcher::onRequestPause);
+    mediaFlyout = new MediaFlyout(this, worker);
 
     mediaFlyout->animateIn();
-}
-
-void QuickSoundSwitcher::updateFlyoutTitleAndArtist(const QString& title, const QString& artist)
-{
-    if (mediaFlyout){
-        mediaFlyout->updateTitle(title);
-        mediaFlyout->updateArtist(artist);
-    }
-}
-
-void QuickSoundSwitcher::updateFlyoutIcon(QIcon icon)
-{
-    if (mediaFlyout){
-        mediaFlyout->updateIcon(icon);
-    }
-}
-
-void QuickSoundSwitcher::updateFlyoutPlayPause(const QString &state)
-{
-    if (state == "Playing") {
-        currentlyPlaying = true;
-    } else {
-        currentlyPlaying = false;
-    }
-
-    mediaFlyout->updatePauseButton(state);
-}
-
-void QuickSoundSwitcher::updateFlyoutProgress(int currentTime, int totalTime)
-{
-    mediaFlyout->updateProgress(currentTime, totalTime);
-}
-
-void QuickSoundSwitcher::onRequestNext()
-{
-    worker->next();
-}
-
-void QuickSoundSwitcher::onRequestPrev()
-{
-    worker->previous();
-}
-
-void QuickSoundSwitcher::onRequestPause()
-{
-    if (!currentlyPlaying) {
-        worker->play();
-    } else {
-        worker->pause();
-    }
 }
