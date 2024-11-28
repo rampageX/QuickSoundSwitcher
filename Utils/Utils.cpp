@@ -172,3 +172,44 @@ void Utils::setAlwaysOnTopState(QWidget *widget, bool state) {
 
     SetWindowPos(hwnd, position, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
+
+QString Utils::truncateTitle(QString title, QFontMetrics metrics, int labelWidth)
+{
+    int maxLines = 2;
+    int lineHeight = metrics.lineSpacing();
+    int maxHeight = maxLines * lineHeight;
+
+    QString truncatedTitle;
+    QStringList words = title.split(' ');
+    QString currentLine;
+    int currentHeight = 0;
+
+    for (const QString& word : words) {
+        QString testLine = currentLine.isEmpty() ? word : currentLine + ' ' + word;
+
+        if (metrics.horizontalAdvance(testLine) > labelWidth) {
+            if (!truncatedTitle.isEmpty()) {
+                truncatedTitle += '\n';
+            }
+            truncatedTitle += currentLine;
+            currentHeight += lineHeight;
+            currentLine = word;
+
+            if (currentHeight >= maxHeight) {
+                truncatedTitle.chop(3);
+                truncatedTitle += "...";
+                break;
+            }
+        } else {
+            currentLine = testLine;
+        }
+    }
+
+    if (currentHeight < maxHeight && !currentLine.isEmpty()) {
+        if (!truncatedTitle.isEmpty()) {
+            truncatedTitle += '\n';
+        }
+        truncatedTitle += currentLine;
+    }
+    return truncatedTitle;
+}

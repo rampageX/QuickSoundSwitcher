@@ -397,7 +397,7 @@ void Panel::populateApplications()
     QList<Application> applications = AudioManager::enumerateAudioApplications();
 
     std::sort(applications.begin(), applications.end(), [](const Application &a, const Application &b) {
-        return a.executableName.toLower() < b.executableName.toLower(); // Case-insensitive comparison
+        return a.executableName.toLower() < b.executableName.toLower();
     });
 
     bool shouldDisplayLabel = applications.isEmpty() || (applications.size() == 1 && applications[0].name == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202");
@@ -429,13 +429,10 @@ void Panel::populateApplications()
 
             for (int i = 0; i < applications.size(); ++i) {
                 const Application &app = applications[i];
-                if (app.executableName == "QuickSoundSwitcher") {
+                if (app.executableName == "QuickSoundSwitcher" || app.name == "Windows system sounds") {
                     continue;
                 }
-                // Skip "Windows system sounds" as it has been handled already
-                if (app.name == "Windows system sounds") {
-                    continue;
-                }
+
                 groupedApps[app.executableName].append(app);
             }
 

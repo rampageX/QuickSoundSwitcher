@@ -25,7 +25,7 @@ MediaFlyout::MediaFlyout(QWidget* parent, MediaSessionWorker *worker)
     ui->next->setIcon(Utils::getButtonsIcon("next"));
     ui->pause->setIcon(Utils::getButtonsIcon("play"));
     updateIcon(Utils::getPlaceholderIcon());
-    updateTitle("No song is currently playing.");
+    updateTitle(tr("No song is currently playing."));
     updateArtist("");
     updateProgress(0, 0);
     ui->progressBar->setRange(0, 100);
@@ -188,60 +188,9 @@ void MediaFlyout::onPauseClicked()
 
 void MediaFlyout::updateTitle(QString title)
 {
-    // Enable word wrap for the title QLabel
-    ui->title->setWordWrap(true);
-
-    // Limit the title to 2 lines
-    QString fullTitle = title;
     QFontMetrics metrics(ui->title->font());
-    int maxLines = 2;
-    int lineHeight = metrics.lineSpacing(); // Height of a single line of text
-    int maxHeight = maxLines * lineHeight;  // Maximum height for 2 lines
-
-    // Calculate text that fits within the QLabel's width and max height
-    QString truncatedTitle;
-    QStringList words = fullTitle.split(' '); // Split title into words for manual wrapping
-    QString currentLine;
-    int currentHeight = 0;
-
-    for (const QString& word : words) {
-        // Test appending the word to the current line
-        QString testLine = currentLine.isEmpty() ? word : currentLine + ' ' + word;
-
-        // Check if the current line exceeds the QLabel's width
-        if (metrics.horizontalAdvance(testLine) > ui->title->width()) {
-            // Line is too wide, add it as a completed line
-            if (!truncatedTitle.isEmpty()) {
-                truncatedTitle += '\n';
-            }
-            truncatedTitle += currentLine;
-            currentHeight += lineHeight;
-
-            // Start a new line with the current word
-            currentLine = word;
-
-            // Stop if we've reached the maximum number of lines
-            if (currentHeight >= maxHeight) {
-                truncatedTitle.chop(3); // Remove last characters if needed
-                truncatedTitle += "..."; // Add ellipsis
-                break;
-            }
-        } else {
-            // Line is still within width, keep building it
-            currentLine = testLine;
-        }
-    }
-
-    // Add the last line, if there's space left
-    if (currentHeight < maxHeight && !currentLine.isEmpty()) {
-        if (!truncatedTitle.isEmpty()) {
-            truncatedTitle += '\n';
-        }
-        truncatedTitle += currentLine;
-    }
-
-    // Set the processed title text
-    ui->title->setText(truncatedTitle);
+    ui->title->setWordWrap(true);
+    ui->title->setText(Utils::truncateTitle(title, metrics, ui->title->width()));
 }
 
 void MediaFlyout::updateArtist(QString artist)
