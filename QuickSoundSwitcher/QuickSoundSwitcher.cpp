@@ -110,8 +110,8 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 
 void QuickSoundSwitcher::hidePanel()
 {
-    panel->animateOut(trayIcon->geometry());
-    mediaFlyout->animateOut(trayIcon->geometry());
+    panel->animateOut();
+    mediaFlyout->animateOut();
 }
 
 void QuickSoundSwitcher::onPanelClosed()

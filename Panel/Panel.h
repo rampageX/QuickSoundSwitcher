@@ -17,7 +17,7 @@ public:
     explicit Panel(QWidget *parent = nullptr);
     ~Panel() override;
     void animateIn(QRect trayIconGeometry);
-    void animateOut(QRect trayIconGeometry);
+    void animateOut();
     bool mergeApps;
     void populateApplications();
     bool isAnimating;

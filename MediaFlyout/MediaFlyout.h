@@ -17,7 +17,7 @@ public:
     explicit MediaFlyout(QWidget* parent = nullptr, MediaSessionWorker *worker = nullptr);
     ~MediaFlyout() override;
     void animateIn();
-    void animateOut(QRect trayIconGeometry);
+    void animateOut();
     void updateTitle(QString title);
     void updateArtist(QString artist);
     void updateIcon(QIcon icon);

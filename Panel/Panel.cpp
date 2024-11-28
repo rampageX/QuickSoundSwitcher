@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QFont>
 #include <QLabel>
+#include <QPropertyAnimation>
 
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
@@ -18,7 +19,7 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
     this->setAttribute(Qt::WA_TranslucentBackground);
     this->setAttribute(Qt::WA_AlwaysShowToolTips);
     setFixedWidth(width());
@@ -62,74 +63,46 @@ void Panel::animateIn(QRect trayIconGeometry)
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
     int margin = 12;
     int panelX = trayIconCenterX - this->width() / 2;
-    int startY = screenGeometry.bottom();
     int targetY = screenGeometry.bottom() - this->height() - trayIconGeometry.height() - margin;
 
-    this->move(panelX, startY);
+    this->move(panelX, targetY);
+
+    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
+    animation->setDuration(300);
+    animation->setStartValue(0.0);
+    animation->setEndValue(1.0);
+    animation->setEasingCurve(QEasingCurve::Linear);
+
+    this->setWindowOpacity(0.0);
     this->show();
 
-    const int durationMs = 300;
-    const int refreshRate = 1;
-    const double totalSteps = durationMs / refreshRate;
-    int currentStep = 0;
-    QTimer *animationTimer = new QTimer(this);
+    QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
+        animation->deleteLater();
+        isAnimating = false;
 
-    animationTimer->start(refreshRate);
-    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        double t = static_cast<double>(currentStep) / totalSteps;
-        double easedT = 1 - pow(1 - t, 3);
-        int currentY = startY + easedT * (targetY - startY);
-
-        if (currentY == targetY) {
-            animationTimer->stop();
-            animationTimer->deleteLater();
-            Utils::setAlwaysOnTopState(this, true);
-            isAnimating = false;
-            return;
-        }
-
-        this->move(panelX, currentY);
-        ++currentStep;
     });
+
+    animation->start();
 }
 
-void Panel::animateOut(QRect trayIconGeometry)
+void Panel::animateOut()
 {
     isAnimating = true;
-    Utils::setAlwaysOnTopState(this, false);
 
-    QPoint trayIconPos = trayIconGeometry.topLeft();
-    QRect screenGeometry = QApplication::primaryScreen()->geometry();
-    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
-    int margin = 12;
-    int panelX = trayIconCenterX - this->width() / 2;
-    int startY = screenGeometry.bottom() - this->height() - trayIconGeometry.height() - margin;
-    int targetY = screenGeometry.bottom();
+    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
+    animation->setDuration(300);
+    animation->setStartValue(1.0);
+    animation->setEndValue(0.0);
+    animation->setEasingCurve(QEasingCurve::Linear);
 
-    const int durationMs = 300;
-    const int refreshRate = 1;
-    const double totalSteps = durationMs / refreshRate;
-
-    int currentStep = 0;
-    QTimer *animationTimer = new QTimer(this);
-
-    animationTimer->start(refreshRate);
-    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        double t = static_cast<double>(currentStep) / totalSteps;
-        double easedT = 1 - pow(1 - t, 3);
-        int currentY = startY + easedT * (targetY - startY);
-
-        if (currentY == targetY) {
-            animationTimer->stop();
-            animationTimer->deleteLater();
-            this->hide();
-            emit panelClosed();
-            return;
-        }
-
-        this->move(panelX, currentY);
-        ++currentStep;
+    QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
+        animation->deleteLater();
+        isAnimating = false;
+        emit panelClosed();
     });
+
+
+    animation->start();
 }
 
 void Panel::paintEvent(QPaintEvent *event)
