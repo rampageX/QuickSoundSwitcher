@@ -32,121 +32,107 @@ void MediaSessionWorker::process()
 
         task.Completed([this](winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager> const& sender, winrt::Windows::Foundation::AsyncStatus status)
                        {
-                           if (status == winrt::Windows::Foundation::AsyncStatus::Completed)
+                           if (status != winrt::Windows::Foundation::AsyncStatus::Completed)
                            {
-                               try
+                               emit sessionError();
+                               return;
+                           }
+
+                           try
+                           {
+                               auto sessionManager = sender.GetResults();
+                               currentSession = sessionManager.GetCurrentSession();
+
+                               if (!currentSession)
                                {
-                                   auto sessionManager = sender.GetResults();
-                                   currentSession = sessionManager.GetCurrentSession();
+                                   emit sessionError();
+                                   return;
+                               }
 
-                                   if (currentSession)
+                               MediaSession session;
+
+                               // Timeline properties
+                               auto timelineProperties = currentSession.GetTimelineProperties();
+                               auto position = timelineProperties.Position();
+                               auto duration = timelineProperties.EndTime();
+                               session.currentTime = static_cast<int>(position.count() / 10000000); // Convert to seconds
+                               session.duration = static_cast<int>(duration.count() / 10000000);
+
+                               // Media properties
+                               auto mediaProperties = currentSession.TryGetMediaPropertiesAsync().get();
+                               session.title = QString::fromStdWString(mediaProperties.Title().c_str());
+                               session.artist = QString::fromStdWString(mediaProperties.Artist().c_str());
+
+                               // Thumbnail
+                               auto thumbnail = mediaProperties.Thumbnail();
+                               if (thumbnail)
+                               {
+                                   auto stream = thumbnail.OpenReadAsync().get();
+                                   if (stream)
                                    {
-                                       MediaSession session;
+                                       auto inputStream = stream.GetInputStreamAt(0);
+                                       winrt::Windows::Storage::Streams::DataReader reader(inputStream);
+                                       uint32_t size = stream.Size();
+                                       reader.LoadAsync(size).get();
 
-                                       auto timelineProperties = currentSession.GetTimelineProperties();
-
-                                       // Get the current position (in 100-nanosecond intervals)
-                                       auto position = timelineProperties.Position();
-                                       qint64 currentTime = position.count(); // In 100-nanosecond intervals
-                                       int currentTimeInt = static_cast<int>(currentTime / 10000000); // Convert to milliseconds and cast to int
-
-                                       // Get the total duration (in 100-nanosecond intervals)
-                                       auto duration = timelineProperties.EndTime();
-                                       qint64 totalTime = duration.count(); // In 100-nanosecond intervals
-                                       int totalTimeInt = static_cast<int>(totalTime / 10000000); // Convert to milliseconds and cast to int
-
-                                       session.currentTime = currentTimeInt;
-                                       session.duration = totalTimeInt;
-
-                                       // Retrieve media properties from the session
-                                       auto mediaProperties = currentSession.TryGetMediaPropertiesAsync().get();
-                                       session.title = QString::fromStdWString(mediaProperties.Title().c_str());
-                                       session.artist = QString::fromStdWString(mediaProperties.Artist().c_str());
-
-                                       // Get album art (icon)
-                                       auto thumbnail = mediaProperties.Thumbnail();
-                                       if (thumbnail)
+                                       QByteArray imageData;
+                                       for (uint32_t i = 0; i < size; ++i)
                                        {
-                                           auto stream = thumbnail.OpenReadAsync().get(); // Open the thumbnail stream
-                                           if (stream)
-                                           {
-                                               // Create DataReader from the input stream
-                                               auto inputStream = stream.GetInputStreamAt(0);
-                                               winrt::Windows::Storage::Streams::DataReader reader(inputStream);
-                                               uint32_t size = stream.Size();
-                                               reader.LoadAsync(size).get(); // Load data into the reader
+                                           imageData.append(static_cast<char>(reader.ReadByte()));
+                                       }
 
-                                               // Convert to QByteArray
-                                               QByteArray imageData;
-                                               for (uint32_t i = 0; i < size; ++i)
-                                               {
-                                                   imageData.append(static_cast<char>(reader.ReadByte()));
-                                               }
-
-                                               // Load into QPixmap
-                                               QPixmap pixmap;
-                                               if (pixmap.loadFromData(imageData))
-                                               {
-                                                   session.icon = pixmap;  // Set the icon if loading is successful
-                                               }
-                                               else
-                                               {
-                                                   session.icon = Utils::getPlaceholderIcon();  // Fallback icon
-                                               }
-                                           }
-                                           else
-                                           {
-                                               session.icon = Utils::getPlaceholderIcon();  // No stream available
-                                           }
+                                       QPixmap pixmap;
+                                       if (pixmap.loadFromData(imageData))
+                                       {
+                                           session.icon = pixmap;
                                        }
                                        else
                                        {
-                                           session.icon = Utils::getPlaceholderIcon();  // No thumbnail available
+                                           session.icon = Utils::getPlaceholderIcon();
                                        }
-
-                                       // Get playback control information
-                                       auto playbackInfo = currentSession.GetPlaybackInfo();
-                                       auto playbackControls = playbackInfo.Controls();
-                                       session.canGoNext = playbackControls.IsNextEnabled();
-                                       session.canGoPrevious = playbackControls.IsPreviousEnabled();
-
-                                       // Get the playback state (Playing, Paused, Stopped)
-                                       auto playbackStatus = playbackInfo.PlaybackStatus();
-                                       switch (playbackStatus)
-                                       {
-                                       case winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing:
-                                           session.playbackState = "Playing";
-                                           break;
-                                       case winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused:
-                                           session.playbackState = "Paused";
-                                           break;
-                                       case winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped:
-                                           session.playbackState = "Stopped";
-                                           break;
-                                       default:
-                                           session.playbackState = "Unknown";
-                                           break;
-                                       }
-
-                                       emit sessionReady(session);
                                    }
                                    else
                                    {
-                                       emit sessionError();
+                                       session.icon = Utils::getPlaceholderIcon();
                                    }
                                }
-                               catch (const std::exception& ex)
+                               else
                                {
-                                   emit sessionError();
+                                   session.icon = Utils::getPlaceholderIcon();
                                }
+
+                               // Playback controls and state
+                               auto playbackInfo = currentSession.GetPlaybackInfo();
+                               auto playbackControls = playbackInfo.Controls();
+                               session.canGoNext = playbackControls.IsNextEnabled();
+                               session.canGoPrevious = playbackControls.IsPreviousEnabled();
+
+                               auto playbackStatus = playbackInfo.PlaybackStatus();
+                               switch (playbackStatus)
+                               {
+                               case winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing:
+                                   session.playbackState = "Playing";
+                                   break;
+                               case winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused:
+                                   session.playbackState = "Paused";
+                                   break;
+                               case winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped:
+                                   session.playbackState = "Stopped";
+                                   break;
+                               default:
+                                   session.playbackState = "Unknown";
+                                   break;
+                               }
+
+                               emit sessionReady(session);
                            }
-                           else
+                           catch (const std::exception&)
                            {
                                emit sessionError();
                            }
                        });
     }
-    catch (const std::exception& ex)
+    catch (const std::exception&)
     {
         emit sessionError();
     }
