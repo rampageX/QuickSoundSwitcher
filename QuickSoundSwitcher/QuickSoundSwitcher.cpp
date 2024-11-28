@@ -24,7 +24,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , settingsPage(nullptr)
     , workerThread(nullptr)
     , worker(nullptr)
-{    
+{
     instance = this;
     createTrayIcon();
     updateApplicationColorScheme();
@@ -104,31 +104,17 @@ void QuickSoundSwitcher::updateApplicationColorScheme()
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::Trigger) {
-        showPanel();
+        getMediaSession();
     }
-}
-
-void QuickSoundSwitcher::showPanel()
-{
-    if (panel && mediaFlyout) {
-        hidePanel();
-        return;
-    }
-
-    panel = new Panel(this);
-    panel->mergeApps = mergeSimilarApps;
-    panel->populateApplications();
-    connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
-    connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
-    connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
-    connect(panel, &Panel::panelClosed, this, &QuickSoundSwitcher::onPanelClosed);
-
-    panel->animateIn(trayIcon->geometry());
-
-    getMediaSession();
 }
 
 void QuickSoundSwitcher::hidePanel()
+{
+    panel->animateOut(trayIcon->geometry());
+    mediaFlyout->animateOut(trayIcon->geometry());
+}
+
+void QuickSoundSwitcher::onPanelClosed()
 {
     if (workerThread) {
         workerThread->quit();
@@ -138,12 +124,7 @@ void QuickSoundSwitcher::hidePanel()
     worker = nullptr;
     delete workerThread;
     workerThread = nullptr;
-    panel->animateOut(trayIcon->geometry());
-    mediaFlyout->animateOut(trayIcon->geometry());
-}
 
-void QuickSoundSwitcher::onPanelClosed()
-{
     delete panel;
     panel = nullptr;
     delete mediaFlyout;
@@ -277,7 +258,7 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
             if (!trayIconRect.contains(cursorPos) &&
                 !panelRect.contains(cursorPos) &&
                 !mediaFlyoutRect.contains(cursorPos)) {
-                if (instance->panel) {
+                if (instance->panel && !instance->panel->isAnimating) {
                     emit instance->panel->lostFocus();
                 }
             }
@@ -373,6 +354,11 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
 void QuickSoundSwitcher::getMediaSession()
 {
+    if (panel && !panel->isAnimating) {
+        hidePanel();
+        return;
+    }
+
     if (!workerThread) workerThread = new QThread(this);
     if (!worker) {
         worker = new MediaSessionWorker();
@@ -383,7 +369,6 @@ void QuickSoundSwitcher::getMediaSession()
         connect(worker, &MediaSessionWorker::sessionError, this, &QuickSoundSwitcher::onSessionError);
 
         workerThread->start();
-
     } else {
         worker->process();
     }
@@ -391,9 +376,9 @@ void QuickSoundSwitcher::getMediaSession()
 
 void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
 {
-    mediaFlyout = new MediaFlyout(this, worker);
+    showMediaFlyout();
+    showPanel();
 
-    mediaFlyout->animateIn();
     mediaFlyout->updateTitle(session.title);
     mediaFlyout->updateArtist(session.artist);
     mediaFlyout->updateIcon(session.icon);
@@ -406,7 +391,29 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
 
 void QuickSoundSwitcher::onSessionError()
 {
-    mediaFlyout = new MediaFlyout(this, worker);
+    showMediaFlyout();
+    showPanel();
+}
 
+void QuickSoundSwitcher::showPanel()
+{
+    if (panel) return;
+
+    panel = new Panel(this);
+    panel->mergeApps = mergeSimilarApps;
+    panel->populateApplications();
+    connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
+    connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
+    connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
+    connect(panel, &Panel::panelClosed, this, &QuickSoundSwitcher::onPanelClosed);
+
+    panel->animateIn(trayIcon->geometry());
+}
+
+void QuickSoundSwitcher::showMediaFlyout()
+{
+    if (mediaFlyout) return;
+    mediaFlyout = new MediaFlyout(this, worker);
     mediaFlyout->animateIn();
 }
+

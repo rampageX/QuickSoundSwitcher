@@ -10,7 +10,6 @@
 
 MediaFlyout::MediaFlyout(QWidget* parent, MediaSessionWorker *worker)
     : QWidget(parent)
-    , isAnimating(false)
     , ui(new Ui::MediaFlyout)
     , worker(worker)
     , currentlyPlaying(false)
@@ -72,9 +71,6 @@ void MediaFlyout::paintEvent(QPaintEvent *event)
 
 void MediaFlyout::animateIn()
 {
-    if (isAnimating) return;
-
-    isAnimating = true;
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
@@ -101,7 +97,6 @@ void MediaFlyout::animateIn()
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            isAnimating = false;
             return;
         }
 
@@ -112,9 +107,6 @@ void MediaFlyout::animateIn()
 
 void MediaFlyout::animateOut(QRect trayIconGeometry)
 {
-    if (isAnimating) return;
-
-    isAnimating = true;
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int screenCenterX = screenGeometry.center().x();
     int panelX = screenCenterX - this->width() / 2;
@@ -137,6 +129,7 @@ void MediaFlyout::animateOut(QRect trayIconGeometry)
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
+            emit mediaFlyoutClosed();
             return;
         }
 

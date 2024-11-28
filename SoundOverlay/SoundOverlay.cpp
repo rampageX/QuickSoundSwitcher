@@ -52,7 +52,7 @@ void SoundOverlay::paintEvent(QPaintEvent *event)
 
 void SoundOverlay::animateIn()
 {
-    int startY;
+    if (isAnimatingOut) return;
 
     if (shown) {
         expireTimer->start(3000);
@@ -67,18 +67,8 @@ void SoundOverlay::animateIn()
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
     int soundOverlayX = screenCenterX - this->width() / 2;
-    startY = screenGeometry.bottom() + taskbarHeight;
+    int startY = screenGeometry.bottom() + taskbarHeight;
     int targetY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
-
-    if (isAnimatingOut) {
-        isAnimatingOut = false;
-        if (animationTimerOut) {
-            animationTimerOut->stop();
-            animationTimerOut->deleteLater();
-            animationTimerOut = nullptr;
-            startY = this->y();
-        }
-    }
 
     this->move(soundOverlayX, startY);
     this->show();
@@ -96,13 +86,10 @@ void SoundOverlay::animateIn()
         double easedT = 1 - pow(1 - t, 3);
         int currentY = startY + easedT * (targetY - startY);
 
-        if (currentY - targetY <= 12) {
-            Utils::setAlwaysOnTopState(this, true);
-        }
-
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
+            Utils::setAlwaysOnTopState(this, true);
             return;
         }
 

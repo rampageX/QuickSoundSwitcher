@@ -14,7 +14,7 @@
 
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
-    , isAnimating(false)
+    , isAnimating(true)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
@@ -56,8 +56,6 @@ Panel::~Panel()
 
 void Panel::animateIn(QRect trayIconGeometry)
 {
-    if (isAnimating) return;
-
     isAnimating = true;
     QPoint trayIconPos = trayIconGeometry.topLeft();
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
@@ -82,13 +80,10 @@ void Panel::animateIn(QRect trayIconGeometry)
         double easedT = 1 - pow(1 - t, 3);
         int currentY = startY + easedT * (targetY - startY);
 
-        if (currentY - targetY == 12) {
-            Utils::setAlwaysOnTopState(this, true);
-        }
-
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
+            Utils::setAlwaysOnTopState(this, true);
             isAnimating = false;
             return;
         }
@@ -100,8 +95,6 @@ void Panel::animateIn(QRect trayIconGeometry)
 
 void Panel::animateOut(QRect trayIconGeometry)
 {
-    if (isAnimating) return;
-
     isAnimating = true;
     Utils::setAlwaysOnTopState(this, false);
 

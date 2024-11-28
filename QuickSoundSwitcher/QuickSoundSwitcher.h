@@ -41,6 +41,7 @@ private:
     SoundOverlay* soundOverlay;
     void createTrayIcon();
     void showPanel();
+    void showMediaFlyout();
     void hidePanel();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     static LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);

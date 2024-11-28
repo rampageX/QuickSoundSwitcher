@@ -24,7 +24,6 @@ public:
     void updatePauseButton(QString state);
     void updateControls(bool prev, bool next);
     void updateProgress(int currentTime, int totalTime);
-    bool isAnimating;
 
 public slots:
     void onPrevClicked();
@@ -43,6 +42,8 @@ private:
     MediaSessionWorker *worker;
     bool currentlyPlaying;
 
+signals:
+    void mediaFlyoutClosed();
 };
 
 #endif // MEDIASFLYOUT_H
