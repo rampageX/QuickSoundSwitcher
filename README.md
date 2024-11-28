@@ -14,8 +14,6 @@ While default sound menu in quick access menu does the job, it does not support 
 Left click on the tray icon to reveal the panel.  
 Click anywhere or press `ESC` to close the panel.
 
-A mute keyboard shortcut and overlay is available in application settings as well as a sound notification (disabled by default).
-
 ## Installation
 
 ### Using OPM
