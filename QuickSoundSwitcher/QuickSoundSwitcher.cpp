@@ -37,10 +37,11 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
 {
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
+    delete worker;
+    delete workerThread;
     delete soundOverlay;
     delete panel;
     delete settingsPage;
-    stopMonitoringMediaSession();
     instance = nullptr;
 }
 
@@ -129,7 +130,12 @@ void QuickSoundSwitcher::showPanel()
 
 void QuickSoundSwitcher::hidePanel()
 {
-    stopMonitoringMediaSession();
+    workerThread->quit();
+    workerThread->wait();
+    delete worker;
+    worker = nullptr;
+    delete workerThread;
+    workerThread = nullptr;
     panel->animateOut(trayIcon->geometry());
     mediaFlyout->animateOut(trayIcon->geometry());
 }
@@ -361,21 +367,6 @@ void QuickSoundSwitcher::toggleMuteWithKey()
     soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, volumeIcon, NULL), AudioManager::getPlaybackVolume());
     soundOverlay->animateIn();
-}
-
-void QuickSoundSwitcher::stopMonitoringMediaSession()
-{
-    if (worker) {
-        workerThread->quit();
-        workerThread->wait();
-        delete worker;
-        worker = nullptr;
-    }
-
-    if (workerThread) {
-        delete workerThread;
-        workerThread = nullptr;
-    }
 }
 
 void QuickSoundSwitcher::getMediaSession()

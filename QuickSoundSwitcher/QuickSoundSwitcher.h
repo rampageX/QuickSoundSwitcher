@@ -63,7 +63,6 @@ private:
     SettingsPage *settingsPage;
     QThread* workerThread;
     MediaSessionWorker* worker;
-    void stopMonitoringMediaSession();
     void getMediaSession();
 
 signals:
