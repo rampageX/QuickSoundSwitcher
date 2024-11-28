@@ -130,8 +130,10 @@ void QuickSoundSwitcher::showPanel()
 
 void QuickSoundSwitcher::hidePanel()
 {
-    workerThread->quit();
-    workerThread->wait();
+    if (workerThread) {
+        workerThread->quit();
+        workerThread->wait();
+    }
     delete worker;
     worker = nullptr;
     delete workerThread;
