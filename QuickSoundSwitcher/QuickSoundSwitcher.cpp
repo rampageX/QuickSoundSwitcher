@@ -34,8 +34,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     installKeyboardHook();
 
     connect(worker, &MediaSessionWorker::sessionReady, this, &QuickSoundSwitcher::onSessionReady);
-    worker->initializeSessionMonitoring();
-
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
 
@@ -371,6 +369,9 @@ void QuickSoundSwitcher::showPanel()
 
     if (!panel->visible) {
         panel->mergeApps = mergeSimilarApps;
+        panel->populateComboBoxes();
+        panel->setButtons();
+        panel->setSliders();
         panel->populateApplications();
 
         worker->process();

@@ -120,6 +120,7 @@ void MediaSessionWorker::process()
                                        }
 
                                        emit sessionReady(session);
+                                       initializeSessionMonitoring();
                                    }
                                    else
                                    {

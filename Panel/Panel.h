@@ -20,6 +20,9 @@ public:
     void animateOut();
     bool mergeApps;
     void populateApplications();
+    void populateComboBoxes();
+    void setSliders();
+    void setButtons();
     bool isAnimating;
     bool visible;
 
@@ -31,13 +34,11 @@ private:
     QList<AudioDevice> playbackDevices;
     QList<AudioDevice> recordingDevices;
 
-    void populateComboBoxes();
-    void setSliders();
-    void setButtons();
     void setFrames();
     void updateUi();
     void addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps, bool isGroup);
     QColor borderColor;
+    void clearLayout(QLayout *layout);
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);

@@ -129,6 +129,12 @@ void Panel::paintEvent(QPaintEvent *event)
 
 void Panel::populateComboBoxes()
 {
+    ui->outputComboBox->blockSignals(true);
+    ui->inputComboBox->blockSignals(true);
+
+    playbackDevices.clear();
+    recordingDevices.clear();
+
     AudioManager::enumeratePlaybackDevices(playbackDevices);
     AudioManager::enumerateRecordingDevices(recordingDevices);
 
@@ -161,6 +167,9 @@ void Panel::populateComboBoxes()
     if (defaultRecordingIndex != -1) {
         ui->inputComboBox->setCurrentIndex(defaultRecordingIndex);
     }
+
+    ui->outputComboBox->blockSignals(false);
+    ui->inputComboBox->blockSignals(false);
 }
 
 void Panel::setSliders()
@@ -348,17 +357,28 @@ void Panel::addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Applicat
     vBoxLayout->addLayout(gridLayout);
 }
 
+void Panel::clearLayout(QLayout *layout)
+{
+    if (!layout)
+        return;
+
+    // Remove and delete all items in the layout
+    while (QLayoutItem *item = layout->takeAt(0)) {
+        if (item->widget()) {
+            item->widget()->deleteLater(); // Properly delete widgets
+        } else if (item->layout()) {
+            clearLayout(item->layout()); // Recursively clear nested layouts
+        }
+        delete item; // Delete the QLayoutItem itself
+    }
+}
+
 void Panel::populateApplications()
 {
     QVBoxLayout *vBoxLayout = qobject_cast<QVBoxLayout *>(ui->appFrame->layout());
-    QList<Application> applications = AudioManager::enumerateAudioApplications();
+    clearLayout(vBoxLayout);
 
-    while (QLayoutItem *item = vBoxLayout->takeAt(0)) {
-        if (QWidget *widget = item->widget()) {
-            widget->deleteLater();
-        }
-        delete item;
-    }
+    QList<Application> applications = AudioManager::enumerateAudioApplications();
 
     std::sort(applications.begin(), applications.end(), [](const Application &a, const Application &b) {
         return a.executableName.toLower() < b.executableName.toLower();
