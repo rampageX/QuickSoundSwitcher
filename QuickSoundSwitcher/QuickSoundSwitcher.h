@@ -29,19 +29,18 @@ private slots:
     void onSoundOverlayClosed();
     void onRunAtStartupStateChanged();
     void onSessionReady(const MediaSession& session);
-    void onSessionError();
     void onVolumeChanged();
     void onOutputMuteChanged();
 
 private:
     QSystemTrayIcon *trayIcon;
     QSettings settings;
+    MediaSessionWorker* worker;
     Panel* panel;
     MediaFlyout* mediaFlyout;
     SoundOverlay* soundOverlay;
     void createTrayIcon();
     void showPanel();
-    void showMediaFlyout();
     void hidePanel();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     static LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
@@ -63,7 +62,6 @@ private:
     int volumeIncrement;
     SettingsPage *settingsPage;
     QThread* workerThread;
-    MediaSessionWorker* worker;
     void getMediaSession();
 
 signals:

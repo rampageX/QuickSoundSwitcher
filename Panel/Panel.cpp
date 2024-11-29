@@ -15,7 +15,8 @@
 
 Panel::Panel(QWidget *parent)
     : QWidget(parent)
-    , isAnimating(true)
+    , isAnimating(false)
+    , visible(false)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
@@ -23,12 +24,12 @@ Panel::Panel(QWidget *parent)
     this->setAttribute(Qt::WA_TranslucentBackground);
     this->setAttribute(Qt::WA_AlwaysShowToolTips);
     setFixedWidth(width());
-    AudioManager::initialize();
     borderColor = Utils::getTheme() == "light" ? QColor(255, 255, 255, 32) : QColor(0, 0, 0, 52);
     populateComboBoxes();
     setSliders();
     setButtons();
     setFrames();
+    isAnimating = false;
 
     QTimer *audioMeterTimer = new QTimer(this);
     connect(audioMeterTimer, &QTimer::timeout, this, &Panel::outputAudioMeter);
@@ -51,7 +52,6 @@ Panel::Panel(QWidget *parent)
 
 Panel::~Panel()
 {
-    AudioManager::cleanup();
     delete ui;
 }
 
@@ -78,8 +78,8 @@ void Panel::animateIn(QRect trayIconGeometry)
 
     QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
         animation->deleteLater();
+        visible = true;
         isAnimating = false;
-
     });
 
     animation->start();
@@ -97,8 +97,8 @@ void Panel::animateOut()
 
     QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
         animation->deleteLater();
+        visible = false;
         isAnimating = false;
-        emit panelClosed();
     });
 
 
@@ -125,15 +125,6 @@ void Panel::paintEvent(QPaintEvent *event)
     QPainterPath borderPath;
     borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8);
     painter.drawPath(borderPath);
-}
-
-void Panel::keyPressEvent(QKeyEvent *event)
-{
-    if (event->key() == Qt::Key_Escape) {
-        emit lostFocus();
-    }
-
-    QWidget::keyPressEvent(event);
 }
 
 void Panel::populateComboBoxes()
@@ -361,6 +352,13 @@ void Panel::populateApplications()
 {
     QVBoxLayout *vBoxLayout = qobject_cast<QVBoxLayout *>(ui->appFrame->layout());
     QList<Application> applications = AudioManager::enumerateAudioApplications();
+
+    while (QLayoutItem *item = vBoxLayout->takeAt(0)) {
+        if (QWidget *widget = item->widget()) {
+            widget->deleteLater();
+        }
+        delete item;
+    }
 
     std::sort(applications.begin(), applications.end(), [](const Application &a, const Application &b) {
         return a.executableName.toLower() < b.executableName.toLower();

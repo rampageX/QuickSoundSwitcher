@@ -12,22 +12,13 @@ MediaSessionWorker::MediaSessionWorker(QObject* parent)
 
 MediaSessionWorker::~MediaSessionWorker()
 {
-    try
-    {
-        winrt::uninit_apartment();
-    }
-    catch (const std::exception& ex)
-    {
-        qDebug() << "Error during COM deinitialization:" << ex.what();
-    }
+
 }
 
 void MediaSessionWorker::process()
 {
     try
     {
-        winrt::init_apartment(winrt::apartment_type::single_threaded);
-
         auto task = winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync();
 
         task.Completed([this](winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager> const& sender, winrt::Windows::Foundation::AsyncStatus status)

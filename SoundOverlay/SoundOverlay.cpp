@@ -1,6 +1,5 @@
 #include "SoundOverlay.h"
 #include "ui_SoundOverlay.h"
-#include "Utils.h"
 #include <QTimer>
 #include <QApplication>
 #include <QPainter>
@@ -80,8 +79,9 @@ void SoundOverlay::animateIn()
     this->setWindowOpacity(0.0);
     this->show();
 
-    QObject::connect(animation, &QPropertyAnimation::finished, [=]() {
+    QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
         animation->deleteLater();
+        expireTimer->start(3000);
     });
 
     animation->start();

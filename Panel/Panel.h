@@ -21,10 +21,10 @@ public:
     bool mergeApps;
     void populateApplications();
     bool isAnimating;
+    bool visible;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
-    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     Ui::Panel *ui;
@@ -54,10 +54,7 @@ private slots:
 
 signals:
     void volumeChanged();
-    void lostFocus();
-    void fadeOutFinished();
     void outputMuteChanged();
-    void panelClosed();
 };
 
 #endif // PANEL_H

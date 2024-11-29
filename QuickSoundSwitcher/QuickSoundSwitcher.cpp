@@ -18,23 +18,32 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , settings("Odizinne", "QuickSoundSwitcher")
-    , panel(nullptr)
-    , mediaFlyout(nullptr)
+    , worker(new MediaSessionWorker)
+    , panel(new Panel(this))
+    , mediaFlyout(new MediaFlyout(this, worker))
     , soundOverlay(nullptr)
     , settingsPage(nullptr)
     , workerThread(nullptr)
-    , worker(nullptr)
 {
+    AudioManager::initialize();
     instance = this;
     createTrayIcon();
     updateApplicationColorScheme();
     loadSettings();
     installGlobalMouseHook();
     installKeyboardHook();
+
+    connect(worker, &MediaSessionWorker::sessionReady, this, &QuickSoundSwitcher::onSessionReady);
+    worker->initializeSessionMonitoring();
+
+    connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
+    connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
+
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
 {
+    AudioManager::cleanup();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
     delete worker;
@@ -104,7 +113,9 @@ void QuickSoundSwitcher::updateApplicationColorScheme()
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::Trigger) {
-        getMediaSession();
+        if (panel && !panel->isAnimating) {
+            showPanel();
+        }
     }
 }
 
@@ -116,15 +127,6 @@ void QuickSoundSwitcher::hidePanel()
 
 void QuickSoundSwitcher::onPanelClosed()
 {
-    if (workerThread) {
-        workerThread->quit();
-        workerThread->wait();
-    }
-    delete worker;
-    worker = nullptr;
-    delete workerThread;
-    workerThread = nullptr;
-
     delete panel;
     panel = nullptr;
     delete mediaFlyout;
@@ -258,8 +260,8 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
             if (!trayIconRect.contains(cursorPos) &&
                 !panelRect.contains(cursorPos) &&
                 !mediaFlyoutRect.contains(cursorPos)) {
-                if (instance->panel && !instance->panel->isAnimating) {
-                    emit instance->panel->lostFocus();
+                if (instance->panel && !instance->panel->isAnimating && instance->panel->visible) {
+                    instance->showPanel();
                 }
             }
         }
@@ -345,6 +347,7 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
     if (!soundOverlay) {
         soundOverlay = new SoundOverlay(this);
+        connect(soundOverlay, &SoundOverlay::overlayClosed, this, &QuickSoundSwitcher::onSoundOverlayClosed);
     }
 
     soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
@@ -352,68 +355,29 @@ void QuickSoundSwitcher::toggleMuteWithKey()
     soundOverlay->animateIn();
 }
 
-void QuickSoundSwitcher::getMediaSession()
-{
-    if (panel && !panel->isAnimating) {
-        hidePanel();
-        return;
-    }
-
-    if (!workerThread) workerThread = new QThread(this);
-    if (!worker) {
-        worker = new MediaSessionWorker();
-        worker->moveToThread(workerThread);
-
-        connect(workerThread, &QThread::started, worker, &MediaSessionWorker::process);
-        connect(worker, &MediaSessionWorker::sessionReady, this, &QuickSoundSwitcher::onSessionReady);
-        connect(worker, &MediaSessionWorker::sessionError, this, &QuickSoundSwitcher::onSessionError);
-
-        workerThread->start();
-    } else {
-        worker->process();
-    }
-}
-
 void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
 {
-    showMediaFlyout();
-    showPanel();
-
     mediaFlyout->updateTitle(session.title);
     mediaFlyout->updateArtist(session.artist);
     mediaFlyout->updateIcon(session.icon);
     mediaFlyout->updatePauseButton(session.playbackState);
     mediaFlyout->updateControls(session.canGoPrevious, session.canGoNext);
     mediaFlyout->updateProgress(session.currentTime, session.duration);
-
-    worker->initializeSessionMonitoring();
-}
-
-void QuickSoundSwitcher::onSessionError()
-{
-    showMediaFlyout();
-    showPanel();
 }
 
 void QuickSoundSwitcher::showPanel()
 {
-    if (panel) return;
+    if (panel->isAnimating) return;
 
-    panel = new Panel(this);
-    panel->mergeApps = mergeSimilarApps;
-    panel->populateApplications();
-    connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
-    connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
-    connect(panel, &Panel::lostFocus, this, &QuickSoundSwitcher::hidePanel);
-    connect(panel, &Panel::panelClosed, this, &QuickSoundSwitcher::onPanelClosed);
+    if (!panel->visible) {
+        panel->mergeApps = mergeSimilarApps;
+        panel->populateApplications();
 
-    panel->animateIn(trayIcon->geometry());
+        worker->process();
+        panel->animateIn(trayIcon->geometry());
+        mediaFlyout->animateIn();
+    } else {
+        panel->animateOut();
+        mediaFlyout->animateOut();
+    }
 }
-
-void QuickSoundSwitcher::showMediaFlyout()
-{
-    if (mediaFlyout) return;
-    mediaFlyout = new MediaFlyout(this, worker);
-    mediaFlyout->animateIn();
-}
-
