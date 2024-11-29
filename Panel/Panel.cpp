@@ -58,6 +58,7 @@ Panel::~Panel()
 void Panel::animateIn(QRect trayIconGeometry)
 {
     isAnimating = true;
+
     QPoint trayIconPos = trayIconGeometry.topLeft();
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
@@ -97,6 +98,7 @@ void Panel::animateOut()
 
     QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
         animation->deleteLater();
+        this->hide();
         visible = false;
         isAnimating = false;
     });
@@ -375,8 +377,20 @@ void Panel::clearLayout(QLayout *layout)
 
 void Panel::populateApplications()
 {
-    QVBoxLayout *vBoxLayout = qobject_cast<QVBoxLayout *>(ui->appFrame->layout());
-    clearLayout(vBoxLayout);
+    // Delete any existing layout in ui->appFrame
+    if (ui->appFrame->layout()) {
+        clearLayout(ui->appFrame->layout());
+        QLayout *oldLayout = ui->appFrame->layout();
+        delete oldLayout; // Delete safely to avoid memory leaks
+    }
+
+    // Create a new QVBoxLayout with margins and spacing
+    QVBoxLayout *vBoxLayout = new QVBoxLayout();
+    vBoxLayout->setContentsMargins(9, 9, 9, 9);
+    vBoxLayout->setSpacing(9);
+
+    // Set the new layout to the appFrame
+    ui->appFrame->setLayout(vBoxLayout);
 
     QList<Application> applications = AudioManager::enumerateAudioApplications();
 
@@ -436,5 +450,7 @@ void Panel::populateApplications()
         }
     }
 
+    ui->appFrame->adjustSize();
+    ui->appFrame->updateGeometry();
     this->adjustSize();
 }
