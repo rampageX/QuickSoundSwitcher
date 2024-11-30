@@ -71,40 +71,66 @@ void MediaFlyout::animateIn()
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
     int mediaFlyoutX = screenCenterX - this->width() / 2;
-    int targetY = screenGeometry.top() + margin;
+    int startY = screenGeometry.top() - this->height() - margin;
+    int targetY = screenGeometry.top() + 12;
 
-    this->move(mediaFlyoutX, targetY);
-
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
-    animation->setDuration(300);
-    animation->setStartValue(0.0);
-    animation->setEndValue(1.0);
-    animation->setEasingCurve(QEasingCurve::Linear);
-
-    this->setWindowOpacity(0.0);
+    this->move(mediaFlyoutX, startY);
     this->show();
 
-    QObject::connect(animation, &QPropertyAnimation::finished, [=]() {
-        animation->deleteLater();
-    });
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
 
-    animation->start();
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            return;
+        }
+
+        this->move(mediaFlyoutX, currentY);
+        ++currentStep;
+    });
 }
 
 void MediaFlyout::animateOut()
 {
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
-    animation->setDuration(300);
-    animation->setStartValue(1.0);
-    animation->setEndValue(0.0);
-    animation->setEasingCurve(QEasingCurve::Linear);
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    int screenCenterX = screenGeometry.center().x();
+    int panelX = screenCenterX - this->width() / 2;
+    int startY = this->y();
+    int targetY = screenGeometry.top() - this->height() - 12;
 
-    QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
-        animation->deleteLater();
-        emit mediaFlyoutClosed();
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            return;
+        }
+
+        this->move(panelX, currentY);
+        ++currentStep;
     });
-
-    animation->start();
 }
 
 QPixmap MediaFlyout::roundPixmap(const QPixmap &src, int radius) {

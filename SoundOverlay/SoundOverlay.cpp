@@ -1,5 +1,6 @@
 #include "SoundOverlay.h"
 #include "ui_SoundOverlay.h"
+#include "Utils.h"
 #include <QTimer>
 #include <QApplication>
 #include <QPainter>
@@ -61,50 +62,84 @@ void SoundOverlay::animateIn()
     shown = true;
 
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
-    QRect availableScreenGeometry = QApplication::primaryScreen()->availableGeometry();
-    int taskbarHeight = screenGeometry.height() - availableScreenGeometry.height();
+    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
+    int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
+
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
     int soundOverlayX = screenCenterX - this->width() / 2;
+    int startY = screenGeometry.bottom();
     int targetY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
 
+    Utils::setAlwaysOnTopState(this, false);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     this->move(soundOverlayX, targetY);
-
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
-    animation->setDuration(300);
-    animation->setStartValue(0.0);
-    animation->setEndValue(1.0);
-    animation->setEasingCurve(QEasingCurve::Linear);
-
-    this->setWindowOpacity(0.0);
     this->show();
 
-    QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
-        animation->deleteLater();
-        expireTimer->start(3000);
-    });
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
 
-    animation->start();
+    animationTimer->start(refreshRate);
+    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            Utils::setAlwaysOnTopState(this, true);
+            expireTimer->start(3000);
+            return;
+        }
+
+        this->move(soundOverlayX, currentY);
+        ++currentStep;
+    });
 }
 
 void SoundOverlay::animateOut()
 {
     shown = false;
     isAnimatingOut = true;
+    Utils::setAlwaysOnTopState(this, false);
 
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
-    animation->setDuration(300);
-    animation->setStartValue(1.0);
-    animation->setEndValue(0.0);
-    animation->setEasingCurve(QEasingCurve::Linear);
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
+    int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
+    int margin = 12;
+    int soundOverlayX = this->x();
+    int startY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
+    int targetY = screenGeometry.bottom();
 
-    QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
-        animation->deleteLater();
-        this->hide();
-        isAnimatingOut = false;
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            this->hide();
+            this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+            isAnimatingOut = false;
+            return;
+        }
+
+        this->move(soundOverlayX, currentY);
+        ++currentStep;
     });
-
-    animation->start();
 }
 
 void SoundOverlay::updateVolumeIconAndLabel(QIcon icon, int volume)

@@ -20,7 +20,7 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     this->setAttribute(Qt::WA_TranslucentBackground);
     this->setAttribute(Qt::WA_AlwaysShowToolTips);
     setFixedWidth(width());
@@ -57,55 +57,89 @@ Panel::~Panel()
 void Panel::animateIn(QRect trayIconGeometry)
 {
     isAnimating = true;
-
     QPoint trayIconPos = trayIconGeometry.topLeft();
+
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
+    int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
+
     int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
     int margin = 12;
     int panelX = trayIconCenterX - this->width() / 2;
-    int targetY = screenGeometry.bottom() - this->height() - trayIconGeometry.height() - margin;
+    int startY = screenGeometry.bottom();
+    int targetY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
 
-    this->move(panelX, targetY);
-
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
-    animation->setDuration(300);
-    animation->setStartValue(0.0);
-    animation->setEndValue(1.0);
-    animation->setEasingCurve(QEasingCurve::Linear);
-
-    this->setWindowOpacity(0.0);
+    Utils::setAlwaysOnTopState(this, false);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
+    this->move(panelX, startY);
     this->show();
 
-    QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
-        animation->deleteLater();
-        visible = true;
-        isAnimating = false;
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            Utils::setAlwaysOnTopState(this, true);
+            visible= true;
+            isAnimating = false;
+            return;
+        }
+
+        this->move(panelX, currentY);
+        ++currentStep;
     });
-
-    animation->start();
 }
-
 void Panel::animateOut()
 {
     isAnimating = true;
+    Utils::setAlwaysOnTopState(this, false);
 
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
-    animation->setDuration(300);
-    animation->setStartValue(1.0);
-    animation->setEndValue(0.0);
-    animation->setEasingCurve(QEasingCurve::Linear);
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
+    int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
 
-    QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
-        animation->deleteLater();
-        this->hide();
-        visible = false;
-        isAnimating = false;
+    int margin = 12;
+    int panelX = this->x();
+    int startY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
+    int targetY = screenGeometry.bottom();
+
+    const int durationMs = 300;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double easedT = 1 - pow(1 - t, 3);
+        int currentY = startY + easedT * (targetY - startY);
+
+        if (currentY == targetY) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            this->hide();
+            this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
+            visible = false;
+            isAnimating = false;
+            return;
+        }
+
+        this->move(panelX, currentY);
+        ++currentStep;
     });
-
-
-    animation->start();
 }
-
 void Panel::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
