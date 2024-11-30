@@ -100,8 +100,8 @@ void SoundOverlay::animateOut()
 
     QObject::connect(animation, &QPropertyAnimation::finished, this, [=, this]() {
         animation->deleteLater();
+        this->hide();
         isAnimatingOut = false;
-        emit overlayClosed();
     });
 
     animation->start();

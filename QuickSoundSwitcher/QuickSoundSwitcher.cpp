@@ -6,8 +6,6 @@
 #include <QApplication>
 #include <QScreen>
 #include <QRect>
-#include <QTimer>
-#include <QThread>
 #include <Windows.h>
 
 HHOOK QuickSoundSwitcher::keyboardHook = NULL;
@@ -21,9 +19,8 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , worker(new MediaSessionWorker)
     , panel(new Panel(this))
     , mediaFlyout(new MediaFlyout(this, worker))
-    , soundOverlay(nullptr)
+    , soundOverlay(new SoundOverlay(this))
     , settingsPage(nullptr)
-    , workerThread(nullptr)
 {
     AudioManager::initialize();
     instance = this;
@@ -34,9 +31,9 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     installKeyboardHook();
 
     connect(worker, &MediaSessionWorker::sessionReady, this, &QuickSoundSwitcher::onSessionReady);
+    connect(worker, &MediaSessionWorker::sessionError, this, &QuickSoundSwitcher::onSessionError);
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
-
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -45,9 +42,9 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
     delete worker;
-    delete workerThread;
     delete soundOverlay;
     delete panel;
+    delete mediaFlyout;
     delete settingsPage;
     instance = nullptr;
 }
@@ -121,20 +118,6 @@ void QuickSoundSwitcher::hidePanel()
 {
     panel->animateOut();
     mediaFlyout->animateOut();
-}
-
-void QuickSoundSwitcher::onPanelClosed()
-{
-    delete panel;
-    panel = nullptr;
-    delete mediaFlyout;
-    mediaFlyout = nullptr;
-}
-
-void QuickSoundSwitcher::onSoundOverlayClosed()
-{
-    delete soundOverlay;
-    soundOverlay = nullptr;
 }
 
 void QuickSoundSwitcher::onVolumeChanged()
@@ -318,11 +301,6 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
     trayIcon->setIcon(Utils::getIcon(1, newVolume, NULL));
     emit volumeChangedWithTray();
 
-    if (!soundOverlay) {
-        soundOverlay = new SoundOverlay(this);
-        connect(soundOverlay, &SoundOverlay::overlayClosed, this, &QuickSoundSwitcher::onSoundOverlayClosed);
-    }
-
     soundOverlay->animateIn();
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, newVolume, NULL), newVolume);
 }
@@ -343,11 +321,6 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
     emit outputMuteStateChanged(newPlaybackMute);
 
-    if (!soundOverlay) {
-        soundOverlay = new SoundOverlay(this);
-        connect(soundOverlay, &SoundOverlay::overlayClosed, this, &QuickSoundSwitcher::onSoundOverlayClosed);
-    }
-
     soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
     soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, volumeIcon, NULL), AudioManager::getPlaybackVolume());
     soundOverlay->animateIn();
@@ -361,6 +334,11 @@ void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
     mediaFlyout->updatePauseButton(session.playbackState);
     mediaFlyout->updateControls(session.canGoPrevious, session.canGoNext);
     mediaFlyout->updateProgress(session.currentTime, session.duration);
+}
+
+void QuickSoundSwitcher::onSessionError()
+{
+    mediaFlyout->setDefaults();
 }
 
 void QuickSoundSwitcher::showPanel()

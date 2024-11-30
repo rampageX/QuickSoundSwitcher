@@ -24,6 +24,7 @@ public:
     void updatePauseButton(QString state);
     void updateControls(bool prev, bool next);
     void updateProgress(int currentTime, int totalTime);
+    void setDefaults();
 
 public slots:
     void onPrevClicked();

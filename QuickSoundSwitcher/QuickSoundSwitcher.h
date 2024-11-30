@@ -25,10 +25,9 @@ protected:
     bool event(QEvent *event) override;
 
 private slots:
-    void onPanelClosed();
-    void onSoundOverlayClosed();
     void onRunAtStartupStateChanged();
     void onSessionReady(const MediaSession& session);
+    void onSessionError();
     void onVolumeChanged();
     void onOutputMuteChanged();
 
@@ -39,6 +38,7 @@ private:
     Panel* panel;
     MediaFlyout* mediaFlyout;
     SoundOverlay* soundOverlay;
+    SettingsPage *settingsPage;
     void createTrayIcon();
     void showPanel();
     void hidePanel();
@@ -60,12 +60,8 @@ private:
     void updateApplicationColorScheme();
     bool mergeSimilarApps;
     int volumeIncrement;
-    SettingsPage *settingsPage;
-    QThread* workerThread;
-    void getMediaSession();
 
 signals:
-    void muteStateChanged();
     void outputMuteStateChanged(bool state);
     void volumeChangedWithTray();
 };

@@ -20,16 +20,11 @@ MediaFlyout::MediaFlyout(QWidget* parent, MediaSessionWorker *worker)
     this->setAttribute(Qt::WA_TranslucentBackground);
     setFixedWidth(width());
     borderColor = Utils::getTheme() == "light" ? QColor(255, 255, 255, 32) : QColor(0, 0, 0, 52);
-
     ui->prev->setIcon(Utils::getButtonsIcon("prev"));
     ui->next->setIcon(Utils::getButtonsIcon("next"));
     ui->pause->setIcon(Utils::getButtonsIcon("play"));
-    updateIcon(Utils::getPlaceholderIcon());
-    updateTitle(tr("No song is currently playing."));
-    updateArtist("");
-    updateProgress(0, 0);
-    ui->progressBar->setRange(0, 100);
-    ui->pause->setEnabled(false);
+
+    setDefaults();
 
     connect(ui->next, &QToolButton::clicked, this, &MediaFlyout::onNextClicked);
     connect(ui->prev, &QToolButton::clicked, this, &MediaFlyout::onPrevClicked);
@@ -208,3 +203,13 @@ void MediaFlyout::updateProgress(int currentTime, int totalTime)
     ui->progressBar->setValue(currentTime);
 }
 
+void MediaFlyout::setDefaults() {
+    updateIcon(Utils::getPlaceholderIcon());
+    updateTitle(tr("No song is currently playing."));
+    updateArtist("");
+    updateProgress(0, 0);
+    ui->progressBar->setRange(0, 100);
+    ui->pause->setEnabled(false);
+    ui->next->setEnabled(false);
+    ui->prev->setEnabled(false);
+}

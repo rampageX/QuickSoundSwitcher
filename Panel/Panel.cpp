@@ -42,8 +42,7 @@ Panel::Panel(QWidget *parent)
     connect(ui->inputVolumeSlider, &QSlider::valueChanged, this, &Panel::onInputValueChanged);
     connect(ui->outputMuteButton, &QPushButton::pressed, this, &Panel::onOutputMuteButtonPressed);
     connect(ui->inputMuteButton, &QPushButton::pressed, this, &Panel::onInputMuteButtonPressed);
-    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::muteStateChanged,
-            this, &Panel::onMuteStateChanged);
+
     connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::outputMuteStateChanged,
             this, &Panel::onOutputMuteStateChanged);
     connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::volumeChangedWithTray,
@@ -255,12 +254,6 @@ void Panel::onInputMuteButtonPressed()
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, !recordingMute));
 }
 
-void Panel::onMuteStateChanged()
-{
-    bool recordingMute = AudioManager::getRecordingMute();
-    ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
-}
-
 void Panel::onOutputMuteStateChanged(bool state)
 {
     ui->outputMuteButton->setIcon(Utils::getIcon(2, NULL, state));
@@ -295,7 +288,7 @@ void Panel::updateUi()
     ui->inputMuteButton->setIcon(Utils::getIcon(3, NULL, recordingMute));
 }
 
-void Panel::addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps, bool isGroup)
+void Panel::addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps)
 {
     QGridLayout *gridLayout = new QGridLayout;
     gridLayout->setVerticalSpacing(0);
@@ -418,7 +411,7 @@ void Panel::populateApplications()
             }
         }
         if (!systemSoundsApps.isEmpty()) {
-            addApplicationControls(vBoxLayout, systemSoundsApps, false);
+            addApplicationControls(vBoxLayout, systemSoundsApps);
         }
 
         // Grouping and adding other applications
@@ -435,7 +428,7 @@ void Panel::populateApplications()
             }
 
             for (QMap<QString, QList<Application>>::iterator it = groupedApps.begin(); it != groupedApps.end(); ++it) {
-                addApplicationControls(vBoxLayout, it.value(), true);
+                addApplicationControls(vBoxLayout, it.value());
             }
         } else {
             for (int i = 0; i < applications.size(); ++i) {
@@ -445,7 +438,7 @@ void Panel::populateApplications()
                 }
                 QList<Application> singleApp;
                 singleApp.append(app);
-                addApplicationControls(vBoxLayout, singleApp, false);
+                addApplicationControls(vBoxLayout, singleApp);
             }
         }
     }

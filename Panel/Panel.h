@@ -36,7 +36,7 @@ private:
 
     void setFrames();
     void updateUi();
-    void addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps, bool isGroup);
+    void addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps);
     QColor borderColor;
     void clearLayout(QLayout *layout);
 
@@ -49,7 +49,6 @@ private slots:
     void onInputMuteButtonPressed();
     void outputAudioMeter();
     void inputAudioMeter();
-    void onMuteStateChanged();
     void onOutputMuteStateChanged(bool state);
     void onVolumeChangedWithTray();
 
