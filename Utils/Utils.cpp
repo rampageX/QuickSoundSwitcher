@@ -170,7 +170,7 @@ void Utils::setAlwaysOnTopState(QWidget *widget, bool state) {
     HWND hwnd = (HWND)widget->winId();
     HWND position = state ? HWND_TOPMOST : HWND_NOTOPMOST;
 
-    SetWindowPos(hwnd, position, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    SetWindowPos(hwnd, position, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
 QString Utils::truncateTitle(QString title, QFontMetrics metrics, int labelWidth)
