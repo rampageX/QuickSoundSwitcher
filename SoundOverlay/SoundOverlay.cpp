@@ -71,8 +71,6 @@ void SoundOverlay::animateIn()
     int startY = screenGeometry.bottom();
     int targetY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
 
-    Utils::setAlwaysOnTopState(this, false);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     this->move(soundOverlayX, targetY);
     this->show();
 
@@ -91,7 +89,6 @@ void SoundOverlay::animateIn()
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            Utils::setAlwaysOnTopState(this, true);
             expireTimer->start(3000);
             return;
         }
@@ -105,7 +102,6 @@ void SoundOverlay::animateOut()
 {
     shown = false;
     isAnimatingOut = true;
-    Utils::setAlwaysOnTopState(this, false);
 
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
@@ -132,7 +128,6 @@ void SoundOverlay::animateOut()
             animationTimer->stop();
             animationTimer->deleteLater();
             this->hide();
-            this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
             isAnimatingOut = false;
             return;
         }

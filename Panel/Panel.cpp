@@ -20,7 +20,7 @@ Panel::Panel(QWidget *parent)
     , ui(new Ui::Panel)
 {
     ui->setupUi(this);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
+    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
     this->setAttribute(Qt::WA_TranslucentBackground);
     this->setAttribute(Qt::WA_AlwaysShowToolTips);
     setFixedWidth(width());
@@ -54,9 +54,18 @@ Panel::~Panel()
     delete ui;
 }
 
+void Panel::toggleAllWidgets(QWidget *parent, bool state) {
+    for (QWidget *widget : parent->findChildren<QWidget*>()) {
+        widget->setEnabled(state);
+    }
+}
+
+
 void Panel::animateIn(QRect trayIconGeometry)
 {
     isAnimating = true;
+
+    toggleAllWidgets(this, false);
     QPoint trayIconPos = trayIconGeometry.topLeft();
 
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
@@ -69,8 +78,6 @@ void Panel::animateIn(QRect trayIconGeometry)
     int startY = screenGeometry.bottom();
     int targetY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
 
-    Utils::setAlwaysOnTopState(this, false);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus);
     this->move(panelX, startY);
     this->show();
 
@@ -89,8 +96,8 @@ void Panel::animateIn(QRect trayIconGeometry)
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            Utils::setAlwaysOnTopState(this, true);
-            visible= true;
+            toggleAllWidgets(this, true);
+            visible = true;
             isAnimating = false;
             return;
         }
@@ -99,10 +106,12 @@ void Panel::animateIn(QRect trayIconGeometry)
         ++currentStep;
     });
 }
+
 void Panel::animateOut()
 {
     isAnimating = true;
-    Utils::setAlwaysOnTopState(this, false);
+
+    toggleAllWidgets(this, false);
 
     QRect screenGeometry = QApplication::primaryScreen()->geometry();
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
@@ -129,8 +138,8 @@ void Panel::animateOut()
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
+            toggleAllWidgets(this, true);
             this->hide();
-            this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
             visible = false;
             isAnimating = false;
             return;

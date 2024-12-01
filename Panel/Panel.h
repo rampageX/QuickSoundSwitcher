@@ -39,6 +39,7 @@ private:
     void addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps);
     QColor borderColor;
     void clearLayout(QLayout *layout);
+    void toggleAllWidgets(QWidget *parent, bool state);
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);
