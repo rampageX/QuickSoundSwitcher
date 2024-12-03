@@ -13,11 +13,12 @@
 #include <QLabel>
 #include <QPropertyAnimation>
 
-Panel::Panel(QWidget *parent)
+Panel::Panel(QWidget *parent, MediaFlyout* mediaFlyout)
     : QWidget(parent)
     , isAnimating(false)
     , visible(false)
     , ui(new Ui::Panel)
+    , m_mediaFlyout(mediaFlyout)
 {
     ui->setupUi(this);
     this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
@@ -54,34 +55,41 @@ Panel::~Panel()
     delete ui;
 }
 
-void Panel::toggleAllWidgets(QWidget *parent, bool state) {
-    for (QWidget *widget : parent->findChildren<QWidget*>()) {
-        widget->setEnabled(state);
+void Panel::setDynamicMask()
+{
+    QRect windowRect = this->geometry();
+    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
+
+    availableGeometry.adjust(0, 0, -12, 0);
+    QRect visiblePart = windowRect.intersected(availableGeometry);
+
+    if (!visiblePart.isEmpty()) {
+        QRegion mask(visiblePart.translated(-windowRect.topLeft()));
+        this->setMask(mask);
+        m_mediaFlyout->setMask(mask);
+        this->show();
+        m_mediaFlyout->show();
+    } else {
+        this->hide();
+        m_mediaFlyout->hide();
     }
 }
 
-
-void Panel::animateIn(QRect trayIconGeometry)
+void Panel::animateIn()
 {
     isAnimating = true;
 
-    toggleAllWidgets(this, false);
-    QPoint trayIconPos = trayIconGeometry.topLeft();
-
-    QRect screenGeometry = QApplication::primaryScreen()->geometry();
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
-    int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
-
-    int trayIconCenterX = trayIconPos.x() + trayIconGeometry.width() / 2;
     int margin = 12;
-    int panelX = trayIconCenterX - this->width() / 2;
-    int startY = screenGeometry.bottom();
-    int targetY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
+    int startX = availableGeometry.right();
+    int targetX = availableGeometry.right() - this->width() - margin;
+    int panelY = availableGeometry.bottom() - margin - this->height();
+    int flyoutY = availableGeometry.bottom() - margin - this->height() - margin - m_mediaFlyout->height();
 
-    this->move(panelX, startY);
-    this->show();
+    this->move(startX, panelY);
+    m_mediaFlyout->move(startX, flyoutY);
 
-    const int durationMs = 300;
+    const int durationMs = 200;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
@@ -91,41 +99,40 @@ void Panel::animateIn(QRect trayIconGeometry)
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
-        int currentY = startY + easedT * (targetY - startY);
+        int currentX = startX + easedT * (targetX - startX);
 
-        if (currentY == targetY) {
+        if (currentX == targetX) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            toggleAllWidgets(this, true);
+            this->clearMask();
+            m_mediaFlyout->clearMask();
             visible = true;
             isAnimating = false;
             return;
         }
-
-        this->move(panelX, currentY);
+        setDynamicMask();
+        this->move(currentX, panelY);
+        m_mediaFlyout->move(currentX, flyoutY);
         ++currentStep;
     });
 }
 
 void Panel::animateOut()
 {
+    if (isAnimating || !visible)
+        return;
+
     isAnimating = true;
 
-    toggleAllWidgets(this, false);
-
-    QRect screenGeometry = QApplication::primaryScreen()->geometry();
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
-    int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
+    int startX = this->x();
+    int targetX = availableGeometry.right();
+    int panelY = this->y();
+    int flyoutY = m_mediaFlyout->y();
 
-    int margin = 12;
-    int panelX = this->x();
-    int startY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
-    int targetY = screenGeometry.bottom();
-
-    const int durationMs = 300;
+    const int durationMs = 200;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
-
     int currentStep = 0;
     QTimer *animationTimer = new QTimer(this);
 
@@ -133,22 +140,26 @@ void Panel::animateOut()
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
-        int currentY = startY + easedT * (targetY - startY);
+        int currentX = startX + easedT * (targetX - startX);
 
-        if (currentY == targetY) {
+        if (currentX == targetX) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            toggleAllWidgets(this, true);
             this->hide();
+            m_mediaFlyout->hide();
+            this->clearMask();
+            m_mediaFlyout->clearMask();
             visible = false;
             isAnimating = false;
             return;
         }
-
-        this->move(panelX, currentY);
+        setDynamicMask();
+        this->move(currentX, panelY);
+        m_mediaFlyout->move(currentX, flyoutY);
         ++currentStep;
     });
 }
+
 void Panel::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);

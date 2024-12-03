@@ -4,6 +4,7 @@
 #include "AudioManager.h"
 #include <QVBoxLayout>
 #include <QMainWindow>
+#include "MediaFlyout.h"
 
 namespace Ui {
 class Panel;
@@ -14,9 +15,9 @@ class Panel : public QWidget
     Q_OBJECT
 
 public:
-    explicit Panel(QWidget *parent = nullptr);
+    explicit Panel(QWidget *parent = nullptr, MediaFlyout* mediaFlyout = nullptr);
     ~Panel() override;
-    void animateIn(QRect trayIconGeometry);
+    void animateIn();
     void animateOut();
     bool mergeApps;
     void populateApplications();
@@ -39,7 +40,8 @@ private:
     void addApplicationControls(QVBoxLayout *vBoxLayout, const QList<Application> &apps);
     QColor borderColor;
     void clearLayout(QLayout *layout);
-    void toggleAllWidgets(QWidget *parent, bool state);
+    void setDynamicMask();
+    MediaFlyout* m_mediaFlyout;
 
 private slots:
     void onOutputComboBoxIndexChanged(int index);

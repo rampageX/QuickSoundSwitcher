@@ -16,8 +16,6 @@ class MediaFlyout : public QWidget
 public:
     explicit MediaFlyout(QWidget* parent = nullptr, MediaSessionWorker *worker = nullptr);
     ~MediaFlyout() override;
-    void animateIn();
-    void animateOut();
     void updateTitle(QString title);
     void updateArtist(QString artist);
     void updateIcon(QIcon icon);

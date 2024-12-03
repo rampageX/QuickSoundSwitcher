@@ -68,13 +68,13 @@ void SoundOverlay::animateIn()
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
     int soundOverlayX = screenCenterX - this->width() / 2;
-    int startY = screenGeometry.bottom();
-    int targetY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
+    int startY = screenGeometry.top() - this->height();
+    int targetY = screenGeometry.top() + margin;
 
-    this->move(soundOverlayX, targetY);
+    this->move(soundOverlayX, startY);
     this->show();
 
-    const int durationMs = 300;
+    const int durationMs = 200;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
@@ -108,10 +108,10 @@ void SoundOverlay::animateOut()
     int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
     int margin = 12;
     int soundOverlayX = this->x();
-    int startY = screenGeometry.bottom() - this->height() - taskbarHeight - margin;
-    int targetY = screenGeometry.bottom();
+    int startY = this->y();
+    int targetY = screenGeometry.top() - this->height();
 
-    const int durationMs = 300;
+    const int durationMs = 200;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
 

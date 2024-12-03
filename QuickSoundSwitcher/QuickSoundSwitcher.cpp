@@ -17,8 +17,8 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , trayIcon(new QSystemTrayIcon(this))
     , settings("Odizinne", "QuickSoundSwitcher")
     , worker(new MediaSessionWorker)
-    , panel(new Panel(this))
     , mediaFlyout(new MediaFlyout(this, worker))
+    , panel(new Panel(this, mediaFlyout))
     , soundOverlay(new SoundOverlay(this))
     , settingsPage(nullptr)
 {
@@ -117,7 +117,7 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 void QuickSoundSwitcher::hidePanel()
 {
     panel->animateOut();
-    mediaFlyout->animateOut();
+    //mediaFlyout->animateOut();
 }
 
 void QuickSoundSwitcher::onVolumeChanged()
@@ -353,10 +353,8 @@ void QuickSoundSwitcher::showPanel()
         panel->populateApplications();
 
         worker->process();
-        panel->animateIn(trayIcon->geometry());
-        mediaFlyout->animateIn();
+        panel->animateIn();
     } else {
         panel->animateOut();
-        mediaFlyout->animateOut();
     }
 }

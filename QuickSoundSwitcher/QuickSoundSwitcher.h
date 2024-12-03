@@ -35,8 +35,8 @@ private:
     QSystemTrayIcon *trayIcon;
     QSettings settings;
     MediaSessionWorker* worker;
-    Panel* panel;
     MediaFlyout* mediaFlyout;
+    Panel* panel;
     SoundOverlay* soundOverlay;
     SettingsPage *settingsPage;
     void createTrayIcon();
