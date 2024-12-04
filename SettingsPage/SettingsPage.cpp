@@ -1,43 +1,50 @@
 #include "SettingsPage.h"
-#include "ui_SettingsPage.h"
-#include <QStandardPaths>
-#include <QDir>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonParseError>
-#include <shortcutmanager.h>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
 
-using namespace ShortcutManager;
-
-SettingsPage::SettingsPage(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::SettingsPage)
-    , settings("Odizinne", "QuickSoundSwitcher")
+SettingsPage::SettingsPage(QObject *parent)
+    : QObject(parent), settings("Odizinne", "QuickSoundSwitcher")
 {
-    ui->setupUi(this);
-    this->setFixedSize(this->size());
-    loadSettings();
+    engine = new QQmlApplicationEngine(this);
 
-    connect(ui->volumeIncrementSpinBox, &QSpinBox::valueChanged, this, &SettingsPage::saveSettings);
-    connect(ui->mergeSimilarCheckBox, &QCheckBox::checkStateChanged, this, &SettingsPage::saveSettings);
+    engine->rootContext()->setContextProperty("settingsPage", this);
+    engine->load(QUrl(QStringLiteral("qrc:/qml/SettingsPage.qml")));
 }
 
 SettingsPage::~SettingsPage()
 {
-    emit closed();
-    delete ui;
 }
 
-void SettingsPage::loadSettings()
+int SettingsPage::volumeIncrement() const
 {
-    ui->volumeIncrementSpinBox->setValue(settings.value("volumeIncrement", 2).toInt());
-    ui->mergeSimilarCheckBox->setChecked(settings.value("mergeSimilarApps", true).toBool());
+    return settings.value("volumeIncrement", 2).toInt();
 }
 
-void SettingsPage::saveSettings()
+void SettingsPage::setVolumeIncrement(int value)
 {
-    settings.setValue("volumeIncrement", ui->volumeIncrementSpinBox->value());
-    settings.setValue("mergeSimilarApps", ui->mergeSimilarCheckBox->isChecked());
+    if (value != volumeIncrement()) {
+        settings.setValue("volumeIncrement", value);
+        emit settingsChanged();
+    }
+}
 
-    emit settingsChanged();
+bool SettingsPage::mergeSimilarApps() const
+{
+    return settings.value("mergeSimilarApps", true).toBool();
+}
+
+void SettingsPage::setMergeSimilarApps(bool value)
+{
+    if (value != mergeSimilarApps()) {
+        settings.setValue("mergeSimilarApps", value);
+        emit settingsChanged();
+    }
+}
+
+void SettingsPage::showWindow()
+{
+    QObject *rootObject = engine->rootObjects().isEmpty() ? nullptr : engine->rootObjects().first();
+    if (rootObject) {
+        rootObject->setProperty("visible", true);
+    }
 }

@@ -1,30 +1,35 @@
 #ifndef SETTINGSPAGE_H
 #define SETTINGSPAGE_H
 
-#include <QMainWindow>
+#include <QObject>
 #include <QSettings>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
 
-namespace Ui {
-class SettingsPage;
-}
-
-class SettingsPage : public QMainWindow
+class SettingsPage : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(int volumeIncrement READ volumeIncrement WRITE setVolumeIncrement NOTIFY settingsChanged)
+    Q_PROPERTY(bool mergeSimilarApps READ mergeSimilarApps WRITE setMergeSimilarApps NOTIFY settingsChanged)
 
 public:
-    explicit SettingsPage(QWidget *parent = nullptr);
+    explicit SettingsPage(QObject *parent = nullptr);
     ~SettingsPage();
 
-private:
-    Ui::SettingsPage *ui;
-    QSettings settings;
-    void loadSettings();
-    void saveSettings();
+    int volumeIncrement() const;
+    void setVolumeIncrement(int value);
+
+    bool mergeSimilarApps() const;
+    void setMergeSimilarApps(bool value);
+
+    void showWindow();
 
 signals:
     void settingsChanged();
-    void closed();
+
+private:
+    QSettings settings;
+    QQmlApplicationEngine *engine = nullptr;
 };
 
 #endif // SETTINGSPAGE_H

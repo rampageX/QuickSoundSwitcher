@@ -6,11 +6,11 @@ import QtQuick.Controls.FluentWinUI3 2.15
 ApplicationWindow {
     visible: false
     width: 360
-    height: 146
+    height: 150
     minimumWidth: 360
     maximumWidth: 360
-    minimumHeight: 146
-    maximumHeight: 146
+    minimumHeight: 150
+    maximumHeight: 150
     title: "Settings"
 
     ColumnLayout {
@@ -33,17 +33,17 @@ ApplicationWindow {
                     id: label2
                     font.pixelSize: 13
                     font.bold: true
-                    text: qsTr("Enable mode:")
+                    text: qsTr("Volume increment")
                 }
 
-                ComboBox {
+                SpinBox {
                     id: spinBox
+                    from: 1
+                    to: 20
+                    value: settingsPage.volumeIncrement
                     Layout.preferredHeight: 32
                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                    //currentIndex: configurator.mode // Bind ComboBox to the mode property
-
-                    // Connect to the C++ function when the index changes
-                    //onCurrentIndexChanged: configurator.setMode(currentIndex)
+                    onValueChanged: settingsPage.volumeIncrement = value
                 }
             }
         }
@@ -65,12 +65,10 @@ ApplicationWindow {
 
                 Switch {
                     id: _soundNotificationSwitch
+                    checked: settingsPage.mergeSimilarApps
                     Layout.preferredHeight: 32
                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                    //checked: configurator.notification // Bind the switch to the C++ property
-
-                    // Connect to the C++ function
-                    //onCheckedChanged: configurator.setNotification(checked)
+                    onCheckedChanged: settingsPage.mergeSimilarApps = checked
                 }
             }
         }

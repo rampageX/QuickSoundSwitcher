@@ -55,7 +55,6 @@ private:
     static const int HOTKEY_ID = 1;
     void loadSettings();
     void onSettingsChanged();
-    void onSettingsClosed();
     void showSettings();
     void updateApplicationColorScheme();
     bool mergeSimilarApps;

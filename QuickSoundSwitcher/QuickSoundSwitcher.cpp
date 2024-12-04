@@ -20,12 +20,12 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , mediaFlyout(new MediaFlyout(this, worker))
     , panel(new Panel(this, mediaFlyout))
     , soundOverlay(new SoundOverlay(this))
-    , settingsPage(nullptr)
+    , settingsPage(new SettingsPage(this))
 {
     AudioManager::initialize();
     instance = this;
+    updateApplicationColorScheme();
     createTrayIcon();
-    //updateApplicationColorScheme();
     loadSettings();
     installGlobalMouseHook();
     installKeyboardHook();
@@ -34,6 +34,8 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     connect(worker, &MediaSessionWorker::sessionError, this, &QuickSoundSwitcher::onSessionError);
     connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
     connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
+
+    connect(settingsPage, &SettingsPage::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -152,18 +154,7 @@ void QuickSoundSwitcher::onRunAtStartupStateChanged()
 
 void QuickSoundSwitcher::showSettings()
 {
-    if (settingsPage) {
-        settingsPage->showNormal();
-        settingsPage->raise();
-        settingsPage->activateWindow();
-        return;
-    }
-
-    settingsPage = new SettingsPage;
-    settingsPage->setAttribute(Qt::WA_DeleteOnClose);
-    connect(settingsPage, &SettingsPage::closed, this, &QuickSoundSwitcher::onSettingsClosed);
-    connect(settingsPage, &SettingsPage::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
-    settingsPage->show();
+    settingsPage->showWindow();
 }
 
 void QuickSoundSwitcher::loadSettings()
@@ -175,13 +166,6 @@ void QuickSoundSwitcher::loadSettings()
 void QuickSoundSwitcher::onSettingsChanged()
 {
     loadSettings();
-}
-
-void QuickSoundSwitcher::onSettingsClosed()
-{
-    disconnect(settingsPage, &SettingsPage::closed, this, &QuickSoundSwitcher::onSettingsClosed);
-    disconnect(settingsPage, &SettingsPage::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
-    settingsPage = nullptr;
 }
 
 void QuickSoundSwitcher::installGlobalMouseHook()

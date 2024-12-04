@@ -44,7 +44,6 @@ HEADERS += \
 
 FORMS += \
     MediaFlyout/MediaFlyout.ui \
-    SettingsPage/SettingsPage.ui \
     Panel/Panel.ui \
 
 RESOURCES += Resources/resources.qrc
