@@ -10,37 +10,39 @@ ApplicationWindow {
     title: "Sound Overlay"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
 
-    RowLayout {
+    Frame {
         anchors.fill: parent
 
-        Image {
-            id: volumeIcon
-            source: volumeIconPixmap
-            width: 16
-            height: 16
-            Layout.alignment: Qt.AlignVCenter
-            Layout.leftMargin: 10
-        }
+        RowLayout {
+            anchors.fill: parent
 
-        ProgressBar {
-            id: volumeBar
-            value: volumeBarValue
-            from: 0    // Minimum value
-            to: 100    // Maximum value
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignVCenter
-            Layout.leftMargin: 10
-            Layout.rightMargin: 10
-        }
+            Image {
+                id: volumeIcon
+                source: volumeIconPixmap
+                width: 16
+                height: 16
+                Layout.alignment: Qt.AlignVCenter
+            }
 
-        Label {
-            id: volumeLabel
-            text: volumeLabelText
-            visible: true
-            font.pixelSize: 13
-            Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
-            Layout.rightMargin: 10
-            Layout.preferredWidth: 24
+            ProgressBar {
+                id: volumeBar
+                value: volumeBarValue
+                from: 0
+                to: 100
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
+            }
+
+            Label {
+                id: volumeLabel
+                text: volumeLabelText
+                visible: true
+                font.pixelSize: 13
+                Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+                Layout.preferredWidth: 14
+            }
         }
     }
 }
