@@ -16,6 +16,7 @@ namespace Utils {
     QIcon getButtonsIcon(QString button);
     void setAlwaysOnTopState(QWidget *widget, bool state);
     QString truncateTitle(QString title, QFontMetrics metrics, int labelWidth);
+    QString getOverlayIcon(int volume);
 }
 
 #endif // UTILS_H

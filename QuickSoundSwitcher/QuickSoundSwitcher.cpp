@@ -25,7 +25,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     AudioManager::initialize();
     instance = this;
     createTrayIcon();
-    updateApplicationColorScheme();
+    //updateApplicationColorScheme();
     loadSettings();
     installGlobalMouseHook();
     installKeyboardHook();
@@ -302,7 +302,9 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
     emit volumeChangedWithTray();
 
     soundOverlay->animateIn();
-    soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, newVolume, NULL), newVolume);
+    soundOverlay->updateVolumeIcon(Utils::getOverlayIcon(newVolume));
+    soundOverlay->updateVolumeLabel(newVolume);
+    soundOverlay->updateProgressBar(newVolume);
 }
 
 void QuickSoundSwitcher::toggleMuteWithKey()
@@ -321,8 +323,10 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
     emit outputMuteStateChanged(newPlaybackMute);
 
-    soundOverlay->updateMuteIcon(Utils::getIcon(1, volumeIcon, NULL));
-    soundOverlay->updateVolumeIconAndLabel(Utils::getIcon(1, volumeIcon, NULL), AudioManager::getPlaybackVolume());
+    int volume = AudioManager::getPlaybackVolume();
+    soundOverlay->updateVolumeIcon(Utils::getOverlayIcon(volumeIcon));
+    soundOverlay->updateVolumeLabel(volume);
+    soundOverlay->updateProgressBar(volume);
     soundOverlay->animateIn();
 }
 

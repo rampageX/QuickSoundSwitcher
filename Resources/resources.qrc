@@ -30,5 +30,7 @@
         <file>icons/next_light.png</file>
         <file>icons/prev_dark.png</file>
         <file>icons/prev_light.png</file>
+        <file>qml/SettingsPage.qml</file>
+        <file>qml/SoundOverlay.qml</file>
     </qresource>
 </RCC>

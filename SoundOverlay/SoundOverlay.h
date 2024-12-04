@@ -1,34 +1,38 @@
 #ifndef SOUNDOVERLAY_H
 #define SOUNDOVERLAY_H
 
+#include <QObject>
+#include <QQmlApplicationEngine>
 #include <QWidget>
 
 namespace Ui {
 class SoundOverlay;
 }
 
-class SoundOverlay : public QWidget
+class SoundOverlay : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit SoundOverlay(QWidget *parent = nullptr);
+    explicit SoundOverlay(QObject *parent = nullptr);
     ~SoundOverlay();
     void animateIn();
-    void updateVolumeIconAndLabel(QIcon icon, int volume);
-    void updateMuteIcon(QIcon icon);
 
-protected:
-    void paintEvent(QPaintEvent *event) override;
+    void updateVolumeIcon(const QString &icon);
+    void updateVolumeLabel(int volume);
+    void updateProgressBar(int volume);
+    void showOverlay();
 
 private:
-    Ui::SoundOverlay *ui;
     bool shown;
     QTimer *expireTimer;
     QTimer *raiseTimer;
     void animateOut();
     QTimer *animationTimerOut;
     bool isAnimatingOut;
+    void applyRadius(QWindow *window, int radius);
+
+    QQmlApplicationEngine *engine;
 
 signals:
     void overlayClosed();

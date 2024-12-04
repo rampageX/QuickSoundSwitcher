@@ -53,6 +53,22 @@ QIcon Utils::getIcon(int type, int volume, bool muted)
     }
 }
 
+QString Utils::getOverlayIcon(int volume)
+{
+    QString theme = getTheme();
+    QString volumeSymbol;
+    if (volume > 66) {
+        volumeSymbol = "100";
+    } else if (volume > 33) {
+        volumeSymbol = "66";
+    } else if (volume > 0) {
+        volumeSymbol = "33";
+    } else {
+        volumeSymbol = "0";
+    }
+    return QString("tray_" + theme + "_" + volumeSymbol + ".png");
+}
+
 QColor Utils::adjustColor(const QColor &color, double factor)
 {
     int r = color.red();

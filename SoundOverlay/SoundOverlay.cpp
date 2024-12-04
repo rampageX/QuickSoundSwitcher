@@ -1,5 +1,4 @@
 #include "SoundOverlay.h"
-#include "ui_SoundOverlay.h"
 #include "Utils.h"
 #include <QTimer>
 #include <QApplication>
@@ -7,17 +6,26 @@
 #include <QPainterPath>
 #include <QScreen>
 #include <QPropertyAnimation>
+#include <QQmlContext>
+#include <QWindow>
+#include <QBuffer>
+#include <QImageWriter>
+#include <QByteArray>
+#include <QPixmap>
 
-SoundOverlay::SoundOverlay(QWidget *parent)
-    : QWidget(parent)
-    , ui(new Ui::SoundOverlay)
+SoundOverlay::SoundOverlay(QObject *parent)
+    : QObject(parent)
     , shown(false)
     , animationTimerOut(nullptr)
     , isAnimatingOut(false)
 {
-    ui->setupUi(this);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
-    setAttribute(Qt::WA_TranslucentBackground);
+
+    engine = new QQmlApplicationEngine(this);
+    engine->rootContext()->setContextProperty("soundOverlay", this);
+    engine->rootContext()->setContextProperty("volumeIconPixmap", ""); // Initial value
+    engine->rootContext()->setContextProperty("volumeLabelText", "50");
+    engine->rootContext()->setContextProperty("volumeBarValue", 50);
+    engine->load(QUrl(QStringLiteral("qrc:/qml/SoundOverlay.qml")));
 
     expireTimer = new QTimer(this);
     connect(expireTimer, &QTimer::timeout, this, &SoundOverlay::animateOut);
@@ -25,30 +33,25 @@ SoundOverlay::SoundOverlay(QWidget *parent)
 
 SoundOverlay::~SoundOverlay()
 {
-    delete ui;
 }
 
-void SoundOverlay::paintEvent(QPaintEvent *event)
+void SoundOverlay::applyRadius(QWindow *window, int radius)
 {
-    Q_UNUSED(event);
-    QPainter painter(this);
+    QRect r(QPoint(), window->geometry().size());
+    QRect rb(0, 0, 2 * radius, 2 * radius);
 
-    painter.setBrush(this->palette().color(QPalette::Window));
-    painter.setPen(Qt::NoPen);
-
-    QPainterPath path;
-    path.addRoundedRect(this->rect().adjusted(1, 1, -1, -1), 8, 8);
-    painter.drawPath(path);
-
-    QPen borderPen(QColor(0, 0, 0, 37));
-    borderPen.setWidth(1);
-    painter.setPen(borderPen);
-    painter.setBrush(Qt::NoBrush);
-
-    QPainterPath borderPath;
-    borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8);
-    painter.drawPath(borderPath);
+    QRegion region(rb, QRegion::Ellipse);
+    rb.moveRight(r.right());
+    region += QRegion(rb, QRegion::Ellipse);
+    rb.moveBottom(r.bottom());
+    region += QRegion(rb, QRegion::Ellipse);
+    rb.moveLeft(r.left());
+    region += QRegion(rb, QRegion::Ellipse);
+    region += QRegion(r.adjusted(radius, 0, -radius, 0), QRegion::Rectangle);
+    region += QRegion(r.adjusted(0, radius, 0, -radius), QRegion::Rectangle);
+    window->setMask(region);
 }
+
 
 void SoundOverlay::animateIn()
 {
@@ -61,18 +64,23 @@ void SoundOverlay::animateIn()
 
     shown = true;
 
-    QRect screenGeometry = QApplication::primaryScreen()->geometry();
-    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
-    int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
+    QWindow *qmlWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+    if (!qmlWindow) return;
 
+    applyRadius(qmlWindow, 8);
+
+    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
-    int soundOverlayX = screenCenterX - this->width() / 2;
-    int startY = screenGeometry.top() - this->height();
+    int windowWidth = qmlWindow->width();
+    int windowHeight = qmlWindow->height();
+
+    int soundOverlayX = screenCenterX - windowWidth / 2;
+    int startY = screenGeometry.top() - windowHeight;
     int targetY = screenGeometry.top() + margin;
 
-    this->move(soundOverlayX, startY);
-    this->show();
+    qmlWindow->setPosition(soundOverlayX, startY);
+    qmlWindow->setVisible(true);
 
     const int durationMs = 200;
     const int refreshRate = 1;
@@ -81,7 +89,7 @@ void SoundOverlay::animateIn()
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
-    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(1 - t, 3);
         int currentY = startY + easedT * (targetY - startY);
@@ -93,7 +101,7 @@ void SoundOverlay::animateIn()
             return;
         }
 
-        this->move(soundOverlayX, currentY);
+        qmlWindow->setPosition(soundOverlayX, currentY);
         ++currentStep;
     });
 }
@@ -103,13 +111,14 @@ void SoundOverlay::animateOut()
     shown = false;
     isAnimatingOut = true;
 
-    QRect screenGeometry = QApplication::primaryScreen()->geometry();
-    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
-    int taskbarHeight = screenGeometry.bottom() - availableGeometry.bottom();
-    int margin = 12;
-    int soundOverlayX = this->x();
-    int startY = this->y();
-    int targetY = screenGeometry.top() - this->height();
+    QWindow *qmlWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+    if (!qmlWindow) return;
+
+    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
+    int windowHeight = qmlWindow->height();
+    int startY = qmlWindow->y();
+    int targetY = screenGeometry.top() - windowHeight;
+    int soundOverlayX = qmlWindow->x();
 
     const int durationMs = 200;
     const int refreshRate = 1;
@@ -127,25 +136,35 @@ void SoundOverlay::animateOut()
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            this->hide();
+            qmlWindow->setVisible(false);
             isAnimatingOut = false;
             return;
         }
 
-        this->move(soundOverlayX, currentY);
+        qmlWindow->setPosition(soundOverlayX, currentY);
         ++currentStep;
     });
 }
 
-void SoundOverlay::updateVolumeIconAndLabel(QIcon icon, int volume)
+void SoundOverlay::showOverlay()
 {
-    ui->iconLabel->setPixmap(icon.pixmap(16, 16));
-    ui->valueLabel->setText(QString::number(volume));
-    ui->progressBar->setValue(volume);
+    if (!engine->rootObjects().isEmpty()) {
+        QObject *rootObject = engine->rootObjects().first();
+        rootObject->setProperty("visible", true);
+    }
 }
 
-void SoundOverlay::updateMuteIcon(QIcon icon)
+void SoundOverlay::updateVolumeIcon(const QString &icon)
 {
-    ui->iconLabel->setPixmap(icon.pixmap(16, 16));
+    engine->rootContext()->setContextProperty("volumeIconPixmap", QStringLiteral("qrc:/icons/") + icon);
 }
 
+void SoundOverlay::updateVolumeLabel(int volume)
+{
+    engine->rootContext()->setContextProperty("volumeLabelText", QString::number(volume));
+}
+
+void SoundOverlay::updateProgressBar(int volume)
+{
+    engine->rootContext()->setContextProperty("volumeBarValue", volume);
+}

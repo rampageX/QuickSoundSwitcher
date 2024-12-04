@@ -1,4 +1,4 @@
-QT += core gui widgets
+QT += core gui widgets qml quick
 
 TEMPLATE = app
 TARGET = QuickSoundSwitcher
@@ -46,7 +46,6 @@ FORMS += \
     MediaFlyout/MediaFlyout.ui \
     SettingsPage/SettingsPage.ui \
     Panel/Panel.ui \
-    SoundOverlay/SoundOverlay.ui
 
 RESOURCES += Resources/resources.qrc
 
