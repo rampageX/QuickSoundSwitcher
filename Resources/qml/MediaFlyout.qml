@@ -113,7 +113,7 @@ ApplicationWindow {
             enabled: mediaFlyout.isPrevEnabled
             flat: true
             Image {
-                anchors.margins: 15
+                anchors.margins: 12
                 anchors.fill: parent
                 source: "qrc:/icons/prev_light.png"
                 fillMode: Image.PreserveAspectFit
@@ -127,7 +127,7 @@ ApplicationWindow {
             Layout.preferredHeight: 40
             flat: true
             Image {
-                anchors.margins: 15
+                anchors.margins: 12
                 anchors.fill: parent
                 source: mediaFlyout.isPlaying ? "qrc:/icons/pause_light.png" : "qrc:/icons/play_light.png"
                 fillMode: Image.PreserveAspectFit
@@ -142,7 +142,7 @@ ApplicationWindow {
             enabled: mediaFlyout.isNextEnabled
             flat: true
             Image {
-                anchors.margins: 15
+                anchors.margins: 12
                 anchors.fill: parent
                 source: "qrc:/icons/next_light.png"
                 fillMode: Image.PreserveAspectFit
