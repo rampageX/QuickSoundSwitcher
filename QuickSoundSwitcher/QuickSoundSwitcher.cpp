@@ -119,7 +119,6 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 void QuickSoundSwitcher::hidePanel()
 {
     panel->animateOut();
-    //mediaFlyout->animateOut();
 }
 
 void QuickSoundSwitcher::onVolumeChanged()
@@ -220,7 +219,7 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
             QPoint cursorPos = QCursor::pos();
             QRect trayIconRect = instance->trayIcon->geometry();
             QRect panelRect = instance->panel ? instance->panel->geometry() : QRect();
-            QRect mediaFlyoutRect = instance->mediaFlyout ? instance->mediaFlyout->geometry() : QRect();
+            QRect mediaFlyoutRect = instance->mediaFlyout->mediaFlyoutWindow ? instance->mediaFlyout->mediaFlyoutWindow->geometry() : QRect();
 
             if (!trayIconRect.contains(cursorPos) &&
                 !panelRect.contains(cursorPos) &&

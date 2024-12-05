@@ -15,7 +15,7 @@ namespace Utils {
     QIcon getPlaceholderIcon();
     QIcon getButtonsIcon(QString button);
     void setAlwaysOnTopState(QWidget *widget, bool state);
-    QString truncateTitle(QString title, QFontMetrics metrics, int labelWidth);
+    QPixmap roundPixmap(const QPixmap &src, int radius);
     QString getOverlayIcon(int volume);
 }
 

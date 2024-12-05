@@ -8,6 +8,7 @@
 #include <QPalette>
 #include <QPushButton>
 #include <QComboBox>
+#include <QPainterPath>
 
 #undef min  // Undefine min macro to avoid conflicts with std::min
 #undef max  // Undefine max macro to avoid conflicts with std::max
@@ -189,43 +190,24 @@ void Utils::setAlwaysOnTopState(QWidget *widget, bool state) {
     SetWindowPos(hwnd, position, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
-QString Utils::truncateTitle(QString title, QFontMetrics metrics, int labelWidth)
-{
-    int maxLines = 2;
-    int lineHeight = metrics.lineSpacing();
-    int maxHeight = maxLines * lineHeight;
-
-    QString truncatedTitle;
-    QStringList words = title.split(' ');
-    QString currentLine;
-    int currentHeight = 0;
-
-    for (const QString& word : words) {
-        QString testLine = currentLine.isEmpty() ? word : currentLine + ' ' + word;
-
-        if (metrics.horizontalAdvance(testLine) > labelWidth) {
-            if (!truncatedTitle.isEmpty()) {
-                truncatedTitle += '\n';
-            }
-            truncatedTitle += currentLine;
-            currentHeight += lineHeight;
-            currentLine = word;
-
-            if (currentHeight >= maxHeight) {
-                truncatedTitle.chop(3);
-                truncatedTitle += "...";
-                break;
-            }
-        } else {
-            currentLine = testLine;
-        }
+QPixmap Utils::roundPixmap(const QPixmap &src, int radius) {
+    if (src.isNull()) {
+        return QPixmap();
     }
 
-    if (currentHeight < maxHeight && !currentLine.isEmpty()) {
-        if (!truncatedTitle.isEmpty()) {
-            truncatedTitle += '\n';
-        }
-        truncatedTitle += currentLine;
-    }
-    return truncatedTitle;
+    QPixmap dest(src.size());
+    dest.fill(Qt::transparent);
+
+    QPainter painter(&dest);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    QPainterPath path;
+    path.addRoundedRect(QRectF(0, 0, src.width(), src.height()), radius, radius);
+
+    painter.setClipPath(path);
+    painter.drawPixmap(0, 0, src);
+    painter.end();
+
+    return dest;
 }

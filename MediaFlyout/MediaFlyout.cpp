@@ -1,34 +1,33 @@
 #include "MediaFlyout.h"
-#include "ui_MediaFlyout.h"
+#include "MediaSessionWorker.h"
 #include "Utils.h"
-#include <QMessageBox>
-#include <QDebug>
-#include <QPainter>
-#include <QPainterPath>
-#include <QScreen>
-#include <QTimer>
-#include <QPropertyAnimation>
+#include <QQmlContext>
+#include <QQuickItem>
+#include <QIcon>
+#include <QPixmap>
+#include <QBuffer>
 
-MediaFlyout::MediaFlyout(QWidget* parent, MediaSessionWorker *worker)
-    : QWidget(parent)
-    , ui(new Ui::MediaFlyout)
+MediaFlyout::MediaFlyout(QObject* parent, MediaSessionWorker* worker)
+    : QObject(parent)
     , worker(worker)
-    , currentlyPlaying(false)
+    , m_currentTime(0)
+    , m_totalTime(100)
+    , m_isPlaying(false)
+    , m_isPrevEnabled(true)  // default enabled state
+    , m_isNextEnabled(true)  // default enabled state
 {
-    ui->setupUi(this);
-    this->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint | Qt::WindowDoesNotAcceptFocus | Qt::WindowStaysOnTopHint);
-    this->setAttribute(Qt::WA_TranslucentBackground);
-    setFixedWidth(width());
-    borderColor = Utils::getTheme() == "light" ? QColor(255, 255, 255, 32) : QColor(0, 0, 0, 52);
-    ui->prev->setIcon(Utils::getButtonsIcon("prev"));
-    ui->next->setIcon(Utils::getButtonsIcon("next"));
-    ui->pause->setIcon(Utils::getButtonsIcon("play"));
+    engine = new QQmlApplicationEngine(this);
+    engine->rootContext()->setContextProperty("mediaFlyout", this);
 
-    setDefaults();
+    QColor windowColor = QGuiApplication::palette().color(QPalette::Window);
+    // Expose the native window color to QML
+    engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
 
-    connect(ui->next, &QToolButton::clicked, this, &MediaFlyout::onNextClicked);
-    connect(ui->prev, &QToolButton::clicked, this, &MediaFlyout::onPrevClicked);
-    connect(ui->pause, &QToolButton::clicked, this, &MediaFlyout::onPauseClicked);
+
+    engine->load(QUrl(QStringLiteral("qrc:/qml/MediaFlyout.qml")));
+
+    mediaFlyoutWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+
 
     connect(worker, &MediaSessionWorker::titleChanged, this, &MediaFlyout::updateTitle);
     connect(worker, &MediaSessionWorker::artistChanged, this, &MediaFlyout::updateArtist);
@@ -36,138 +35,157 @@ MediaFlyout::MediaFlyout(QWidget* parent, MediaSessionWorker *worker)
     connect(worker, &MediaSessionWorker::sessionPlaybackStateChanged, this, &MediaFlyout::updatePauseButton);
     connect(worker, &MediaSessionWorker::sessionTimeInfoUpdated, this, &MediaFlyout::updateProgress);
 
+    setDefaults();
 }
 
 MediaFlyout::~MediaFlyout()
 {
-    delete ui;
+    delete engine;
 }
 
-void MediaFlyout::paintEvent(QPaintEvent *event)
-{
-    Q_UNUSED(event);
-    QPainter painter(this);
-
-    painter.setBrush(this->palette().color(QPalette::Window));
-    painter.setPen(Qt::NoPen);
-
-    QPainterPath path;
-    path.addRoundedRect(this->rect().adjusted(1, 1, -1, -1), 8, 8);
-    painter.drawPath(path);
-
-    QPen borderPen(borderColor);
-    borderPen.setWidth(1);
-    painter.setPen(borderPen);
-    painter.setBrush(Qt::NoBrush);
-
-    QPainterPath borderPath;
-    borderPath.addRoundedRect(this->rect().adjusted(0, 0, -1, -1), 8, 8);
-    painter.drawPath(borderPath);
-}
-
-QPixmap MediaFlyout::roundPixmap(const QPixmap &src, int radius) {
-    if (src.isNull()) {
-        return QPixmap();
+QString MediaFlyout::title() const { return m_title; }
+void MediaFlyout::setTitle(const QString& title) {
+    if (m_title != title) {
+        m_title = title;
+        emit titleChanged(m_title);
     }
-
-    QPixmap dest(src.size());
-    dest.fill(Qt::transparent);
-
-    QPainter painter(&dest);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-
-    QPainterPath path;
-    path.addRoundedRect(QRectF(0, 0, src.width(), src.height()), radius, radius);
-
-    painter.setClipPath(path);
-    painter.drawPixmap(0, 0, src);
-    painter.end();
-
-    return dest;
 }
 
-void MediaFlyout::onPrevClicked()
-{
-    worker->previous();
-}
-
-void MediaFlyout::onNextClicked()
-{
-    worker->next();
-}
-
-void MediaFlyout::onPauseClicked()
-{
-    if (!currentlyPlaying) {
-        worker->play();
-    } else {
-        worker->pause();
+QString MediaFlyout::artist() const { return m_artist; }
+void MediaFlyout::setArtist(const QString& artist) {
+    if (m_artist != artist) {
+        m_artist = artist;
+        emit artistChanged(m_artist);
     }
+}
+
+int MediaFlyout::currentTime() const { return m_currentTime; }
+void MediaFlyout::setCurrentTime(int currentTime) {
+    if (m_currentTime != currentTime) {
+        m_currentTime = currentTime;
+        emit currentTimeChanged(m_currentTime);
+    }
+}
+
+int MediaFlyout::totalTime() const { return m_totalTime; }
+void MediaFlyout::setTotalTime(int totalTime) {
+    if (m_totalTime != totalTime) {
+        m_totalTime = totalTime;
+        emit totalTimeChanged(m_totalTime);
+    }
+}
+
+bool MediaFlyout::isPlaying() const { return m_isPlaying; }
+void MediaFlyout::setIsPlaying(bool isPlaying) {
+    if (m_isPlaying != isPlaying) {
+        m_isPlaying = isPlaying;
+        emit isPlayingChanged(m_isPlaying);
+    }
+}
+
+QString MediaFlyout::iconSource() const { return m_iconSource; }
+void MediaFlyout::setIconSource(const QString& iconSource) {
+    if (m_iconSource != iconSource) {
+        m_iconSource = iconSource;
+        emit iconSourceChanged(m_iconSource);
+    }
+}
+
+bool MediaFlyout::isPrevEnabled() const { return m_isPrevEnabled; }
+void MediaFlyout::setPrevEnabled(bool enabled) {
+    if (m_isPrevEnabled != enabled) {
+        m_isPrevEnabled = enabled;
+        emit prevEnabledChanged(m_isPrevEnabled);
+    }
+}
+
+bool MediaFlyout::isNextEnabled() const { return m_isNextEnabled; }
+void MediaFlyout::setNextEnabled(bool enabled) {
+    if (m_isNextEnabled != enabled) {
+        m_isNextEnabled = enabled;
+        emit nextEnabledChanged(m_isNextEnabled);
+    }
+}
+
+void MediaFlyout::applyRadius(QWindow *window, int radius)
+{
+    QRect r(QPoint(), window->geometry().size());
+    QRect rb(0, 0, 2 * radius, 2 * radius);
+
+    QRegion region(rb, QRegion::Ellipse);
+    rb.moveRight(r.right());
+    region += QRegion(rb, QRegion::Ellipse);
+    rb.moveBottom(r.bottom());
+    region += QRegion(rb, QRegion::Ellipse);
+    rb.moveLeft(r.left());
+    region += QRegion(rb, QRegion::Ellipse);
+    region += QRegion(r.adjusted(radius, 0, -radius, 0), QRegion::Rectangle);
+    region += QRegion(r.adjusted(0, radius, 0, -radius), QRegion::Rectangle);
+    window->setMask(region);
 }
 
 void MediaFlyout::updateTitle(QString title)
 {
-    QFontMetrics metrics(ui->title->font());
-    ui->title->setWordWrap(true);
-    ui->title->setText(Utils::truncateTitle(title, metrics, ui->title->width()));
+    if (title.length() > 30) {
+        title = title.left(30) + "...";
+    }
+    setTitle(title);
 }
 
 void MediaFlyout::updateArtist(QString artist)
 {
-    ui->artist->setText(artist);
-}
-
-void MediaFlyout::updateIcon(QIcon icon)
-{
-    QPixmap originalIcon = icon.pixmap(96, 96);
-    QPixmap roundedIcon = roundPixmap(originalIcon, 8);
-    ui->icon->setPixmap(roundedIcon);
-}
-
-void MediaFlyout::updatePauseButton(QString state)
-{
-    ui->pause->setEnabled(true);
-    QString playPause;
-    if (state == "Playing") {
-        playPause = "pause";
-        currentlyPlaying = true;
-    } else {
-        playPause = "play";
-        currentlyPlaying = false;
+    if (artist.length() > 30) {
+        artist = artist.left(30) + "...";
     }
-    ui->pause->setIcon(Utils::getButtonsIcon(playPause));
+    setArtist(artist);
 }
 
-void MediaFlyout::updateControls(bool prev, bool next)
-{
-    ui->next->setEnabled(next);
-    ui->prev->setEnabled(prev);
+void MediaFlyout::updateIcon(QIcon icon) {
+    QPixmap pixmap = icon.pixmap(64, 64);
+    pixmap = Utils::roundPixmap(pixmap, 8);
+    QByteArray byteArray;
+    QBuffer buffer(&byteArray);
+    buffer.open(QIODevice::WriteOnly);
+    pixmap.save(&buffer, "PNG");
+    setIconSource("data:image/png;base64," + byteArray.toBase64());
 }
 
-void MediaFlyout::updateProgress(int currentTime, int totalTime)
-{
-    int currentMinutes = currentTime / 60;
-    int currentSeconds = currentTime % 60;
-    QString currentTimeText = QString::asprintf("%02d:%02d", currentMinutes, currentSeconds);
+void MediaFlyout::updatePauseButton(QString state) {
+    bool isPlaying = (state == "Playing");
+    setIsPlaying(isPlaying);
+}
 
-    int totalMinutes = totalTime / 60;
-    int totalSeconds = totalTime % 60;
-    QString totalTimeText = QString::asprintf("%02d:%02d", totalMinutes, totalSeconds);
-
-    ui->currentTime->setText(currentTimeText);
-    ui->totalTime->setText(totalTimeText);
-    ui->progressBar->setRange(0, totalTime);
-    ui->progressBar->setValue(currentTime);
+void MediaFlyout::updateProgress(int currentTime, int totalTime) {
+    setCurrentTime(currentTime);
+    setTotalTime(totalTime);
 }
 
 void MediaFlyout::setDefaults() {
-    updateIcon(Utils::getPlaceholderIcon());
-    updateTitle(tr("No song is currently playing."));
-    updateArtist("");
-    updateProgress(0, 0);
-    ui->progressBar->setRange(0, 100);
-    ui->pause->setEnabled(false);
-    ui->next->setEnabled(false);
-    ui->prev->setEnabled(false);
+    setTitle("No song is currently playing");
+    setArtist("");
+    setCurrentTime(0);
+    setTotalTime(100);
+    setIsPlaying(false);
+    setIconSource("qrc:/icons/placeholder_light.png");
+}
+
+void MediaFlyout::onPrevButtonClicked() {
+    worker->previous();
+}
+
+void MediaFlyout::onPauseButtonClicked() {
+    if (isPlaying()) {
+        worker->pause();
+    } else {
+        worker->play();
+    }
+}
+
+void MediaFlyout::onNextButtonClicked() {
+    worker->next();
+}
+
+void MediaFlyout::updateControls(bool prev, bool next) {
+    setPrevEnabled(prev);
+    setNextEnabled(next);
 }

@@ -66,12 +66,12 @@ void Panel::setDynamicMask()
     if (!visiblePart.isEmpty()) {
         QRegion mask(visiblePart.translated(-windowRect.topLeft()));
         this->setMask(mask);
-        m_mediaFlyout->setMask(mask);
+        m_mediaFlyout->mediaFlyoutWindow->setMask(mask);
         this->show();
-        m_mediaFlyout->show();
+        m_mediaFlyout->mediaFlyoutWindow->setVisible(true);
     } else {
         this->hide();
-        m_mediaFlyout->hide();
+        m_mediaFlyout->mediaFlyoutWindow->setVisible(false);
     }
 }
 
@@ -84,12 +84,12 @@ void Panel::animateIn()
     int startX = availableGeometry.right();
     int targetX = availableGeometry.right() - this->width() - margin;
     int panelY = availableGeometry.bottom() - margin - this->height();
-    int flyoutY = availableGeometry.bottom() - margin - this->height() - margin - m_mediaFlyout->height();
+    int flyoutY = availableGeometry.bottom() - margin - this->height() - margin - m_mediaFlyout->mediaFlyoutWindow->height();
 
     this->move(startX, panelY);
-    m_mediaFlyout->move(startX, flyoutY);
+    m_mediaFlyout->mediaFlyoutWindow->setPosition(startX, flyoutY);
 
-    const int durationMs = 200;
+    const int durationMs = 60;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
@@ -105,14 +105,14 @@ void Panel::animateIn()
             animationTimer->stop();
             animationTimer->deleteLater();
             this->clearMask();
-            m_mediaFlyout->clearMask();
+            //m_mediaFlyout->mediaFlyoutWindow->setMask(QRegion());
             visible = true;
             isAnimating = false;
             return;
         }
         setDynamicMask();
         this->move(currentX, panelY);
-        m_mediaFlyout->move(currentX, flyoutY);
+        m_mediaFlyout->mediaFlyoutWindow->setPosition(currentX, flyoutY);
         ++currentStep;
     });
 }
@@ -128,9 +128,9 @@ void Panel::animateOut()
     int startX = this->x();
     int targetX = availableGeometry.right();
     int panelY = this->y();
-    int flyoutY = m_mediaFlyout->y();
+    int flyoutY = m_mediaFlyout->mediaFlyoutWindow->y();
 
-    const int durationMs = 200;
+    const int durationMs = 60;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
@@ -146,16 +146,16 @@ void Panel::animateOut()
             animationTimer->stop();
             animationTimer->deleteLater();
             this->hide();
-            m_mediaFlyout->hide();
+            m_mediaFlyout->mediaFlyoutWindow->setVisible(false);
             this->clearMask();
-            m_mediaFlyout->clearMask();
+            m_mediaFlyout->mediaFlyoutWindow->setMask(QRegion());
             visible = false;
             isAnimating = false;
             return;
         }
         setDynamicMask();
         this->move(currentX, panelY);
-        m_mediaFlyout->move(currentX, flyoutY);
+        m_mediaFlyout->mediaFlyoutWindow->setPosition(currentX, flyoutY);
         ++currentStep;
     });
 }

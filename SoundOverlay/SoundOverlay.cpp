@@ -1,5 +1,4 @@
 #include "SoundOverlay.h"
-#include "Utils.h"
 #include <QTimer>
 #include <QApplication>
 #include <QPainter>
@@ -51,7 +50,6 @@ void SoundOverlay::applyRadius(QWindow *window, int radius)
     region += QRegion(r.adjusted(0, radius, 0, -radius), QRegion::Rectangle);
     window->setMask(region);
 }
-
 
 void SoundOverlay::animateIn()
 {

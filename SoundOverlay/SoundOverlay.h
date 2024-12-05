@@ -3,11 +3,7 @@
 
 #include <QObject>
 #include <QQmlApplicationEngine>
-#include <QWidget>
-
-namespace Ui {
-class SoundOverlay;
-}
+#include <QWindow>
 
 class SoundOverlay : public QObject
 {

@@ -32,5 +32,6 @@
         <file>icons/prev_light.png</file>
         <file>qml/SettingsPage.qml</file>
         <file>qml/SoundOverlay.qml</file>
+        <file>qml/MediaFlyout.qml</file>
     </qresource>
 </RCC>
