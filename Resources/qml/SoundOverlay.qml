@@ -9,6 +9,15 @@ ApplicationWindow {
     height: 46
     title: "Sound Overlay"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
+    color: "transparent"
+
+    Rectangle {
+        anchors.fill: parent
+        color: nativeWindowColor
+        radius: 8
+        border.width: 1
+        border.color: Qt.rgba(255, 255, 255, 0.15)
+    }
 
     Frame {
         anchors.fill: parent

@@ -11,6 +11,7 @@
 #include <QImageWriter>
 #include <QByteArray>
 #include <QPixmap>
+#include <QPalette>
 
 SoundOverlay::SoundOverlay(QObject *parent)
     : QObject(parent)
@@ -24,6 +25,11 @@ SoundOverlay::SoundOverlay(QObject *parent)
     engine->rootContext()->setContextProperty("volumeIconPixmap", ""); // Initial value
     engine->rootContext()->setContextProperty("volumeLabelText", "50");
     engine->rootContext()->setContextProperty("volumeBarValue", 50);
+
+    QColor windowColor = QGuiApplication::palette().color(QPalette::Window);
+    // Expose the native window color to QML
+    engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
+
     engine->load(QUrl(QStringLiteral("qrc:/qml/SoundOverlay.qml")));
 
     expireTimer = new QTimer(this);
@@ -32,23 +38,6 @@ SoundOverlay::SoundOverlay(QObject *parent)
 
 SoundOverlay::~SoundOverlay()
 {
-}
-
-void SoundOverlay::applyRadius(QWindow *window, int radius)
-{
-    QRect r(QPoint(), window->geometry().size());
-    QRect rb(0, 0, 2 * radius, 2 * radius);
-
-    QRegion region(rb, QRegion::Ellipse);
-    rb.moveRight(r.right());
-    region += QRegion(rb, QRegion::Ellipse);
-    rb.moveBottom(r.bottom());
-    region += QRegion(rb, QRegion::Ellipse);
-    rb.moveLeft(r.left());
-    region += QRegion(rb, QRegion::Ellipse);
-    region += QRegion(r.adjusted(radius, 0, -radius, 0), QRegion::Rectangle);
-    region += QRegion(r.adjusted(0, radius, 0, -radius), QRegion::Rectangle);
-    window->setMask(region);
 }
 
 void SoundOverlay::animateIn()
@@ -64,8 +53,6 @@ void SoundOverlay::animateIn()
 
     QWindow *qmlWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
     if (!qmlWindow) return;
-
-    applyRadius(qmlWindow, 8);
 
     QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
     int screenCenterX = screenGeometry.center().x();

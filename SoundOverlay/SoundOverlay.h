@@ -26,7 +26,6 @@ private:
     void animateOut();
     QTimer *animationTimerOut;
     bool isAnimatingOut;
-    void applyRadius(QWindow *window, int radius);
 
     QQmlApplicationEngine *engine;
 
