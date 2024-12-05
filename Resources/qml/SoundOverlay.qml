@@ -7,7 +7,6 @@ ApplicationWindow {
     visible: false
     width: 216
     height: 46
-    title: "Sound Overlay"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
 

@@ -32,6 +32,8 @@ SoundOverlay::SoundOverlay(QObject *parent)
 
     engine->load(QUrl(QStringLiteral("qrc:/qml/SoundOverlay.qml")));
 
+    soundOverlayWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+
     expireTimer = new QTimer(this);
     connect(expireTimer, &QTimer::timeout, this, &SoundOverlay::animateOut);
 }
@@ -51,21 +53,18 @@ void SoundOverlay::animateIn()
 
     shown = true;
 
-    QWindow *qmlWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
-    if (!qmlWindow) return;
-
     QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
     int screenCenterX = screenGeometry.center().x();
     int margin = 12;
-    int windowWidth = qmlWindow->width();
-    int windowHeight = qmlWindow->height();
+    int windowWidth = soundOverlayWindow->width();
+    int windowHeight = soundOverlayWindow->height();
 
     int soundOverlayX = screenCenterX - windowWidth / 2;
     int startY = screenGeometry.top() - windowHeight;
     int targetY = screenGeometry.top() + margin;
 
-    qmlWindow->setPosition(soundOverlayX, startY);
-    qmlWindow->setVisible(true);
+    soundOverlayWindow->setPosition(soundOverlayX, startY);
+    soundOverlayWindow->setVisible(true);
 
     const int durationMs = 200;
     const int refreshRate = 1;
@@ -86,7 +85,7 @@ void SoundOverlay::animateIn()
             return;
         }
 
-        qmlWindow->setPosition(soundOverlayX, currentY);
+        soundOverlayWindow->setPosition(soundOverlayX, currentY);
         ++currentStep;
     });
 }
@@ -96,14 +95,11 @@ void SoundOverlay::animateOut()
     shown = false;
     isAnimatingOut = true;
 
-    QWindow *qmlWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
-    if (!qmlWindow) return;
-
     QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
-    int windowHeight = qmlWindow->height();
-    int startY = qmlWindow->y();
+    int windowHeight = soundOverlayWindow->height();
+    int startY = soundOverlayWindow->y();
     int targetY = screenGeometry.top() - windowHeight;
-    int soundOverlayX = qmlWindow->x();
+    int soundOverlayX = soundOverlayWindow->x();
 
     const int durationMs = 200;
     const int refreshRate = 1;
@@ -121,22 +117,14 @@ void SoundOverlay::animateOut()
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            qmlWindow->setVisible(false);
+            soundOverlayWindow->setVisible(false);
             isAnimatingOut = false;
             return;
         }
 
-        qmlWindow->setPosition(soundOverlayX, currentY);
+        soundOverlayWindow->setPosition(soundOverlayX, currentY);
         ++currentStep;
     });
-}
-
-void SoundOverlay::showOverlay()
-{
-    if (!engine->rootObjects().isEmpty()) {
-        QObject *rootObject = engine->rootObjects().first();
-        rootObject->setProperty("visible", true);
-    }
 }
 
 void SoundOverlay::updateVolumeIcon(const QString &icon)

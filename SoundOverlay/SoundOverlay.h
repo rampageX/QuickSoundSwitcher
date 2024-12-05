@@ -17,7 +17,6 @@ public:
     void updateVolumeIcon(const QString &icon);
     void updateVolumeLabel(int volume);
     void updateProgressBar(int volume);
-    void showOverlay();
 
 private:
     bool shown;
@@ -28,6 +27,8 @@ private:
     bool isAnimatingOut;
 
     QQmlApplicationEngine *engine;
+    QWindow* soundOverlayWindow;
+
 
 signals:
     void overlayClosed();
