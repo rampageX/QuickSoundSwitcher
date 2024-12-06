@@ -55,41 +55,25 @@ Panel::~Panel()
     delete ui;
 }
 
-void Panel::setDynamicMask()
-{
-    QRect windowRect = this->geometry();
-    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
-
-    availableGeometry.adjust(0, 0, -12, 0);
-    QRect visiblePart = windowRect.intersected(availableGeometry);
-
-    if (!visiblePart.isEmpty()) {
-        QRegion mask(visiblePart.translated(-windowRect.topLeft()));
-        this->setMask(mask);
-        m_mediaFlyout->mediaFlyoutWindow->setMask(mask);
-        this->show();
-        m_mediaFlyout->mediaFlyoutWindow->setVisible(true);
-    } else {
-        this->hide();
-        m_mediaFlyout->mediaFlyoutWindow->setVisible(false);
-    }
-}
-
 void Panel::animateIn()
 {
     isAnimating = true;
 
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
     int margin = 12;
-    int startX = availableGeometry.right();
-    int targetX = availableGeometry.right() - this->width() - margin;
     int panelY = availableGeometry.bottom() - margin - this->height();
     int flyoutY = availableGeometry.bottom() - margin - this->height() - margin - m_mediaFlyout->mediaFlyoutWindow->height();
 
-    this->move(startX, panelY);
-    m_mediaFlyout->mediaFlyoutWindow->setPosition(startX, flyoutY);
+    this->setWindowOpacity(0.0);
+    this->show();
 
-    const int durationMs = 60;
+    m_mediaFlyout->mediaFlyoutWindow->setOpacity(0.0);
+    m_mediaFlyout->mediaFlyoutWindow->show();
+
+    this->move(availableGeometry.right() - this->width() - 12, panelY);
+    m_mediaFlyout->mediaFlyoutWindow->setPosition(availableGeometry.right() - this->width() - 12, flyoutY);
+
+    const int durationMs = 200;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
@@ -98,21 +82,21 @@ void Panel::animateIn()
     animationTimer->start(refreshRate);
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
-        double easedT = 1 - pow(1 - t, 3);
-        int currentX = startX + easedT * (targetX - startX);
+        double currentOpacity = t;
 
-        if (currentX == targetX) {
+        this->setWindowOpacity(currentOpacity);
+        m_mediaFlyout->mediaFlyoutWindow->setOpacity(currentOpacity);
+
+        if (currentStep >= totalSteps) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            this->clearMask();
-            //m_mediaFlyout->mediaFlyoutWindow->setMask(QRegion());
+            this->setWindowOpacity(1.0);  // Ensure it ends at full opacity
+            m_mediaFlyout->mediaFlyoutWindow->setOpacity(1.0);
             visible = true;
             isAnimating = false;
             return;
         }
-        setDynamicMask();
-        this->move(currentX, panelY);
-        m_mediaFlyout->mediaFlyoutWindow->setPosition(currentX, flyoutY);
+
         ++currentStep;
     });
 }
@@ -124,13 +108,7 @@ void Panel::animateOut()
 
     isAnimating = true;
 
-    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
-    int startX = this->x();
-    int targetX = availableGeometry.right();
-    int panelY = this->y();
-    int flyoutY = m_mediaFlyout->mediaFlyoutWindow->y();
-
-    const int durationMs = 60;
+    const int durationMs = 200;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
@@ -139,23 +117,23 @@ void Panel::animateOut()
     animationTimer->start(refreshRate);
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
-        double easedT = 1 - pow(1 - t, 3);
-        int currentX = startX + easedT * (targetX - startX);
+        double currentOpacity = 1.0 - t;
 
-        if (currentX == targetX) {
+        this->setWindowOpacity(currentOpacity);
+        m_mediaFlyout->mediaFlyoutWindow->setOpacity(currentOpacity);
+
+        if (currentStep >= totalSteps) {
             animationTimer->stop();
             animationTimer->deleteLater();
+            this->setWindowOpacity(0);
+            m_mediaFlyout->mediaFlyoutWindow->setOpacity(0);
             this->hide();
             m_mediaFlyout->mediaFlyoutWindow->setVisible(false);
-            this->clearMask();
-            m_mediaFlyout->mediaFlyoutWindow->setMask(QRegion());
             visible = false;
             isAnimating = false;
             return;
         }
-        setDynamicMask();
-        this->move(currentX, panelY);
-        m_mediaFlyout->mediaFlyoutWindow->setPosition(currentX, flyoutY);
+
         ++currentStep;
     });
 }
