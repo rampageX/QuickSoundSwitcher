@@ -15,7 +15,7 @@ QuickSoundSwitcher* QuickSoundSwitcher::instance = nullptr;
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
-    , mediaFlyout(new MediaFlyout(this))
+    , mediaFlyout(nullptr)
 {
     AudioManager::initialize();
     instance = this;
@@ -23,7 +23,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     installGlobalMouseHook();
     installKeyboardHook();
 
-    connect(mediaFlyout, &MediaFlyout::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -70,15 +69,8 @@ bool QuickSoundSwitcher::event(QEvent *event)
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::Trigger) {
-        if (mediaFlyout && !mediaFlyout->isAnimating) {
-            showPanel();
-        }
+        togglePanel();
     }
-}
-
-void QuickSoundSwitcher::hidePanel()
-{
-    mediaFlyout->animateOut();
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()
@@ -150,12 +142,18 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
         if (wParam == WM_LBUTTONUP || wParam == WM_RBUTTONUP) {
             QPoint cursorPos = QCursor::pos();
             QRect trayIconRect = instance->trayIcon->geometry();
-            QRect mediaFlyoutRect = instance->mediaFlyout->mediaFlyoutWindow ? instance->mediaFlyout->mediaFlyoutWindow->geometry() : QRect();
+            QRect mediaFlyoutRect;
 
-            if (!trayIconRect.contains(cursorPos) &&
-                !mediaFlyoutRect.contains(cursorPos)) {
-                if (instance->mediaFlyout && !instance->mediaFlyout->isAnimating && instance->mediaFlyout->visible) {
-                    instance->showPanel();
+            if (instance->mediaFlyout && instance->mediaFlyout->mediaFlyoutWindow) {
+                mediaFlyoutRect = instance->mediaFlyout->mediaFlyoutWindow->geometry();
+            } else {
+                mediaFlyoutRect = QRect();
+            }
+
+            if (!mediaFlyoutRect.contains(cursorPos) && !trayIconRect.contains(cursorPos)) {
+                if (instance->mediaFlyout) {
+                    delete instance->mediaFlyout;
+                    instance->mediaFlyout = nullptr;
                 }
             }
         }
@@ -215,14 +213,13 @@ void QuickSoundSwitcher::toggleMuteWithKey()
     trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
 }
 
-void QuickSoundSwitcher::showPanel()
+void QuickSoundSwitcher::togglePanel()
 {
-    if (mediaFlyout->isAnimating) return;
-
-    if (!mediaFlyout->visible) {
-        mediaFlyout->setupUI();
-        mediaFlyout->animateIn();
+    if (!mediaFlyout) {
+        mediaFlyout = new MediaFlyout(this);
+        connect(mediaFlyout, &MediaFlyout::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
     } else {
-        mediaFlyout->animateOut();
+        delete mediaFlyout;
+        mediaFlyout = nullptr;
     }
 }

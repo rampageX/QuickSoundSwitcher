@@ -10,8 +10,6 @@
 
 MediaFlyout::MediaFlyout(QObject* parent)
     : QObject(parent)
-    , visible(false)
-    , isAnimating(false)
     , mediaFlyoutWindow(nullptr)
 {
     engine = new QQmlApplicationEngine(this);
@@ -26,6 +24,9 @@ MediaFlyout::MediaFlyout(QObject* parent)
     engine->load(QUrl(QStringLiteral("qrc:/qml/MediaFlyout.qml")));
 
     mediaFlyoutWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+
+    setupUI();
+    animateIn();
 }
 
 MediaFlyout::~MediaFlyout()
@@ -35,8 +36,6 @@ MediaFlyout::~MediaFlyout()
 
 void MediaFlyout::animateIn()
 {
-    isAnimating = true;
-
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
     int panelX = availableGeometry.right() - mediaFlyoutWindow->width() + 1;
@@ -46,9 +45,6 @@ void MediaFlyout::animateIn()
     mediaFlyoutWindow->setPosition(panelX, startY);
     mediaFlyoutWindow->show();
 
-    HWND hwnd = (HWND)mediaFlyoutWindow->winId();
-    qDebug() << hwnd;
-
     const int durationMs = 200;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
@@ -56,7 +52,7 @@ void MediaFlyout::animateIn()
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
-    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
         double easedT = 1 - pow(2, -3 * t);
         int currentY = startY + easedT * (targetY - startY);
@@ -64,25 +60,12 @@ void MediaFlyout::animateIn()
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            visible = true;
-            isAnimating = false;
             return;
         }
 
         mediaFlyoutWindow->setPosition(panelX, currentY);
         ++currentStep;
     });
-}
-
-void MediaFlyout::animateOut()
-{
-    if (isAnimating || !visible)
-        return;
-
-    isAnimating = true;
-    mediaFlyoutWindow->setVisible(false);
-    visible = false;
-    isAnimating = false;
 }
 
 int MediaFlyout::playbackVolume() const {
@@ -92,7 +75,6 @@ int MediaFlyout::playbackVolume() const {
 void MediaFlyout::setPlaybackVolume(int volume) {
     if (m_playbackVolume != volume) {
         m_playbackVolume = volume;
-        AudioManager::setPlaybackVolume(volume);
         emit playbackVolumeChanged();
     }
 }

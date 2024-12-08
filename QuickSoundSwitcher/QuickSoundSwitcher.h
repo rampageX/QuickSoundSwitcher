@@ -27,8 +27,7 @@ private:
     QSystemTrayIcon *trayIcon;
     MediaFlyout* mediaFlyout;
     void createTrayIcon();
-    void showPanel();
-    void hidePanel();
+    void togglePanel();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     static LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
     static LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);

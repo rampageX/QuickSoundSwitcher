@@ -18,10 +18,6 @@ public:
     explicit MediaFlyout(QObject* parent = nullptr);
     ~MediaFlyout() override;
 
-    bool visible = false;
-    bool isAnimating = false;
-    void animateIn();
-    void animateOut();
     QWindow* mediaFlyoutWindow;
 
     int playbackVolume() const;
@@ -30,8 +26,6 @@ public:
     int recordingVolume() const;
     void setRecordingVolume(int volume);
 
-    void populateComboBoxes();
-    void setupUI();
 
     void setOutputButtonImage(int volume);
     void setInputButtonImage(bool muted);
@@ -55,13 +49,14 @@ signals:
 
 private:
     QQmlApplicationEngine* engine;
-
     QList<AudioDevice> playbackDevices;
     QList<AudioDevice> recordingDevices;
-
     int m_playbackVolume = 0;
     int m_recordingVolume = 0;
 
+    void animateIn();
+    void setupUI();
+    void populateComboBoxes();
 };
 
 #endif // MEDIASFLYOUT_H
