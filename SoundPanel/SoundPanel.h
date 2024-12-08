@@ -40,7 +40,10 @@ public slots:
     void onInputMuteButtonClicked();
 
     void onOutputSliderReleased();
+
 private slots:
+    void onVolumeChangedWithTray(int volume);
+    void onOutputMuteStateChanged(int volumeIcon);
 
 signals:
     void playbackVolumeChanged();

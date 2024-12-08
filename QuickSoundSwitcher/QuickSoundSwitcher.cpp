@@ -114,22 +114,6 @@ void QuickSoundSwitcher::uninstallKeyboardHook()
 
 LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
-        MSLLHOOKSTRUCT *hookStruct = reinterpret_cast<MSLLHOOKSTRUCT*>(lParam);
-
-        if (wParam == WM_MOUSEWHEEL) {
-            int zDelta = GET_WHEEL_DELTA_WPARAM(hookStruct->mouseData);
-            QPoint cursorPos = QCursor::pos();
-
-            QRect trayIconRect = instance->trayIcon->geometry();
-            if (trayIconRect.contains(cursorPos)) {
-                if (zDelta > 0) {
-                    instance->adjustOutputVolume(true);
-                } else {
-                    instance->adjustOutputVolume(false);
-                }
-            }
-        }
-
         if (wParam == WM_LBUTTONUP || wParam == WM_RBUTTONUP) {
             QPoint cursorPos = QCursor::pos();
             QRect trayIconRect = instance->trayIcon->geometry();
@@ -180,13 +164,20 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
 
 void QuickSoundSwitcher::adjustOutputVolume(bool up)
 {
-    int volume = AudioManager::getPlaybackVolume();
+    int originalVolume = AudioManager::getPlaybackVolume();
+    int newVolume;
     if (up) {
-        volume = volume + 2;
+        newVolume = originalVolume + 2;
     } else {
-        volume = volume - 2;
+        newVolume = originalVolume - 2;
     }
-    trayIcon->setIcon(QIcon(Utils::getIcon(1, volume, NULL)));
+
+    if (AudioManager::getPlaybackMute()) {
+        AudioManager::setPlaybackMute(false);
+    }
+
+    trayIcon->setIcon(QIcon(Utils::getIcon(1, newVolume, NULL)));
+    emit volumeChangedWithTray(newVolume) ;
 }
 
 void QuickSoundSwitcher::toggleMuteWithKey()
@@ -202,6 +193,7 @@ void QuickSoundSwitcher::toggleMuteWithKey()
     }
 
     trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
+    emit outputMuteStateChanged(volumeIcon);
 }
 
 void QuickSoundSwitcher::togglePanel()

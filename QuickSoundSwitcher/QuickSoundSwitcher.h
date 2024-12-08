@@ -37,8 +37,8 @@ private:
     static const int HOTKEY_ID = 1;
 
 signals:
-    void outputMuteStateChanged(bool state);
-    void volumeChangedWithTray();
+    void outputMuteStateChanged(int volumeIcon);
+    void volumeChangedWithTray(int volume);
 };
 
 #endif // QUICKSOUNDSWITCHER_H

@@ -7,6 +7,7 @@
 #include <QBuffer>
 #include <QApplication>
 #include <QTimer>
+#include "QuickSoundSwitcher.h"
 
 SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
@@ -36,11 +37,25 @@ SoundPanel::SoundPanel(QObject* parent)
 
     setupUI();
     animateIn();
+
+    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::outputMuteStateChanged,
+            this, &SoundPanel::onOutputMuteStateChanged);
+    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::volumeChangedWithTray,
+            this, &SoundPanel::onVolumeChangedWithTray);
 }
 
 SoundPanel::~SoundPanel()
 {
     delete engine;
+}
+
+void SoundPanel::onVolumeChangedWithTray(int volume) {
+    setPlaybackVolume(volume);
+    setOutputButtonImage(volume);
+}
+
+void SoundPanel::onOutputMuteStateChanged(int volumeIcon) {
+    setOutputButtonImage(volumeIcon);
 }
 
 void SoundPanel::animateIn()

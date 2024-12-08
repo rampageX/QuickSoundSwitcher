@@ -130,7 +130,9 @@ ApplicationWindow {
             Layout.preferredHeight: -1
             Layout.bottomMargin: 10
             onValueChanged: {
-                soundPanel.onPlaybackVolumeChanged(value)
+                if (pressed) {
+                    soundPanel.onPlaybackVolumeChanged(value)
+                }
             }
 
             onPressedChanged: {
