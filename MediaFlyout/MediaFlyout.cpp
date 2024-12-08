@@ -12,6 +12,7 @@ MediaFlyout::MediaFlyout(QObject* parent)
     : QObject(parent)
     , visible(false)
     , isAnimating(false)
+    , mediaFlyoutWindow(nullptr)
 {
     engine = new QQmlApplicationEngine(this);
     engine->rootContext()->setContextProperty("mediaFlyout", this);
@@ -38,12 +39,15 @@ void MediaFlyout::animateIn()
 
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
-    int panelX = availableGeometry.right() - mediaFlyoutWindow->width();
+    int panelX = availableGeometry.right() - mediaFlyoutWindow->width() + 1;
     int startY = availableGeometry.bottom() - (mediaFlyoutWindow->height() / 2);
     int targetY = availableGeometry.bottom() - mediaFlyoutWindow->height();
 
     mediaFlyoutWindow->setPosition(panelX, startY);
     mediaFlyoutWindow->show();
+
+    HWND hwnd = (HWND)mediaFlyoutWindow->winId();
+    qDebug() << hwnd;
 
     const int durationMs = 200;
     const int refreshRate = 1;
