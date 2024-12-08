@@ -217,3 +217,9 @@ QPixmap Utils::roundPixmap(const QPixmap &src, int radius) {
 
     return dest;
 }
+
+void Utils::playSoundNotification()
+{
+    const wchar_t* soundFile = L"C:\\Windows\\Media\\Windows Background.wav";;
+    PlaySound(soundFile, NULL, SND_FILENAME | SND_ASYNC);
+}

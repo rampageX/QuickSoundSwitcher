@@ -130,6 +130,12 @@ ApplicationWindow {
             onValueChanged: {
                 soundPanel.onPlaybackVolumeChanged(value)
             }
+
+            onPressedChanged: {
+                if (!pressed) {
+                    soundPanel.onOutputSliderReleased()
+                }
+            }
         }
 
         Label {

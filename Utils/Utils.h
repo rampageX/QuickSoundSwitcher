@@ -17,6 +17,7 @@ namespace Utils {
     void setAlwaysOnTopState(QWidget *widget, bool state);
     QPixmap roundPixmap(const QPixmap &src, int radius);
     QString getOverlayIcon(int volume);
+    void playSoundNotification();
 }
 
 #endif // UTILS_H

@@ -218,3 +218,7 @@ void SoundPanel::onInputMuteButtonClicked() {
     AudioManager::setRecordingMute(!isMuted);
     setInputButtonImage(!isMuted);
 }
+
+void SoundPanel::onOutputSliderReleased() {
+    Utils::playSoundNotification();
+}

@@ -26,7 +26,6 @@ public:
     int recordingVolume() const;
     void setRecordingVolume(int volume);
 
-
     void setOutputButtonImage(int volume);
     void setInputButtonImage(bool muted);
 
@@ -39,6 +38,8 @@ public slots:
 
     void onOutputMuteButtonClicked();
     void onInputMuteButtonClicked();
+
+    void onOutputSliderReleased();
 private slots:
 
 signals:
