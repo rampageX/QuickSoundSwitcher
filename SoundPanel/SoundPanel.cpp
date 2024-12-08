@@ -63,13 +63,13 @@ void SoundPanel::animateIn()
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1;
-    int startY = availableGeometry.bottom() - (soundPanelWindow->height() / 2);
+    int startY = availableGeometry.bottom() - (soundPanelWindow->height() * 80 / 100);
     int targetY = availableGeometry.bottom() - soundPanelWindow->height();
 
     soundPanelWindow->setPosition(panelX, startY);
     soundPanelWindow->show();
 
-    const int durationMs = 200;
+    const int durationMs = 400;
     const int refreshRate = 1;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
@@ -78,7 +78,7 @@ void SoundPanel::animateIn()
     animationTimer->start(refreshRate);
     connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
-        double easedT = 1 - pow(2, -3 * t);
+        double easedT = 1 - pow(2, -5 * t);
         int currentY = startY + easedT * (targetY - startY);
 
         if (currentY == targetY) {
