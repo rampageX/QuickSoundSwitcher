@@ -16,9 +16,6 @@ public:
     void adjustOutputVolume(bool up);
     void toggleMuteWithKey();
 
-protected:
-    bool event(QEvent *event) override;
-
 private slots:
     void onRunAtStartupStateChanged();
     void onOutputMuteChanged();

@@ -15,11 +15,20 @@ SoundPanel::SoundPanel(QObject* parent)
     engine = new QQmlApplicationEngine(this);
     engine->rootContext()->setContextProperty("soundPanel", this);
 
-    QColor windowColor = QGuiApplication::palette().color(QPalette::Window);
+    QColor windowColor;
+    QColor borderColor;
+    if (Utils::getTheme() == "dark") {
+        windowColor = QColor(228, 228, 228);
+        borderColor = QColor(1, 1, 1, 51);
+    } else {
+        windowColor = QColor(31, 31, 31);
+        borderColor = QColor(255, 255, 255, 51);
+    }
     engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
 
     QColor accentColor(Utils::getAccentColor("normal"));
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
+    engine->rootContext()->setContextProperty("borderColor", borderColor);
 
     engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel.qml")));
 

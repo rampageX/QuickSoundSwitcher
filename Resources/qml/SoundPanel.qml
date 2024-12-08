@@ -111,8 +111,10 @@ ApplicationWindow {
 
             Image {
                 id: outputImage
-                anchors.margins: 10
-                anchors.fill: parent
+                width: 24
+                height: 24
+                anchors.margins: 0
+                anchors.centerIn: parent
                 source: outputIcon
                 fillMode: Image.PreserveAspectFit
             }
@@ -141,12 +143,12 @@ ApplicationWindow {
         Label {
             id: outputVolume
             text: String(outputSlider.value)
-            Layout.rightMargin: 20
+            Layout.rightMargin: 25
             Layout.leftMargin: 10
             Layout.preferredHeight: -1
             Layout.preferredWidth: 20
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 20
+            font.pixelSize: 24
             Layout.bottomMargin: 10
         }
 
@@ -154,7 +156,7 @@ ApplicationWindow {
             id: inputSeparator
             Layout.preferredHeight: 1
             Layout.fillWidth: true
-            color: Qt.rgba(1, 1, 1, 0.2)
+            color: borderColor
             Layout.columnSpan: 3
         }
 
@@ -186,8 +188,10 @@ ApplicationWindow {
             }
             Image {
                 id: inputImage
-                anchors.margins: 8
-                anchors.fill: parent
+                width: 24
+                height: 24
+                anchors.margins: 0
+                anchors.centerIn: parent
                 source: inputIcon
                 fillMode: Image.PreserveAspectFit
             }
@@ -210,12 +214,12 @@ ApplicationWindow {
         Label {
             id: inputVolume
             text: String(inputSlider.value)
-            Layout.rightMargin: 20
+            Layout.rightMargin: 25
             Layout.leftMargin: 10
             Layout.preferredHeight: -1
             Layout.preferredWidth: 20
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 20
+            font.pixelSize: 24
             Layout.bottomMargin: 10
         }
     }

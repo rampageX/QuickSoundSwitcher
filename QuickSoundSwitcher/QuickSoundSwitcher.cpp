@@ -57,15 +57,6 @@ void QuickSoundSwitcher::createTrayIcon()
     connect(trayIcon, &QSystemTrayIcon::activated, this, &QuickSoundSwitcher::trayIconActivated);
 }
 
-bool QuickSoundSwitcher::event(QEvent *event)
-{
-    if (event->type() == QEvent::ApplicationPaletteChange) {
-        onOutputMuteChanged();
-        return true;
-    }
-    return QMainWindow::event(event);
-}
-
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::Trigger) {
