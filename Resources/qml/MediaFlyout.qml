@@ -1,155 +1,216 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls.FluentWinUI3 2.15
+import QtQuick.Controls.Universal 2.15
+
 ApplicationWindow {
-    width: 330
-    height: 180
+    id: window
+    width: 360
+    height: gridLayout.implicitHeight
     visible: false
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
+    Universal.theme: Universal.System
+    Universal.accent: accentColor
+
+    property bool blockOutputSignal: false
+    property bool blockInputSignal: false
+
+    function setOutputImageSource(source) {
+        outputImage.source = source;
+    }
+
+    function setInputImageSource(source) {
+        inputImage.source = source;
+    }
+
+    function clearPlaybackDevices() {
+        outputDeviceComboBox.model.clear();
+    }
+
+    function addPlaybackDevice(deviceName) {
+        outputDeviceComboBox.model.append({name: deviceName});
+    }
+
+    function clearRecordingDevices() {
+        inputDeviceComboBox.model.clear();
+    }
+
+    function addRecordingDevice(deviceName) {
+        inputDeviceComboBox.model.append({name: deviceName});
+    }
+
+    function setPlaybackDeviceCurrentIndex(index) {
+        blockOutputSignal = true;
+        outputDeviceComboBox.currentIndex = index;
+        blockOutputSignal = false;
+    }
+
+    function setRecordingDeviceCurrentIndex(index) {
+        blockInputSignal = true;
+        inputDeviceComboBox.currentIndex = index;
+        blockInputSignal = false;
+    }
 
     Rectangle {
         anchors.fill: parent
         color: nativeWindowColor
-        radius: 8
-        border.width: 1
-        border.color: Qt.rgba(255, 255, 255, 0.15)
+
+        Rectangle {
+            height: 1
+            width: parent.width
+            color: Qt.rgba(255, 255, 255, 0.15)
+            anchors.top: parent.top
+        }
+
+        // Left border
+        Rectangle {
+            width: 1
+            height: parent.height
+            color: Qt.rgba(255, 255, 255, 0.15)
+            anchors.left: parent.left
+            anchors.top: parent.top
+        }
     }
 
     GridLayout {
-        id: timeline
-        y: 12
-        height: 24
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.leftMargin: 15
-        anchors.rightMargin: 15
-        layoutDirection: Qt.LeftToRight
-        flow: GridLayout.LeftToRight
-        rows: 1
+        id: gridLayout
+        anchors.fill: parent
+        anchors.leftMargin: 0
+        anchors.rightMargin: 0
+        anchors.topMargin: 0
+        anchors.bottomMargin: 0
         columns: 3
-        columnSpacing: 12
+        rowSpacing: 0
 
-        Label {
-            id: currentTimeLabel
-            text: qsTr("%1:%2").arg(Math.floor(mediaFlyout.currentTime / 60).toString().padStart(2, '0')).arg((mediaFlyout.currentTime % 60).toString().padStart(2, '0'))
-            font.pixelSize: 13
+        ComboBox {
+            id: outputDeviceComboBox
+            Layout.preferredHeight: 45
+            Layout.columnSpan: 3
+            Layout.fillWidth: true
+            flat: true
+            font.pixelSize: 16
+            model: ListModel {}
+            onCurrentTextChanged: {
+                if (!window.blockOutputSignal) {
+                    mediaFlyout.onPlaybackDeviceChanged(outputDeviceComboBox.currentText);
+                }
+            }
         }
 
-        ProgressBar {
-            id: progressBar
+        Button {
+            id: outputeMuteButton
+            Layout.leftMargin: 10
+            Layout.preferredHeight: 45
+            Layout.preferredWidth: 45
+            flat: true
+            Layout.bottomMargin: 10
+            onClicked: {
+                mediaFlyout.onOutputMuteButtonClicked()
+            }
+
+            Image {
+                id: outputImage
+                anchors.margins: 10
+                anchors.fill: parent
+                source: outputIcon
+                fillMode: Image.PreserveAspectFit
+            }
+        }
+
+        Slider {
+            id: outputSlider
+            value: mediaFlyout.playbackVolume
             from: 0
-            to: mediaFlyout.totalTime
-            value: mediaFlyout.currentTime
+            to: 100
+            stepSize: 1
             Layout.fillWidth: true
+            Layout.preferredHeight: -1
+            Layout.bottomMargin: 10
+            onValueChanged: {
+                mediaFlyout.onPlaybackVolumeChanged(value)
+            }
         }
 
         Label {
-            id: totalTimeLabel
-            text: qsTr("%1:%2").arg(Math.floor(mediaFlyout.totalTime / 60).toString().padStart(2, '0')).arg((mediaFlyout.totalTime % 60).toString().padStart(2, '0'))
-            font.pixelSize: 13
+            id: outputVolume
+            text: String(outputSlider.value)
+            Layout.rightMargin: 20
+            Layout.leftMargin: 10
+            Layout.preferredHeight: -1
+            Layout.preferredWidth: 20
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 20
+            Layout.bottomMargin: 10
         }
-    }
 
-    ColumnLayout {
-        id: columnLayout
-        anchors.top: timeline.bottom
-        height: 64
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.topMargin: 15
-        anchors.leftMargin: 15
-        anchors.rightMargin: 15
+        Rectangle {
+            id: inputSeparator
+            Layout.preferredHeight: 1
+            Layout.fillWidth: true
+            color: Qt.rgba(1, 1, 1, 0.2)
+            Layout.columnSpan: 3
+        }
+
+        ComboBox {
+            id: inputDeviceComboBox
+            Layout.topMargin: -2
+            Layout.preferredHeight: 45
+            Layout.fillWidth: true
+            Layout.columnSpan: 3
+            flat: true
+            font.pixelSize: 16
+            model: ListModel {}
+            onCurrentTextChanged: {
+                if (!window.blockInputSignal) {
+                    mediaFlyout.onRecordingDeviceChanged(inputDeviceComboBox.currentText);
+                }
+            }
+        }
+
+        Button {
+            id: inputMuteButton
+            Layout.leftMargin: 10
+            Layout.preferredWidth: 45
+            Layout.preferredHeight: 45
+            flat: true
+            Layout.bottomMargin: 10
+            onClicked: {
+                mediaFlyout.onInputMuteButtonClicked()
+            }
+            Image {
+                id: inputImage
+                anchors.margins: 8
+                anchors.fill: parent
+                source: inputIcon
+                fillMode: Image.PreserveAspectFit
+            }
+        }
+
+        Slider {
+            id: inputSlider
+            value: mediaFlyout.recordingVolume
+            from: 0
+            to: 100
+            stepSize: 1
+            Layout.fillWidth: true
+            Layout.preferredHeight: -1
+            Layout.bottomMargin: 10
+            onValueChanged: {
+                mediaFlyout.onRecordingVolumeChanged(value)
+            }
+        }
 
         Label {
-            id: titleLabel
-            Layout.preferredWidth: parent.width - icon.width - 20  // Adjust width to avoid overlap
-            text: mediaFlyout.title
-            Layout.fillWidth: true
-            font.bold: true
-            font.pixelSize: 14
+            id: inputVolume
+            text: String(inputSlider.value)
+            Layout.rightMargin: 20
+            Layout.leftMargin: 10
+            Layout.preferredHeight: -1
+            Layout.preferredWidth: 20
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 20
+            Layout.bottomMargin: 10
         }
-
-        Label {
-            id: artistLabel
-            text: mediaFlyout.artist
-            Layout.fillWidth: true
-            font.pixelSize: 13
-        }
-    }
-
-    GridLayout {
-        id: gridLayout1
-        anchors.top: timeline.bottom
-        width: 64
-        height: 64
-        anchors.right: parent.right
-        anchors.topMargin: 15
-        anchors.leftMargin: 15
-        anchors.rightMargin: 15
-
-        Image {
-            id: icon
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            source: mediaFlyout.iconSource
-            fillMode: Image.PreserveAspectFit
-        }
-    }
-
-    RowLayout {
-        width: parent.width
-        spacing: 15
-        anchors.top: gridLayout1.bottom
-        anchors.topMargin: 15
-
-        Item { Layout.fillWidth: true }
-
-        Button {
-            id: prev
-            Layout.preferredWidth: 40
-            Layout.preferredHeight: 40
-            enabled: mediaFlyout.isPrevEnabled
-            flat: true
-            Image {
-                anchors.margins: 12
-                anchors.fill: parent
-                source: "qrc:/icons/prev_light.png"
-                fillMode: Image.PreserveAspectFit
-            }
-            onClicked: mediaFlyout.onPrevButtonClicked()
-        }
-
-        Button {
-            id: pause
-            Layout.preferredWidth: 40
-            Layout.preferredHeight: 40
-            flat: true
-            Image {
-                anchors.margins: 12
-                anchors.fill: parent
-                source: mediaFlyout.isPlaying ? "qrc:/icons/pause_light.png" : "qrc:/icons/play_light.png"
-                fillMode: Image.PreserveAspectFit
-            }
-            onClicked: mediaFlyout.onPauseButtonClicked()
-        }
-
-        Button {
-            id: next
-            Layout.preferredWidth: 40
-            Layout.preferredHeight: 40
-            enabled: mediaFlyout.isNextEnabled
-            flat: true
-            Image {
-                anchors.margins: 12
-                anchors.fill: parent
-                source: "qrc:/icons/next_light.png"
-                fillMode: Image.PreserveAspectFit
-            }
-            onClicked: mediaFlyout.onNextButtonClicked()
-        }
-
-        Item { Layout.fillWidth: true }
     }
 }

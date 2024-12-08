@@ -2,13 +2,8 @@
 #define QUICKSOUNDSWITCHER_H
 
 #include "MediaFlyout.h"
-#include "MediaSessionWorker.h"
-#include "Panel.h"
-#include "SettingsPage.h"
-#include "SoundOverlay.h"
 #include <QMainWindow>
 #include <QSystemTrayIcon>
-#include <QSettings>
 
 class QuickSoundSwitcher : public QMainWindow
 {
@@ -26,19 +21,11 @@ protected:
 
 private slots:
     void onRunAtStartupStateChanged();
-    void onSessionReady(const MediaSession& session);
-    void onSessionError();
-    void onVolumeChanged();
     void onOutputMuteChanged();
 
 private:
     QSystemTrayIcon *trayIcon;
-    QSettings settings;
-    MediaSessionWorker* worker;
     MediaFlyout* mediaFlyout;
-    Panel* panel;
-    SoundOverlay* soundOverlay;
-    SettingsPage *settingsPage;
     void createTrayIcon();
     void showPanel();
     void hidePanel();
@@ -51,14 +38,7 @@ private:
     void uninstallGlobalMouseHook();
     void installKeyboardHook();
     void uninstallKeyboardHook();
-
     static const int HOTKEY_ID = 1;
-    void loadSettings();
-    void onSettingsChanged();
-    void showSettings();
-    void updateApplicationColorScheme();
-    bool mergeSimilarApps;
-    int volumeIncrement;
 
 signals:
     void outputMuteStateChanged(bool state);

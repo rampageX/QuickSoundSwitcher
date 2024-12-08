@@ -15,27 +15,15 @@ QuickSoundSwitcher* QuickSoundSwitcher::instance = nullptr;
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
-    , settings("Odizinne", "QuickSoundSwitcher")
-    , worker(new MediaSessionWorker)
-    , mediaFlyout(new MediaFlyout(this, worker))
-    , panel(new Panel(this, mediaFlyout))
-    , soundOverlay(new SoundOverlay(this))
-    , settingsPage(new SettingsPage(this))
+    , mediaFlyout(new MediaFlyout(this))
 {
     AudioManager::initialize();
     instance = this;
-    updateApplicationColorScheme();
     createTrayIcon();
-    loadSettings();
     installGlobalMouseHook();
     installKeyboardHook();
 
-    connect(worker, &MediaSessionWorker::sessionReady, this, &QuickSoundSwitcher::onSessionReady);
-    connect(worker, &MediaSessionWorker::sessionError, this, &QuickSoundSwitcher::onSessionError);
-    connect(panel, &Panel::volumeChanged, this, &QuickSoundSwitcher::onVolumeChanged);
-    connect(panel, &Panel::outputMuteChanged, this, &QuickSoundSwitcher::onOutputMuteChanged);
-
-    connect(settingsPage, &SettingsPage::settingsChanged, this, &QuickSoundSwitcher::onSettingsChanged);
+    connect(mediaFlyout, &MediaFlyout::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -43,11 +31,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     AudioManager::cleanup();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
-    delete worker;
-    delete soundOverlay;
-    delete panel;
     delete mediaFlyout;
-    delete settingsPage;
     instance = nullptr;
 }
 
@@ -62,15 +46,10 @@ void QuickSoundSwitcher::createTrayIcon()
     startupAction->setChecked(ShortcutManager::isShortcutPresent("QuickSoundSwitcher.lnk"));
     connect(startupAction, &QAction::triggered, this, &QuickSoundSwitcher::onRunAtStartupStateChanged);
 
-    QAction *settingsAction = new QAction(tr("Settings"), this);
-    connect(settingsAction, &QAction::triggered, this, &QuickSoundSwitcher::showSettings);
-
     QAction *exitAction = new QAction(tr("Exit"), this);
     connect(exitAction, &QAction::triggered, this, &QApplication::quit);
 
     trayMenu->addAction(startupAction);
-    trayMenu->addAction(settingsAction);
-    trayMenu->addSeparator();
     trayMenu->addAction(exitAction);
 
     trayIcon->setContextMenu(trayMenu);
@@ -82,35 +61,16 @@ void QuickSoundSwitcher::createTrayIcon()
 bool QuickSoundSwitcher::event(QEvent *event)
 {
     if (event->type() == QEvent::ApplicationPaletteChange) {
-        updateApplicationColorScheme();
         onOutputMuteChanged();
         return true;
     }
     return QMainWindow::event(event);
 }
 
-void QuickSoundSwitcher::updateApplicationColorScheme()
-{
-    QString mode = Utils::getTheme();
-    QString color;
-    QPalette palette = QApplication::palette();
-
-    if (mode == "light") {
-        color = Utils::getAccentColor("light1");
-    } else {
-        color = Utils::getAccentColor("dark1");
-    }
-
-    QColor highlightColor(color);
-
-    palette.setColor(QPalette::Highlight, highlightColor);
-    qApp->setPalette(palette);
-}
-
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::Trigger) {
-        if (panel && !panel->isAnimating) {
+        if (mediaFlyout && !mediaFlyout->isAnimating) {
             showPanel();
         }
     }
@@ -118,19 +78,7 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 
 void QuickSoundSwitcher::hidePanel()
 {
-    panel->animateOut();
-}
-
-void QuickSoundSwitcher::onVolumeChanged()
-{
-    int volumeIcon;
-    if (AudioManager::getPlaybackMute()) {
-        volumeIcon = 0;
-    } else {
-        volumeIcon = AudioManager::getPlaybackVolume();
-    }
-
-    trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
+    mediaFlyout->animateOut();
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()
@@ -142,29 +90,13 @@ void QuickSoundSwitcher::onOutputMuteChanged()
         volumeIcon = AudioManager::getPlaybackVolume();
     }
 
-    trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
+    trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
 }
 
 void QuickSoundSwitcher::onRunAtStartupStateChanged()
 {
     QAction *action = qobject_cast<QAction *>(sender());
     ShortcutManager::manageShortcut(action->isChecked(), "QuickSoundSwitcher.lnk");
-}
-
-void QuickSoundSwitcher::showSettings()
-{
-    settingsPage->showWindow();
-}
-
-void QuickSoundSwitcher::loadSettings()
-{
-    volumeIncrement = settings.value("volumeIncrement", 2).toInt();
-    mergeSimilarApps = settings.value("mergeSimilarApps", true).toBool();
-}
-
-void QuickSoundSwitcher::onSettingsChanged()
-{
-    loadSettings();
 }
 
 void QuickSoundSwitcher::installGlobalMouseHook()
@@ -218,13 +150,11 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
         if (wParam == WM_LBUTTONUP || wParam == WM_RBUTTONUP) {
             QPoint cursorPos = QCursor::pos();
             QRect trayIconRect = instance->trayIcon->geometry();
-            QRect panelRect = instance->panel ? instance->panel->geometry() : QRect();
             QRect mediaFlyoutRect = instance->mediaFlyout->mediaFlyoutWindow ? instance->mediaFlyout->mediaFlyoutWindow->geometry() : QRect();
 
             if (!trayIconRect.contains(cursorPos) &&
-                !panelRect.contains(cursorPos) &&
                 !mediaFlyoutRect.contains(cursorPos)) {
-                if (instance->panel && !instance->panel->isAnimating && instance->panel->visible) {
+                if (instance->mediaFlyout && !instance->mediaFlyout->isAnimating && instance->mediaFlyout->visible) {
                     instance->showPanel();
                 }
             }
@@ -243,13 +173,13 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
             switch (pKeyboard->vkCode) {
             case VK_VOLUME_UP:
                 instance->adjustOutputVolume(true);
-                return 1;
+                break;
             case VK_VOLUME_DOWN:
                 instance->adjustOutputVolume(false);
-                return 1;
+                break;
             case VK_VOLUME_MUTE:
                 instance->toggleMuteWithKey();
-                return 1;
+                break;
             default:
                 break;
             }
@@ -262,86 +192,37 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
 void QuickSoundSwitcher::adjustOutputVolume(bool up)
 {
     int volume = AudioManager::getPlaybackVolume();
-    int newVolume;
     if (up) {
-        newVolume = volume + volumeIncrement;
-        if (newVolume > 100) {
-            newVolume = 100;
-        }
+        volume = volume + 2;
     } else {
-        newVolume = volume - volumeIncrement;
-        if (newVolume < 0) {
-            newVolume = 0;
-        }
+        volume = volume - 2;
     }
-
-    AudioManager::setPlaybackVolume(newVolume);
-
-    if (AudioManager::getPlaybackMute()) {
-        AudioManager::setPlaybackMute(false);
-        emit outputMuteStateChanged(false);
-    }
-    trayIcon->setIcon(Utils::getIcon(1, newVolume, NULL));
-    emit volumeChangedWithTray();
-
-    soundOverlay->animateIn();
-    soundOverlay->updateVolumeIcon(Utils::getOverlayIcon(newVolume));
-    soundOverlay->updateVolumeLabel(newVolume);
-    soundOverlay->updateProgressBar(newVolume);
+    trayIcon->setIcon(QIcon(Utils::getIcon(1, volume, NULL)));
 }
 
 void QuickSoundSwitcher::toggleMuteWithKey()
 {
-    bool newPlaybackMute = !AudioManager::getPlaybackMute();
-    AudioManager::setPlaybackMute(newPlaybackMute);
+    bool muted = !AudioManager::getPlaybackMute();
+    int volume = AudioManager::getPlaybackVolume();
 
     int volumeIcon;
-    if (AudioManager::getPlaybackMute()) {
+    if (volume == 0 || muted) {
         volumeIcon = 0;
     } else {
-        volumeIcon = AudioManager::getPlaybackVolume();
+        volumeIcon = volume;
     }
 
-    trayIcon->setIcon(Utils::getIcon(1, volumeIcon, NULL));
-
-    emit outputMuteStateChanged(newPlaybackMute);
-
-    int volume = AudioManager::getPlaybackVolume();
-    soundOverlay->updateVolumeIcon(Utils::getOverlayIcon(volumeIcon));
-    soundOverlay->updateVolumeLabel(volume);
-    soundOverlay->updateProgressBar(volume);
-    soundOverlay->animateIn();
-}
-
-void QuickSoundSwitcher::onSessionReady(const MediaSession& session)
-{
-    mediaFlyout->updateTitle(session.title);
-    mediaFlyout->updateArtist(session.artist);
-    mediaFlyout->updateIcon(session.icon);
-    mediaFlyout->updatePauseButton(session.playbackState);
-    mediaFlyout->updateControls(session.canGoPrevious, session.canGoNext);
-    mediaFlyout->updateProgress(session.currentTime, session.duration);
-}
-
-void QuickSoundSwitcher::onSessionError()
-{
-    mediaFlyout->setDefaults();
+    trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
 }
 
 void QuickSoundSwitcher::showPanel()
 {
-    if (panel->isAnimating) return;
+    if (mediaFlyout->isAnimating) return;
 
-    if (!panel->visible) {
-        panel->mergeApps = mergeSimilarApps;
-        panel->populateComboBoxes();
-        panel->setButtons();
-        panel->setSliders();
-        panel->populateApplications();
-
-        worker->process();
-        panel->animateIn();
+    if (!mediaFlyout->visible) {
+        mediaFlyout->setupUI();
+        mediaFlyout->animateIn();
     } else {
-        panel->animateOut();
+        mediaFlyout->animateOut();
     }
 }

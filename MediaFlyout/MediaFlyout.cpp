@@ -1,41 +1,30 @@
 #include "MediaFlyout.h"
-#include "MediaSessionWorker.h"
 #include "Utils.h"
 #include <QQmlContext>
 #include <QQuickItem>
 #include <QIcon>
 #include <QPixmap>
 #include <QBuffer>
+#include <QApplication>
+#include <QTimer>
 
-MediaFlyout::MediaFlyout(QObject* parent, MediaSessionWorker* worker)
+MediaFlyout::MediaFlyout(QObject* parent)
     : QObject(parent)
-    , worker(worker)
-    , m_currentTime(0)
-    , m_totalTime(100)
-    , m_isPlaying(false)
-    , m_isPrevEnabled(true)  // default enabled state
-    , m_isNextEnabled(true)  // default enabled state
+    , visible(false)
+    , isAnimating(false)
 {
     engine = new QQmlApplicationEngine(this);
     engine->rootContext()->setContextProperty("mediaFlyout", this);
 
     QColor windowColor = QGuiApplication::palette().color(QPalette::Window);
-    // Expose the native window color to QML
     engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
 
+    QColor accentColor(Utils::getAccentColor("normal"));
+    engine->rootContext()->setContextProperty("accentColor", accentColor.name());
 
     engine->load(QUrl(QStringLiteral("qrc:/qml/MediaFlyout.qml")));
 
     mediaFlyoutWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
-
-
-    connect(worker, &MediaSessionWorker::titleChanged, this, &MediaFlyout::updateTitle);
-    connect(worker, &MediaSessionWorker::artistChanged, this, &MediaFlyout::updateArtist);
-    connect(worker, &MediaSessionWorker::sessionIconChanged, this, &MediaFlyout::updateIcon);
-    connect(worker, &MediaSessionWorker::sessionPlaybackStateChanged, this, &MediaFlyout::updatePauseButton);
-    connect(worker, &MediaSessionWorker::sessionTimeInfoUpdated, this, &MediaFlyout::updateProgress);
-
-    setDefaults();
 }
 
 MediaFlyout::~MediaFlyout()
@@ -43,149 +32,226 @@ MediaFlyout::~MediaFlyout()
     delete engine;
 }
 
-QString MediaFlyout::title() const { return m_title; }
-void MediaFlyout::setTitle(const QString& title) {
-    if (m_title != title) {
-        m_title = title;
-        emit titleChanged(m_title);
-    }
-}
-
-QString MediaFlyout::artist() const { return m_artist; }
-void MediaFlyout::setArtist(const QString& artist) {
-    if (m_artist != artist) {
-        m_artist = artist;
-        emit artistChanged(m_artist);
-    }
-}
-
-int MediaFlyout::currentTime() const { return m_currentTime; }
-void MediaFlyout::setCurrentTime(int currentTime) {
-    if (m_currentTime != currentTime) {
-        m_currentTime = currentTime;
-        emit currentTimeChanged(m_currentTime);
-    }
-}
-
-int MediaFlyout::totalTime() const { return m_totalTime; }
-void MediaFlyout::setTotalTime(int totalTime) {
-    if (m_totalTime != totalTime) {
-        m_totalTime = totalTime;
-        emit totalTimeChanged(m_totalTime);
-    }
-}
-
-bool MediaFlyout::isPlaying() const { return m_isPlaying; }
-void MediaFlyout::setIsPlaying(bool isPlaying) {
-    if (m_isPlaying != isPlaying) {
-        m_isPlaying = isPlaying;
-        emit isPlayingChanged(m_isPlaying);
-    }
-}
-
-QString MediaFlyout::iconSource() const { return m_iconSource; }
-void MediaFlyout::setIconSource(const QString& iconSource) {
-    if (m_iconSource != iconSource) {
-        m_iconSource = iconSource;
-        emit iconSourceChanged(m_iconSource);
-    }
-}
-
-bool MediaFlyout::isPrevEnabled() const { return m_isPrevEnabled; }
-void MediaFlyout::setPrevEnabled(bool enabled) {
-    if (m_isPrevEnabled != enabled) {
-        m_isPrevEnabled = enabled;
-        emit prevEnabledChanged(m_isPrevEnabled);
-    }
-}
-
-bool MediaFlyout::isNextEnabled() const { return m_isNextEnabled; }
-void MediaFlyout::setNextEnabled(bool enabled) {
-    if (m_isNextEnabled != enabled) {
-        m_isNextEnabled = enabled;
-        emit nextEnabledChanged(m_isNextEnabled);
-    }
-}
-
-void MediaFlyout::applyRadius(QWindow *window, int radius)
+void MediaFlyout::animateIn()
 {
-    QRect r(QPoint(), window->geometry().size());
-    QRect rb(0, 0, 2 * radius, 2 * radius);
+    isAnimating = true;
 
-    QRegion region(rb, QRegion::Ellipse);
-    rb.moveRight(r.right());
-    region += QRegion(rb, QRegion::Ellipse);
-    rb.moveBottom(r.bottom());
-    region += QRegion(rb, QRegion::Ellipse);
-    rb.moveLeft(r.left());
-    region += QRegion(rb, QRegion::Ellipse);
-    region += QRegion(r.adjusted(radius, 0, -radius, 0), QRegion::Rectangle);
-    region += QRegion(r.adjusted(0, radius, 0, -radius), QRegion::Rectangle);
-    window->setMask(region);
+    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
+    int flyoutY = availableGeometry.bottom() - mediaFlyoutWindow->height();
+
+    mediaFlyoutWindow->setOpacity(0.0);
+    mediaFlyoutWindow->show();
+
+    mediaFlyoutWindow->setPosition(availableGeometry.right() - 359, flyoutY + 1);
+
+    const int durationMs = 200;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double currentOpacity = t;
+
+        mediaFlyoutWindow->setOpacity(currentOpacity);
+
+        if (currentStep >= totalSteps) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            mediaFlyoutWindow->setOpacity(1.0);
+            visible = true;
+            isAnimating = false;
+            return;
+        }
+
+        ++currentStep;
+    });
 }
 
-void MediaFlyout::updateTitle(QString title)
+void MediaFlyout::animateOut()
 {
-    if (title.length() > 30) {
-        title = title.left(30) + "...";
+    if (isAnimating || !visible)
+        return;
+
+    isAnimating = true;
+
+    const int durationMs = 200;
+    const int refreshRate = 1;
+    const double totalSteps = durationMs / refreshRate;
+    int currentStep = 0;
+    QTimer *animationTimer = new QTimer(this);
+
+    animationTimer->start(refreshRate);
+    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
+        double t = static_cast<double>(currentStep) / totalSteps;
+        double currentOpacity = 1.0 - t;
+
+        mediaFlyoutWindow->setOpacity(currentOpacity);
+
+        if (currentStep >= totalSteps) {
+            animationTimer->stop();
+            animationTimer->deleteLater();
+            mediaFlyoutWindow->setOpacity(0);
+            mediaFlyoutWindow->setVisible(false);
+            visible = false;
+            isAnimating = false;
+            return;
+        }
+
+        ++currentStep;
+    });
+}
+
+int MediaFlyout::playbackVolume() const {
+    return m_playbackVolume;
+}
+
+void MediaFlyout::setPlaybackVolume(int volume) {
+    if (m_playbackVolume != volume) {
+        m_playbackVolume = volume;
+        AudioManager::setPlaybackVolume(volume);
+        emit playbackVolumeChanged();
     }
-    setTitle(title);
 }
 
-void MediaFlyout::updateArtist(QString artist)
-{
-    if (artist.length() > 30) {
-        artist = artist.left(30) + "...";
+int MediaFlyout::recordingVolume() const {
+    return m_recordingVolume;
+}
+
+void MediaFlyout::setRecordingVolume(int volume) {
+    if (m_recordingVolume != volume) {
+        m_recordingVolume = volume;
+        emit recordingVolumeChanged();
     }
-    setArtist(artist);
 }
 
-void MediaFlyout::updateIcon(QIcon icon) {
-    QPixmap pixmap = icon.pixmap(64, 64);
-    pixmap = Utils::roundPixmap(pixmap, 8);
-    QByteArray byteArray;
-    QBuffer buffer(&byteArray);
-    buffer.open(QIODevice::WriteOnly);
-    pixmap.save(&buffer, "PNG");
-    setIconSource("data:image/png;base64," + byteArray.toBase64());
+void MediaFlyout::onPlaybackVolumeChanged(int volume) {
+    AudioManager::setPlaybackVolume(volume);
+    if (AudioManager::getPlaybackMute()) {
+        AudioManager::setPlaybackMute(false);
+    }
+    setOutputButtonImage(volume);
+    emit shouldUpdateTray();
 }
 
-void MediaFlyout::updatePauseButton(QString state) {
-    bool isPlaying = (state == "Playing");
-    setIsPlaying(isPlaying);
+void MediaFlyout::onRecordingVolumeChanged(int volume) {
+    AudioManager::setRecordingVolume(volume);
 }
 
-void MediaFlyout::updateProgress(int currentTime, int totalTime) {
-    setCurrentTime(currentTime);
-    setTotalTime(totalTime);
+void MediaFlyout::populateComboBoxes() {
+    playbackDevices.clear();
+    recordingDevices.clear();
+
+    AudioManager::enumeratePlaybackDevices(playbackDevices);
+    AudioManager::enumerateRecordingDevices(recordingDevices);
+
+    QMetaObject::invokeMethod(engine->rootObjects().first(), "clearPlaybackDevices");
+
+    int defaultPlaybackIndex = -1;
+    for (int i = 0; i < playbackDevices.size(); ++i) {
+        const AudioDevice& device = playbackDevices[i];
+        QMetaObject::invokeMethod(engine->rootObjects().first(), "addPlaybackDevice",
+                                  Q_ARG(QVariant, QVariant::fromValue(device.shortName)));
+
+        if (device.isDefault) {
+            defaultPlaybackIndex = i;
+        }
+    }
+
+    if (defaultPlaybackIndex != -1) {
+        QMetaObject::invokeMethod(engine->rootObjects().first(), "setPlaybackDeviceCurrentIndex",
+                                  Q_ARG(QVariant, defaultPlaybackIndex));
+    }
+
+    QMetaObject::invokeMethod(engine->rootObjects().first(), "clearRecordingDevices");
+
+    int defaultRecordingIndex = -1;
+    for (int i = 0; i < recordingDevices.size(); ++i) {
+        const AudioDevice& device = recordingDevices[i];
+        QMetaObject::invokeMethod(engine->rootObjects().first(), "addRecordingDevice",
+                                  Q_ARG(QVariant, QVariant::fromValue(device.shortName)));
+
+        if (device.isDefault) {
+            defaultRecordingIndex = i;
+        }
+    }
+
+    if (defaultRecordingIndex != -1) {
+        QMetaObject::invokeMethod(engine->rootObjects().first(), "setRecordingDeviceCurrentIndex",
+                                  Q_ARG(QVariant, defaultRecordingIndex));
+    }
 }
 
-void MediaFlyout::setDefaults() {
-    setTitle("No song is currently playing");
-    setArtist("");
-    setCurrentTime(0);
-    setTotalTime(100);
-    setIsPlaying(false);
-    setIconSource("qrc:/icons/placeholder_light.png");
+void MediaFlyout::onPlaybackDeviceChanged(const QString &deviceName) {
+    for (const AudioDevice& device : playbackDevices) {
+        if (device.shortName == deviceName) {
+            AudioManager::setDefaultEndpoint(device.id);
+            setPlaybackVolume(AudioManager::getPlaybackVolume());
+            break;
+        }
+    }
 }
 
-void MediaFlyout::onPrevButtonClicked() {
-    worker->previous();
+void MediaFlyout::onRecordingDeviceChanged(const QString &deviceName) {
+    for (const AudioDevice& device : recordingDevices) {
+        if (device.shortName == deviceName) {
+            AudioManager::setDefaultEndpoint(device.id);
+            setRecordingVolume(AudioManager::getRecordingVolume());
+            break;
+        }
+    }
 }
 
-void MediaFlyout::onPauseButtonClicked() {
-    if (isPlaying()) {
-        worker->pause();
+void MediaFlyout::setupUI() {
+    populateComboBoxes();
+    setPlaybackVolume(AudioManager::getPlaybackVolume());
+    setRecordingVolume(AudioManager::getRecordingVolume());
+
+    int volume = AudioManager::getPlaybackVolume();
+    bool isOutputMuted = AudioManager::getPlaybackMute();
+
+    if (isOutputMuted || volume == 0) {
+        setOutputButtonImage(0);
     } else {
-        worker->play();
+        setOutputButtonImage(volume);
     }
+
+    bool isInputMuted = AudioManager::getRecordingMute();
+    setInputButtonImage(isInputMuted);
+
+
 }
 
-void MediaFlyout::onNextButtonClicked() {
-    worker->next();
+void MediaFlyout::setOutputButtonImage(int volume) {
+    QString icon = Utils::getIcon(2, volume, NULL);
+
+    engine->rootContext()->setContextProperty("outputIcon", QStringLiteral("qrc") + icon);
 }
 
-void MediaFlyout::updateControls(bool prev, bool next) {
-    setPrevEnabled(prev);
-    setNextEnabled(next);
+void MediaFlyout::setInputButtonImage(bool muted) {
+    QString icon = Utils::getIcon(3, NULL, muted);
+
+    engine->rootContext()->setContextProperty("inputIcon", QStringLiteral("qrc") + icon);
+}
+
+void MediaFlyout::onOutputMuteButtonClicked() {
+    bool isMuted = AudioManager::getPlaybackMute();
+    int volume = AudioManager::getPlaybackVolume();
+    AudioManager::setPlaybackMute(!isMuted);
+
+    if (!isMuted || volume == 0) {
+        setOutputButtonImage(0);
+    } else {
+        setOutputButtonImage(volume);
+    }
+
+    emit shouldUpdateTray();
+
+}
+void MediaFlyout::onInputMuteButtonClicked() {
+    bool isMuted = AudioManager::getRecordingMute();
+    AudioManager::setRecordingMute(!isMuted);
+    setInputButtonImage(!isMuted);
 }

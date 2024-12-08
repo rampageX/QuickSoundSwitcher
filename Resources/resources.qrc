@@ -8,30 +8,18 @@
         <file>icons/tray_dark_66.png</file>
         <file>icons/tray_light_100.png</file>
         <file>icons/tray_dark_100.png</file>
-        <file>icons/headset_light.png</file>
-        <file>icons/headset_dark.png</file>
-        <file>icons/headset_light_muted.png</file>
-        <file>icons/headset_dark_muted.png</file>
         <file>icons/mic_light.png</file>
         <file>icons/mic_dark.png</file>
         <file>icons/mic_light_muted.png</file>
         <file>icons/mic_dark_muted.png</file>
-        <file>icons/muted_layer.png</file>
-        <file>icons/overlay_dark.png</file>
-        <file>icons/overlay_light.png</file>
-        <file>icons/w11_icon.png</file>
-        <file>icons/placeholder_dark.png</file>
-        <file>icons/placeholder_light.png</file>
-        <file>icons/pause_dark.png</file>
-        <file>icons/pause_light.png</file>
-        <file>icons/play_dark.png</file>
-        <file>icons/play_light.png</file>
-        <file>icons/next_dark.png</file>
-        <file>icons/next_light.png</file>
-        <file>icons/prev_dark.png</file>
-        <file>icons/prev_light.png</file>
-        <file>qml/SettingsPage.qml</file>
-        <file>qml/SoundOverlay.qml</file>
+        <file>icons/panel_volume_100_dark.png</file>
+        <file>icons/panel_volume_66_dark.png</file>
+        <file>icons/panel_volume_33_dark.png</file>
+        <file>icons/panel_volume_0_dark.png</file>
+        <file>icons/panel_volume_100_light.png</file>
+        <file>icons/panel_volume_66_light.png</file>
+        <file>icons/panel_volume_33_light.png</file>
+        <file>icons/panel_volume_0_light.png</file>
         <file>qml/MediaFlyout.qml</file>
     </qresource>
 </RCC>

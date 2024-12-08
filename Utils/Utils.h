@@ -5,7 +5,7 @@
 #include <QFrame>
 
 namespace Utils {
-    QIcon getIcon(int type, int volume, bool muted);
+    QString getIcon(int type, int volume, bool muted);
     void setFrameColorBasedOnWindow(QWidget *window, QFrame *frame);
     QColor adjustColor(const QColor &color, double factor);
     bool isDarkMode(const QColor &color);

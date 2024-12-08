@@ -24,7 +24,7 @@ QString Utils::getTheme()
     return (value == 0) ? "light" : "dark";
 }
 
-QIcon Utils::getIcon(int type, int volume, bool muted)
+QString Utils::getIcon(int type, int volume, bool muted)
 {
     QString theme = getTheme();
     if (type == 1) {
@@ -38,18 +38,24 @@ QIcon Utils::getIcon(int type, int volume, bool muted)
         } else {
             volumeSymbol = "0";
         }
-        return QIcon(":/icons/tray_" + theme + "_" + volumeSymbol + ".png");
+        return QString(":/icons/tray_" + theme + "_" + volumeSymbol + ".png");
     } else if (type == 2) {
-        if (muted) {
-            return QIcon(":/icons/headset_" + theme + "_muted.png");
+        QString volumeSymbol;
+        if (volume > 66) {
+            volumeSymbol = "100";
+        } else if (volume > 33) {
+            volumeSymbol = "66";
+        } else if (volume > 0) {
+            volumeSymbol = "33";
         } else {
-            return QIcon(":/icons/headset_" + theme + ".png");
+            volumeSymbol = "0";
         }
+        return QString(":/icons/panel_volume_" + volumeSymbol + "_" + theme + ".png");
     } else {
         if (muted) {
-            return QIcon(":/icons/mic_" + theme + "_muted.png");
+            return QString(":/icons/mic_" + theme + "_muted.png");
         } else {
-            return QIcon(":/icons/mic_" + theme + ".png");
+            return QString(":/icons/mic_" + theme + ".png");
         }
     }
 }
