@@ -1,4 +1,4 @@
-#include "MediaFlyout.h"
+#include "SoundPanel.h"
 #include "Utils.h"
 #include <QQmlContext>
 #include <QQuickItem>
@@ -8,12 +8,12 @@
 #include <QApplication>
 #include <QTimer>
 
-MediaFlyout::MediaFlyout(QObject* parent)
+SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
-    , mediaFlyoutWindow(nullptr)
+    , soundPanelWindow(nullptr)
 {
     engine = new QQmlApplicationEngine(this);
-    engine->rootContext()->setContextProperty("mediaFlyout", this);
+    engine->rootContext()->setContextProperty("soundPanel", this);
 
     QColor windowColor = QGuiApplication::palette().color(QPalette::Window);
     engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
@@ -21,29 +21,29 @@ MediaFlyout::MediaFlyout(QObject* parent)
     QColor accentColor(Utils::getAccentColor("normal"));
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
 
-    engine->load(QUrl(QStringLiteral("qrc:/qml/MediaFlyout.qml")));
+    engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel.qml")));
 
-    mediaFlyoutWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+    soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
 
     setupUI();
     animateIn();
 }
 
-MediaFlyout::~MediaFlyout()
+SoundPanel::~SoundPanel()
 {
     delete engine;
 }
 
-void MediaFlyout::animateIn()
+void SoundPanel::animateIn()
 {
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
-    int panelX = availableGeometry.right() - mediaFlyoutWindow->width() + 1;
-    int startY = availableGeometry.bottom() - (mediaFlyoutWindow->height() / 2);
-    int targetY = availableGeometry.bottom() - mediaFlyoutWindow->height();
+    int panelX = availableGeometry.right() - soundPanelWindow->width() + 1;
+    int startY = availableGeometry.bottom() - (soundPanelWindow->height() / 2);
+    int targetY = availableGeometry.bottom() - soundPanelWindow->height();
 
-    mediaFlyoutWindow->setPosition(panelX, startY);
-    mediaFlyoutWindow->show();
+    soundPanelWindow->setPosition(panelX, startY);
+    soundPanelWindow->show();
 
     const int durationMs = 200;
     const int refreshRate = 1;
@@ -63,34 +63,34 @@ void MediaFlyout::animateIn()
             return;
         }
 
-        mediaFlyoutWindow->setPosition(panelX, currentY);
+        soundPanelWindow->setPosition(panelX, currentY);
         ++currentStep;
     });
 }
 
-int MediaFlyout::playbackVolume() const {
+int SoundPanel::playbackVolume() const {
     return m_playbackVolume;
 }
 
-void MediaFlyout::setPlaybackVolume(int volume) {
+void SoundPanel::setPlaybackVolume(int volume) {
     if (m_playbackVolume != volume) {
         m_playbackVolume = volume;
         emit playbackVolumeChanged();
     }
 }
 
-int MediaFlyout::recordingVolume() const {
+int SoundPanel::recordingVolume() const {
     return m_recordingVolume;
 }
 
-void MediaFlyout::setRecordingVolume(int volume) {
+void SoundPanel::setRecordingVolume(int volume) {
     if (m_recordingVolume != volume) {
         m_recordingVolume = volume;
         emit recordingVolumeChanged();
     }
 }
 
-void MediaFlyout::onPlaybackVolumeChanged(int volume) {
+void SoundPanel::onPlaybackVolumeChanged(int volume) {
     AudioManager::setPlaybackVolume(volume);
     if (AudioManager::getPlaybackMute()) {
         AudioManager::setPlaybackMute(false);
@@ -99,11 +99,11 @@ void MediaFlyout::onPlaybackVolumeChanged(int volume) {
     emit shouldUpdateTray();
 }
 
-void MediaFlyout::onRecordingVolumeChanged(int volume) {
+void SoundPanel::onRecordingVolumeChanged(int volume) {
     AudioManager::setRecordingVolume(volume);
 }
 
-void MediaFlyout::populateComboBoxes() {
+void SoundPanel::populateComboBoxes() {
     playbackDevices.clear();
     recordingDevices.clear();
 
@@ -147,7 +147,7 @@ void MediaFlyout::populateComboBoxes() {
     }
 }
 
-void MediaFlyout::onPlaybackDeviceChanged(const QString &deviceName) {
+void SoundPanel::onPlaybackDeviceChanged(const QString &deviceName) {
     for (const AudioDevice& device : playbackDevices) {
         if (device.shortName == deviceName) {
             AudioManager::setDefaultEndpoint(device.id);
@@ -157,7 +157,7 @@ void MediaFlyout::onPlaybackDeviceChanged(const QString &deviceName) {
     }
 }
 
-void MediaFlyout::onRecordingDeviceChanged(const QString &deviceName) {
+void SoundPanel::onRecordingDeviceChanged(const QString &deviceName) {
     for (const AudioDevice& device : recordingDevices) {
         if (device.shortName == deviceName) {
             AudioManager::setDefaultEndpoint(device.id);
@@ -167,7 +167,7 @@ void MediaFlyout::onRecordingDeviceChanged(const QString &deviceName) {
     }
 }
 
-void MediaFlyout::setupUI() {
+void SoundPanel::setupUI() {
     populateComboBoxes();
     setPlaybackVolume(AudioManager::getPlaybackVolume());
     setRecordingVolume(AudioManager::getRecordingVolume());
@@ -187,19 +187,19 @@ void MediaFlyout::setupUI() {
 
 }
 
-void MediaFlyout::setOutputButtonImage(int volume) {
+void SoundPanel::setOutputButtonImage(int volume) {
     QString icon = Utils::getIcon(2, volume, NULL);
 
     engine->rootContext()->setContextProperty("outputIcon", QStringLiteral("qrc") + icon);
 }
 
-void MediaFlyout::setInputButtonImage(bool muted) {
+void SoundPanel::setInputButtonImage(bool muted) {
     QString icon = Utils::getIcon(3, NULL, muted);
 
     engine->rootContext()->setContextProperty("inputIcon", QStringLiteral("qrc") + icon);
 }
 
-void MediaFlyout::onOutputMuteButtonClicked() {
+void SoundPanel::onOutputMuteButtonClicked() {
     bool isMuted = AudioManager::getPlaybackMute();
     int volume = AudioManager::getPlaybackVolume();
     AudioManager::setPlaybackMute(!isMuted);
@@ -213,7 +213,7 @@ void MediaFlyout::onOutputMuteButtonClicked() {
     emit shouldUpdateTray();
 
 }
-void MediaFlyout::onInputMuteButtonClicked() {
+void SoundPanel::onInputMuteButtonClicked() {
     bool isMuted = AudioManager::getRecordingMute();
     AudioManager::setRecordingMute(!isMuted);
     setInputButtonImage(!isMuted);

@@ -1,7 +1,7 @@
 #ifndef QUICKSOUNDSWITCHER_H
 #define QUICKSOUNDSWITCHER_H
 
-#include "MediaFlyout.h"
+#include "SoundPanel.h"
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 
@@ -25,7 +25,7 @@ private slots:
 
 private:
     QSystemTrayIcon *trayIcon;
-    MediaFlyout* mediaFlyout;
+    SoundPanel* soundPanel;
     void createTrayIcon();
     void togglePanel();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);

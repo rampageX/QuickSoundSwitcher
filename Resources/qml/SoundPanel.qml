@@ -93,7 +93,7 @@ ApplicationWindow {
             model: ListModel {}
             onCurrentTextChanged: {
                 if (!window.blockOutputSignal) {
-                    mediaFlyout.onPlaybackDeviceChanged(outputDeviceComboBox.currentText);
+                    soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText);
                 }
             }
         }
@@ -106,7 +106,7 @@ ApplicationWindow {
             flat: true
             Layout.bottomMargin: 10
             onClicked: {
-                mediaFlyout.onOutputMuteButtonClicked()
+                soundPanel.onOutputMuteButtonClicked()
             }
 
             Image {
@@ -120,7 +120,7 @@ ApplicationWindow {
 
         Slider {
             id: outputSlider
-            value: mediaFlyout.playbackVolume
+            value: soundPanel.playbackVolume
             from: 0
             to: 100
             stepSize: 1
@@ -128,7 +128,7 @@ ApplicationWindow {
             Layout.preferredHeight: -1
             Layout.bottomMargin: 10
             onValueChanged: {
-                mediaFlyout.onPlaybackVolumeChanged(value)
+                soundPanel.onPlaybackVolumeChanged(value)
             }
         }
 
@@ -163,7 +163,7 @@ ApplicationWindow {
             model: ListModel {}
             onCurrentTextChanged: {
                 if (!window.blockInputSignal) {
-                    mediaFlyout.onRecordingDeviceChanged(inputDeviceComboBox.currentText);
+                    soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText);
                 }
             }
         }
@@ -176,7 +176,7 @@ ApplicationWindow {
             flat: true
             Layout.bottomMargin: 10
             onClicked: {
-                mediaFlyout.onInputMuteButtonClicked()
+                soundPanel.onInputMuteButtonClicked()
             }
             Image {
                 id: inputImage
@@ -189,7 +189,7 @@ ApplicationWindow {
 
         Slider {
             id: inputSlider
-            value: mediaFlyout.recordingVolume
+            value: soundPanel.recordingVolume
             from: 0
             to: 100
             stepSize: 1
@@ -197,7 +197,7 @@ ApplicationWindow {
             Layout.preferredHeight: -1
             Layout.bottomMargin: 10
             onValueChanged: {
-                mediaFlyout.onRecordingVolumeChanged(value)
+                soundPanel.onRecordingVolumeChanged(value)
             }
         }
 

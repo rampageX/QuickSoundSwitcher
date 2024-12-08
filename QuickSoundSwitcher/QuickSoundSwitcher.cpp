@@ -15,7 +15,7 @@ QuickSoundSwitcher* QuickSoundSwitcher::instance = nullptr;
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QMainWindow(parent)
     , trayIcon(new QSystemTrayIcon(this))
-    , mediaFlyout(nullptr)
+    , soundPanel(nullptr)
 {
     AudioManager::initialize();
     instance = this;
@@ -30,7 +30,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     AudioManager::cleanup();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
-    delete mediaFlyout;
+    delete soundPanel;
     instance = nullptr;
 }
 
@@ -142,18 +142,18 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
         if (wParam == WM_LBUTTONUP || wParam == WM_RBUTTONUP) {
             QPoint cursorPos = QCursor::pos();
             QRect trayIconRect = instance->trayIcon->geometry();
-            QRect mediaFlyoutRect;
+            QRect soundPanelRect;
 
-            if (instance->mediaFlyout && instance->mediaFlyout->mediaFlyoutWindow) {
-                mediaFlyoutRect = instance->mediaFlyout->mediaFlyoutWindow->geometry();
+            if (instance->soundPanel && instance->soundPanel->soundPanelWindow) {
+                soundPanelRect = instance->soundPanel->soundPanelWindow->geometry();
             } else {
-                mediaFlyoutRect = QRect();
+                soundPanelRect = QRect();
             }
 
-            if (!mediaFlyoutRect.contains(cursorPos) && !trayIconRect.contains(cursorPos)) {
-                if (instance->mediaFlyout) {
-                    delete instance->mediaFlyout;
-                    instance->mediaFlyout = nullptr;
+            if (!soundPanelRect.contains(cursorPos) && !trayIconRect.contains(cursorPos)) {
+                if (instance->soundPanel) {
+                    delete instance->soundPanel;
+                    instance->soundPanel = nullptr;
                 }
             }
         }
@@ -215,11 +215,11 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
 void QuickSoundSwitcher::togglePanel()
 {
-    if (!mediaFlyout) {
-        mediaFlyout = new MediaFlyout(this);
-        connect(mediaFlyout, &MediaFlyout::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
+    if (!soundPanel) {
+        soundPanel = new SoundPanel(this);
+        connect(soundPanel, &SoundPanel::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
     } else {
-        delete mediaFlyout;
-        mediaFlyout = nullptr;
+        delete soundPanel;
+        soundPanel = nullptr;
     }
 }

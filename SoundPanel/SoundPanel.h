@@ -8,17 +8,17 @@
 #include <QIcon>
 #include <QComboBox>
 
-class MediaFlyout : public QObject
+class SoundPanel : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int playbackVolume READ playbackVolume WRITE setPlaybackVolume NOTIFY playbackVolumeChanged)
     Q_PROPERTY(int recordingVolume READ recordingVolume WRITE setRecordingVolume NOTIFY recordingVolumeChanged)
 
 public:
-    explicit MediaFlyout(QObject* parent = nullptr);
-    ~MediaFlyout() override;
+    explicit SoundPanel(QObject* parent = nullptr);
+    ~SoundPanel() override;
 
-    QWindow* mediaFlyoutWindow;
+    QWindow* soundPanelWindow;
 
     int playbackVolume() const;
     void setPlaybackVolume(int volume);

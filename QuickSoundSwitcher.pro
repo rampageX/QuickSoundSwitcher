@@ -8,14 +8,14 @@ QM_FILES_RESOURCE_PREFIX=/translations/tr
 
 INCLUDEPATH += \
     AudioManager \
-    MediaFlyout \
+    SoundPanel \
     QuickSoundSwitcher \
     ShortcutManager \
     Utils
 
 SOURCES += \
     AudioManager/AudioManager.cpp \
-    MediaFlyout/MediaFlyout.cpp \
+    SoundPanel/SoundPanel.cpp \
     QuickSoundSwitcher/QuickSoundSwitcher.cpp \
     ShortcutManager/ShortcutManager.cpp \
     Utils/Utils.cpp \
@@ -24,7 +24,7 @@ SOURCES += \
 HEADERS += \
     AudioManager/AudioManager.h \
     AudioManager/PolicyConfig.h \
-    MediaFlyout/MediaFlyout.h \
+    SoundPanel/SoundPanel.h \
     QuickSoundSwitcher/QuickSoundSwitcher.h \
     ShortcutManager/ShortcutManager.h \
     Utils/Utils.h
