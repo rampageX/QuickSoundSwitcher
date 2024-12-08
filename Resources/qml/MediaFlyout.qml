@@ -8,7 +8,7 @@ ApplicationWindow {
     width: 360
     height: gridLayout.implicitHeight
     visible: false
-    flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
+    flags: Qt.FramelessWindowHint
     color: "transparent"
     Universal.theme: Universal.System
     Universal.accent: accentColor

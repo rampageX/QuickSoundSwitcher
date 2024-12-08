@@ -37,12 +37,13 @@ void MediaFlyout::animateIn()
     isAnimating = true;
 
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
-    int flyoutY = availableGeometry.bottom() - mediaFlyoutWindow->height();
 
-    mediaFlyoutWindow->setOpacity(0.0);
+    int panelX = availableGeometry.right() - mediaFlyoutWindow->width();
+    int startY = availableGeometry.bottom() - (mediaFlyoutWindow->height() / 2);
+    int targetY = availableGeometry.bottom() - mediaFlyoutWindow->height();
+
+    mediaFlyoutWindow->setPosition(panelX, startY);
     mediaFlyoutWindow->show();
-
-    mediaFlyoutWindow->setPosition(availableGeometry.right() - 359, flyoutY + 1);
 
     const int durationMs = 200;
     const int refreshRate = 1;
@@ -53,19 +54,18 @@ void MediaFlyout::animateIn()
     animationTimer->start(refreshRate);
     connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
-        double currentOpacity = t;
+        double easedT = 1 - pow(2, -3 * t);
+        int currentY = startY + easedT * (targetY - startY);
 
-        mediaFlyoutWindow->setOpacity(currentOpacity);
-
-        if (currentStep >= totalSteps) {
+        if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
-            mediaFlyoutWindow->setOpacity(1.0);
             visible = true;
             isAnimating = false;
             return;
         }
 
+        mediaFlyoutWindow->setPosition(panelX, currentY);
         ++currentStep;
     });
 }
@@ -76,32 +76,9 @@ void MediaFlyout::animateOut()
         return;
 
     isAnimating = true;
-
-    const int durationMs = 200;
-    const int refreshRate = 1;
-    const double totalSteps = durationMs / refreshRate;
-    int currentStep = 0;
-    QTimer *animationTimer = new QTimer(this);
-
-    animationTimer->start(refreshRate);
-    connect(animationTimer, &QTimer::timeout, this, [=]() mutable {
-        double t = static_cast<double>(currentStep) / totalSteps;
-        double currentOpacity = 1.0 - t;
-
-        mediaFlyoutWindow->setOpacity(currentOpacity);
-
-        if (currentStep >= totalSteps) {
-            animationTimer->stop();
-            animationTimer->deleteLater();
-            mediaFlyoutWindow->setOpacity(0);
-            mediaFlyoutWindow->setVisible(false);
-            visible = false;
-            isAnimating = false;
-            return;
-        }
-
-        ++currentStep;
-    });
+    mediaFlyoutWindow->setVisible(false);
+    visible = false;
+    isAnimating = false;
 }
 
 int MediaFlyout::playbackVolume() const {
