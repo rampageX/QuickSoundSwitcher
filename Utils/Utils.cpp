@@ -60,75 +60,6 @@ QString Utils::getIcon(int type, int volume, bool muted)
     }
 }
 
-QString Utils::getOverlayIcon(int volume)
-{
-    QString theme = getTheme();
-    QString volumeSymbol;
-    if (volume > 66) {
-        volumeSymbol = "100";
-    } else if (volume > 33) {
-        volumeSymbol = "66";
-    } else if (volume > 0) {
-        volumeSymbol = "33";
-    } else {
-        volumeSymbol = "0";
-    }
-    return QString("tray_" + theme + "_" + volumeSymbol + ".png");
-}
-
-QColor Utils::adjustColor(const QColor &color, double factor)
-{
-    int r = color.red();
-    int g = color.green();
-    int b = color.blue();
-    int a = color.alpha();
-
-    r = std::min(std::max(static_cast<int>(r * factor), 0), 255);
-    g = std::min(std::max(static_cast<int>(g * factor), 0), 255);
-    b = std::min(std::max(static_cast<int>(b * factor), 0), 255);
-
-    return QColor(r, g, b, a);
-}
-
-bool Utils::isDarkMode(const QColor &color)
-{
-    int r = color.red();
-    int g = color.green();
-    int b = color.blue();
-    double brightness = (r + g + b) / 3.0;
-    return brightness < 127;
-}
-
-void Utils::setFrameColorBasedOnWindow(QWidget *window, QFrame *frame)
-{
-    QColor main_bg_color = window->palette().color(QPalette::Window);
-    QColor frame_bg_color;
-
-    if (isDarkMode(main_bg_color)) {
-        frame_bg_color = adjustColor(main_bg_color, 1.75);  // Brighten color
-    } else {
-        frame_bg_color = adjustColor(main_bg_color, 0.95);  // Darken color
-    }
-
-    QPalette palette = frame->palette();
-    palette.setBrush(QPalette::Window, QBrush(frame_bg_color));
-    frame->setAutoFillBackground(true);
-    frame->setPalette(palette);
-}
-
-QIcon Utils::generateMutedIcon(QPixmap originalPixmap)
-{
-    QPixmap mutedLayer(":/icons/muted_layer.png");
-    mutedLayer = mutedLayer.scaled(originalPixmap.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-    QPainter painter(&originalPixmap);
-    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-    painter.drawPixmap(0, 0, mutedLayer);
-    painter.end();
-
-    return QIcon(originalPixmap);
-}
-
 QString toHex(BYTE value)
 {
     const char* hexDigits = "0123456789ABCDEF";
@@ -175,47 +106,6 @@ QString Utils::getAccentColor(const QString &accentKey)
     }
 
     return "#FFFFFF";
-}
-
-QIcon Utils::getPlaceholderIcon()
-{
-    QString theme = Utils::getTheme();
-    return QIcon(QString(":/icons/placeholder_%1.png").arg(theme));
-}
-
-QIcon Utils::getButtonsIcon(QString button)
-{
-    QString theme = Utils::getTheme();
-    return QIcon(QString(":/icons/%1_%2.png").arg(button, theme));
-}
-
-void Utils::setAlwaysOnTopState(QWidget *widget, bool state) {
-    HWND hwnd = (HWND)widget->winId();
-    HWND position = state ? HWND_TOPMOST : HWND_NOTOPMOST;
-
-    SetWindowPos(hwnd, position, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-}
-
-QPixmap Utils::roundPixmap(const QPixmap &src, int radius) {
-    if (src.isNull()) {
-        return QPixmap();
-    }
-
-    QPixmap dest(src.size());
-    dest.fill(Qt::transparent);
-
-    QPainter painter(&dest);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-
-    QPainterPath path;
-    path.addRoundedRect(QRectF(0, 0, src.width(), src.height()), radius, radius);
-
-    painter.setClipPath(path);
-    painter.drawPixmap(0, 0, src);
-    painter.end();
-
-    return dest;
 }
 
 void Utils::playSoundNotification()
