@@ -72,15 +72,24 @@ void SoundPanel::animateIn()
     } else {
         margin = 12;
     }
+
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
-    int startY = availableGeometry.bottom() - (soundPanelWindow->height() * 80 / 100);
+
+    int startY;
+    if (Utils::isWindows10()) {
+        startY = availableGeometry.bottom() - (soundPanelWindow->height() * 80 / 100);
+    } else {
+        startY = availableGeometry.bottom();
+
+    }
     int targetY = availableGeometry.bottom() - soundPanelWindow->height() - margin;
 
     soundPanelWindow->setPosition(panelX, startY);
     soundPanelWindow->show();
 
-    const int durationMs = 400;
-    const int refreshRate = 1;
+    // Check if Windows 10 or not to adjust duration and easing
+    const int durationMs = Utils::isWindows10() ? 400 : 300;
+    const int refreshRate = 16;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
     QTimer *animationTimer = new QTimer(this);
@@ -88,12 +97,21 @@ void SoundPanel::animateIn()
     animationTimer->start(refreshRate);
     connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
         double t = static_cast<double>(currentStep) / totalSteps;
-        double easedT = 1 - pow(2, -5 * t);
+
+        // Use easing function depending on OS
+        double easedT;
+        if (Utils::isWindows10()) {
+            easedT = 1 - pow(2, -5 * t);  // Exponential easing (for Windows 10)
+        } else {
+            easedT = t;  // Linear easing (for non-Windows 10)
+        }
+
         int currentY = startY + easedT * (targetY - startY);
 
         if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
+            soundPanelWindow->setPosition(panelX, targetY);
             return;
         }
 
