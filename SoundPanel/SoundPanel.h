@@ -61,6 +61,7 @@ private:
     void animateIn();
     void setupUI();
     void populateComboBoxes();
+    bool isWindows10;
 };
 
 #endif // MEDIASFLYOUT_H

@@ -12,6 +12,7 @@
 SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
     , soundPanelWindow(nullptr)
+    , isWindows10(Utils::isWindows10())
 {
     engine = new QQmlApplicationEngine(this);
     engine->rootContext()->setContextProperty("soundPanel", this);
@@ -31,7 +32,7 @@ SoundPanel::SoundPanel(QObject* parent)
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
     engine->rootContext()->setContextProperty("borderColor", borderColor);
 
-    if (Utils::isWindows10()) {
+    if (isWindows10) {
         engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel.qml")));
     } else {
         engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel11.qml")));
@@ -67,7 +68,7 @@ void SoundPanel::animateIn()
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
     int margin;
-    if (Utils::isWindows10()) {
+    if (isWindows10) {
         margin = 0;
     } else {
         margin = 12;
@@ -76,7 +77,7 @@ void SoundPanel::animateIn()
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
 
     int startY;
-    if (Utils::isWindows10()) {
+    if (isWindows10) {
         startY = availableGeometry.bottom() - (soundPanelWindow->height() * 80 / 100);
     } else {
         startY = availableGeometry.bottom();
@@ -88,8 +89,8 @@ void SoundPanel::animateIn()
     soundPanelWindow->show();
 
     // Check if Windows 10 or not to adjust duration and easing
-    const int durationMs = Utils::isWindows10() ? 400 : 300;
-    const int refreshRate = 16;
+    const int durationMs = isWindows10 ? 400 : 100;
+    const int refreshRate = isWindows10 ? 1 : 2;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
     QTimer *animationTimer = new QTimer(this);
@@ -100,15 +101,15 @@ void SoundPanel::animateIn()
 
         // Use easing function depending on OS
         double easedT;
-        if (Utils::isWindows10()) {
+        if (isWindows10) {
             easedT = 1 - pow(2, -5 * t);  // Exponential easing (for Windows 10)
         } else {
-            easedT = t;  // Linear easing (for non-Windows 10)
+            easedT = 1 - pow(1 - t, 3);
         }
 
         int currentY = startY + easedT * (targetY - startY);
 
-        if (currentY == targetY) {
+        if (currentStep == totalSteps) {
             animationTimer->stop();
             animationTimer->deleteLater();
             soundPanelWindow->setPosition(panelX, targetY);
