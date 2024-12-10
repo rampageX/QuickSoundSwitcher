@@ -20,10 +20,10 @@ SoundPanel::SoundPanel(QObject* parent)
     QColor borderColor;
     if (Utils::getTheme() == "dark") {
         windowColor = QColor(228, 228, 228);
-        borderColor = QColor(1, 1, 1, 51);
+        borderColor = QColor(1, 1, 1, 31);
     } else {
         windowColor = QColor(31, 31, 31);
-        borderColor = QColor(255, 255, 255, 51);
+        borderColor = QColor(255, 255, 255, 31);
     }
     engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
 
@@ -31,7 +31,11 @@ SoundPanel::SoundPanel(QObject* parent)
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
     engine->rootContext()->setContextProperty("borderColor", borderColor);
 
-    engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel.qml")));
+    if (Utils::isWindows10()) {
+        engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel.qml")));
+    } else {
+        engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel11.qml")));
+    }
 
     soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
 
@@ -62,9 +66,15 @@ void SoundPanel::animateIn()
 {
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
-    int panelX = availableGeometry.right() - soundPanelWindow->width() + 1;
+    int margin;
+    if (Utils::isWindows10()) {
+        margin = 0;
+    } else {
+        margin = 12;
+    }
+    int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
     int startY = availableGeometry.bottom() - (soundPanelWindow->height() * 80 / 100);
-    int targetY = availableGeometry.bottom() - soundPanelWindow->height();
+    int targetY = availableGeometry.bottom() - soundPanelWindow->height() - margin;
 
     soundPanelWindow->setPosition(panelX, startY);
     soundPanelWindow->show();
@@ -115,6 +125,7 @@ void SoundPanel::setRecordingVolume(int volume) {
 }
 
 void SoundPanel::onPlaybackVolumeChanged(int volume) {
+    qDebug() << volume;
     AudioManager::setPlaybackVolume(volume);
     if (AudioManager::getPlaybackMute()) {
         AudioManager::setPlaybackMute(false);

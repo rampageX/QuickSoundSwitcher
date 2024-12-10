@@ -9,6 +9,7 @@ namespace Utils {
     QString getAccentColor(const QString &accentKey);
     QString getTheme();
     void playSoundNotification();
+    bool isWindows10();
 }
 
 #endif // UTILS_H

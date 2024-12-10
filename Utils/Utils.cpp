@@ -113,3 +113,31 @@ void Utils::playSoundNotification()
     const wchar_t* soundFile = L"C:\\Windows\\Media\\Windows Background.wav";;
     PlaySound(soundFile, NULL, SND_FILENAME | SND_ASYNC);
 }
+
+int getBuildNumber()
+{
+    QSettings registry("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", QSettings::NativeFormat);
+    QVariant buildVariant = registry.value("CurrentBuild");
+
+    if (!buildVariant.isValid()) {
+        buildVariant = registry.value("CurrentBuildNumber");
+    }
+
+    if (buildVariant.isValid() && buildVariant.canConvert<QString>()) {
+        bool ok;
+        int buildNumber = buildVariant.toString().toInt(&ok);
+        if (ok) {
+            return buildNumber;
+        }
+    }
+
+    qDebug() << "Failed to retrieve build number from the registry.";
+    return -1;
+}
+
+
+bool Utils::isWindows10()
+{
+    int buildNumber = getBuildNumber();
+    return (buildNumber >= 10240 && buildNumber < 22000);
+}

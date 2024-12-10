@@ -21,5 +21,6 @@
         <file>icons/panel_volume_33_light.png</file>
         <file>icons/panel_volume_0_light.png</file>
         <file>qml/SoundPanel.qml</file>
+        <file>qml/SoundPanel11.qml</file>
     </qresource>
 </RCC>
