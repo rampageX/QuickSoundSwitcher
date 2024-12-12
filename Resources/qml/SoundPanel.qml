@@ -104,11 +104,11 @@ ApplicationWindow {
 
         ComboBox {
             id: outputDeviceComboBox
-            Layout.preferredHeight: 45
+            Layout.preferredHeight: 35
             Layout.columnSpan: 3
             Layout.fillWidth: true
             flat: true
-            font.pixelSize: 16
+            font.pixelSize: 15
             model: ListModel {}
             onCurrentTextChanged: {
                 if (!window.blockOutputSignal) {
@@ -120,8 +120,8 @@ ApplicationWindow {
         Button {
             id: outputeMuteButton
             Layout.leftMargin: 10
-            Layout.preferredHeight: 45
-            Layout.preferredWidth: 45
+            Layout.preferredHeight: 40
+            Layout.preferredWidth: 40
             flat: true
             Layout.bottomMargin: 10
             onClicked: {
@@ -130,8 +130,8 @@ ApplicationWindow {
 
             Image {
                 id: outputImage
-                width: 24
-                height: 24
+                width: 20
+                height: 20
                 anchors.margins: 0
                 anchors.centerIn: parent
                 source: outputIcon
@@ -169,7 +169,7 @@ ApplicationWindow {
             Layout.preferredHeight: -1
             Layout.preferredWidth: 20
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 24
+            font.pixelSize: 20
             Layout.bottomMargin: 10
         }
 
@@ -184,11 +184,11 @@ ApplicationWindow {
         ComboBox {
             id: inputDeviceComboBox
             Layout.topMargin: -2
-            Layout.preferredHeight: 45
+            Layout.preferredHeight: 40
             Layout.fillWidth: true
             Layout.columnSpan: 3
             flat: true
-            font.pixelSize: 16
+            font.pixelSize: 15
             model: ListModel {}
             onCurrentTextChanged: {
                 if (!window.blockInputSignal) {
@@ -200,8 +200,8 @@ ApplicationWindow {
         Button {
             id: inputMuteButton
             Layout.leftMargin: 10
-            Layout.preferredWidth: 45
-            Layout.preferredHeight: 45
+            Layout.preferredWidth: 40
+            Layout.preferredHeight: 40
             flat: true
             Layout.bottomMargin: 10
             onClicked: {
@@ -209,8 +209,8 @@ ApplicationWindow {
             }
             Image {
                 id: inputImage
-                width: 24
-                height: 24
+                width: 20
+                height: 20
                 anchors.margins: 0
                 anchors.centerIn: parent
                 source: inputIcon
@@ -240,7 +240,7 @@ ApplicationWindow {
             Layout.preferredHeight: -1
             Layout.preferredWidth: 20
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 24
+            font.pixelSize: 20
             Layout.bottomMargin: 10
         }
 
@@ -265,8 +265,8 @@ ApplicationWindow {
 
                 Button {
                     id: muteButton
-                    Layout.preferredWidth: 45
-                    Layout.preferredHeight: 45
+                    Layout.preferredWidth: 40
+                    Layout.preferredHeight: 40
                     flat: true
                     checkable: true
                     checked: model.isMuted
@@ -304,7 +304,7 @@ ApplicationWindow {
                     Layout.preferredHeight: -1
                     Layout.preferredWidth: 20
                     horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 24
+                    font.pixelSize: 20
                 }
             }
         }

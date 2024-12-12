@@ -12,7 +12,7 @@
 SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
     , soundPanelWindow(nullptr)
-    , isWindows10(Utils::isWindows10())
+    , isWindows10(!Utils::isWindows10())
 {
     engine = new QQmlApplicationEngine(this);
     engine->rootContext()->setContextProperty("soundPanel", this);
@@ -80,11 +80,15 @@ void SoundPanel::animateIn()
     }
 
     int margin = 12;
+    if (isWindows10) margin = 0;
 
     int windowHeight = soundPanelWindow->height() + repeaterSize;
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
 
     int startY = availableGeometry.bottom() - (windowHeight * 50 / 100);
+
+    if (isWindows10) startY = availableGeometry.bottom() - (windowHeight * 80 / 100);
+
     int targetY = availableGeometry.bottom() - windowHeight - margin;
 
     soundPanelWindow->setPosition(panelX, startY);
