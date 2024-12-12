@@ -278,5 +278,9 @@ ApplicationWindow {
                 }
             }
         }
+
+        Item {
+            Layout.preferredHeight: 5
+        }
     }
 }

@@ -20,13 +20,15 @@ SoundPanel::SoundPanel(QObject* parent)
     QColor windowColor;
     QColor borderColor;
     if (Utils::getTheme() == "dark") {
-        windowColor = QColor(228, 228, 228);
+        windowColor = QColor(242, 242, 242);
         borderColor = QColor(1, 1, 1, 31);
     } else {
-        windowColor = QColor(31, 31, 31);
+        windowColor = QColor(36, 36, 36);
         borderColor = QColor(255, 255, 255, 31);
     }
+
     engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
+
 
     QColor accentColor(Utils::getAccentColor("normal"));
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
@@ -77,55 +79,32 @@ void SoundPanel::animateIn()
         repeaterSize = 50 * repeater->property("count").toInt();
     }
 
-    int margin;
-    if (isWindows10) {
-        margin = 0;
-    } else {
-        margin = 12;
-    }
+    int margin = 12;
 
+    int windowHeight = soundPanelWindow->height() + repeaterSize;
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
 
-    int startY;
-    if (isWindows10) {
-        int windowSize = soundPanelWindow->height() + repeaterSize;
-        startY = availableGeometry.bottom() - (windowSize * 80 / 100);
-    } else {
-        startY = availableGeometry.bottom();
-
-    }
-    int targetY = availableGeometry.bottom() - soundPanelWindow->height() - repeaterSize - margin;
+    int startY = availableGeometry.bottom() - (windowHeight * 50 / 100);
+    int targetY = availableGeometry.bottom() - windowHeight - margin;
 
     soundPanelWindow->setPosition(panelX, startY);
     soundPanelWindow->show();
 
-    // Check if Windows 10 or not to adjust duration and easing
-    const int durationMs = isWindows10 ? 400 : 250;
-    const int refreshRate = isWindows10 ? 1 : 8;
-    const double totalSteps = durationMs / refreshRate;
+    // Animation settings
+    const int durationMs = 40;
+    const int refreshRate = 1;
+    const int totalSteps = durationMs / refreshRate;
     int currentStep = 0;
     QTimer *animationTimer = new QTimer(this);
 
     animationTimer->start(refreshRate);
     connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
-        double t = static_cast<double>(currentStep) / totalSteps;
+        int currentY = startY + ((targetY - startY) * currentStep) / totalSteps;
 
-        // Use easing function depending on OS
-        double easedT;
-        if (isWindows10) {
-            easedT = 1 - pow(2, -5 * t);  // Exponential easing (for Windows 10)
-        } else {
-            easedT = 1 - pow(1 - t, 3);
-        }
-
-        int currentY = startY + easedT * (targetY - startY);
-
-        if (currentStep == totalSteps) {
+        if (currentY == targetY) {
             animationTimer->stop();
             animationTimer->deleteLater();
             soundPanelWindow->setPosition(panelX, targetY);
-
-            return;
         }
 
         soundPanelWindow->setPosition(panelX, currentY);
