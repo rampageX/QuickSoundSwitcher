@@ -32,6 +32,8 @@ SoundPanel::SoundPanel(QObject* parent)
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
     engine->rootContext()->setContextProperty("borderColor", borderColor);
 
+    setSystemSoundsIcon();
+
     if (isWindows10) {
         engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel.qml")));
     } else {
@@ -67,6 +69,14 @@ void SoundPanel::animateIn()
 {
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
+    QObject *gridLayout = engine->rootObjects().first()->findChild<QObject*>("gridLayout");
+    QObject *repeater = gridLayout ? gridLayout->findChild<QObject*>("appRepeater", Qt::FindChildrenRecursively) : nullptr;
+
+    int repeaterSize = 0;
+    if (repeater) {
+        repeaterSize = 50 * repeater->property("count").toInt();
+    }
+
     int margin;
     if (isWindows10) {
         margin = 0;
@@ -78,19 +88,20 @@ void SoundPanel::animateIn()
 
     int startY;
     if (isWindows10) {
-        startY = availableGeometry.bottom() - (soundPanelWindow->height() * 80 / 100);
+        int windowSize = soundPanelWindow->height() + repeaterSize;
+        startY = availableGeometry.bottom() - (windowSize * 80 / 100);
     } else {
         startY = availableGeometry.bottom();
 
     }
-    int targetY = availableGeometry.bottom() - soundPanelWindow->height() - margin;
+    int targetY = availableGeometry.bottom() - soundPanelWindow->height() - repeaterSize - margin;
 
     soundPanelWindow->setPosition(panelX, startY);
     soundPanelWindow->show();
 
     // Check if Windows 10 or not to adjust duration and easing
-    const int durationMs = isWindows10 ? 400 : 100;
-    const int refreshRate = isWindows10 ? 1 : 2;
+    const int durationMs = isWindows10 ? 400 : 250;
+    const int refreshRate = isWindows10 ? 1 : 8;
     const double totalSteps = durationMs / refreshRate;
     int currentStep = 0;
     QTimer *animationTimer = new QTimer(this);
@@ -113,10 +124,12 @@ void SoundPanel::animateIn()
             animationTimer->stop();
             animationTimer->deleteLater();
             soundPanelWindow->setPosition(panelX, targetY);
+
             return;
         }
 
         soundPanelWindow->setPosition(panelX, currentY);
+
         ++currentStep;
     });
 }
@@ -144,7 +157,6 @@ void SoundPanel::setRecordingVolume(int volume) {
 }
 
 void SoundPanel::onPlaybackVolumeChanged(int volume) {
-    qDebug() << volume;
     AudioManager::setPlaybackVolume(volume);
     if (AudioManager::getPlaybackMute()) {
         AudioManager::setPlaybackMute(false);
@@ -222,6 +234,7 @@ void SoundPanel::onRecordingDeviceChanged(const QString &deviceName) {
 }
 
 void SoundPanel::setupUI() {
+    populateApplicationModel();
     populateComboBoxes();
     setPlaybackVolume(AudioManager::getPlaybackVolume());
     setRecordingVolume(AudioManager::getRecordingVolume());
@@ -237,8 +250,6 @@ void SoundPanel::setupUI() {
 
     bool isInputMuted = AudioManager::getRecordingMute();
     setInputButtonImage(isInputMuted);
-
-
 }
 
 void SoundPanel::setOutputButtonImage(int volume) {
@@ -275,4 +286,55 @@ void SoundPanel::onInputMuteButtonClicked() {
 
 void SoundPanel::onOutputSliderReleased() {
     Utils::playSoundNotification();
+}
+
+void SoundPanel::populateApplicationModel() {
+    applications = AudioManager::enumerateAudioApplications();
+
+    // Sort applications to put "Windows system sounds" first
+    std::sort(applications.begin(), applications.end(), [](const Application &a, const Application &b) {
+        if (a.name == "Windows system sounds") return true;
+        if (b.name == "Windows system sounds") return false;
+        return a.name < b.name;  // Default sorting for other applications
+    });
+
+    QMetaObject::invokeMethod(engine->rootObjects().first(), "clearApplicationModel");
+
+    for (const Application &app : applications) {
+        // Use app.name if not empty, otherwise use app.executableName
+        QString displayName = app.name.isEmpty() ? app.executableName : app.name;
+
+        // Convert QPixmap to QByteArray (Base64 encoding)
+        QPixmap iconPixmap = app.icon.pixmap(16, 16);
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+        iconPixmap.toImage().save(&buffer, "PNG");  // Save as PNG to the buffer
+
+        QString base64Icon = QString::fromUtf8(byteArray.toBase64());
+
+        // Pass the base64 string and display name to QML
+        QMetaObject::invokeMethod(engine->rootObjects().first(), "addApplication",
+                                  Q_ARG(QVariant, QVariant::fromValue(app.id)),
+                                  Q_ARG(QVariant, QVariant::fromValue(displayName)),
+                                  Q_ARG(QVariant, QVariant::fromValue(app.isMuted)),
+                                  Q_ARG(QVariant, QVariant::fromValue(app.volume)),
+                                  Q_ARG(QVariant, QVariant::fromValue(base64Icon)));
+    }
+}
+
+void SoundPanel::onApplicationVolumeSliderValueChanged(QString appID, int volume) {
+    AudioManager::setApplicationVolume(appID, volume);
+}
+
+void SoundPanel::onApplicationMuteButtonClicked(QString appID, bool state) {
+    AudioManager::setApplicationMute(appID, state);
+}
+
+void SoundPanel::setSystemSoundsIcon() {
+    if (Utils::getTheme() == "light") {
+        engine->rootContext()->setContextProperty("systemSoundsIcon", QStringLiteral("qrc") + ":/icons/system_light.png");
+    } else {
+        engine->rootContext()->setContextProperty("systemSoundsIcon", QStringLiteral("qrc") + ":/icons/system_dark.png");
+    }
 }

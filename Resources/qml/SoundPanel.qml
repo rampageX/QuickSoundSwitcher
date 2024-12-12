@@ -16,6 +16,24 @@ ApplicationWindow {
     property bool blockOutputSignal: false
     property bool blockInputSignal: false
 
+    ListModel {
+        id: appModel
+    }
+
+    function clearApplicationModel() {
+        appModel.clear();
+    }
+
+    function addApplication(appID, name, isMuted, volume, icon) {
+        appModel.append({
+            appID: appID,
+            name: name,
+            isMuted: isMuted,
+            volume: volume,
+            icon: "data:image/png;base64," + icon
+        });
+    }
+
     function setOutputImageSource(source) {
         outputImage.source = source;
     }
@@ -75,6 +93,7 @@ ApplicationWindow {
 
     GridLayout {
         id: gridLayout
+        objectName: "gridLayout"
         anchors.fill: parent
         anchors.leftMargin: 0
         anchors.rightMargin: 0
@@ -223,6 +242,71 @@ ApplicationWindow {
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 24
             Layout.bottomMargin: 10
+        }
+
+        Rectangle {
+            id: appSeparator
+            Layout.preferredHeight: 1
+            Layout.fillWidth: true
+            color: borderColor
+            Layout.columnSpan: 3
+            Layout.bottomMargin: 10
+        }
+
+        Repeater {
+            id: appRepeater
+            objectName: "appRepeater"
+            model: appModel
+            delegate: RowLayout {
+                Layout.bottomMargin: 10
+                Layout.leftMargin: 10
+                Layout.fillWidth: true
+                Layout.columnSpan: 3
+
+                Button {
+                    id: muteButton
+                    Layout.preferredWidth: 45
+                    Layout.preferredHeight: 45
+                    flat: true
+                    checkable: true
+                    checked: model.isMuted
+                    onClicked: {
+                        model.isMuted = !model.isMuted;
+                        soundPanel.onApplicationMuteButtonClicked(model.appID, model.isMuted);
+                    }
+
+                    Image {
+                        source: model.name === "Windows system sounds" ? systemSoundsIcon : model.icon
+                        anchors.centerIn: parent
+                        width: 16
+                        height: 16
+                    }
+                }
+
+                Slider {
+                    id: volumeSlider
+                    from: 0
+                    to: 100
+                    stepSize: 1
+                    //Layout.leftMargin: -15
+                    value: model.volume
+                    Layout.fillWidth: true
+                    onValueChanged: {
+                        soundPanel.onApplicationVolumeSliderValueChanged(model.appID, value);
+                        //modelData.volume = value; // Update the model
+                    }
+                }
+
+                Label {
+                    text: volumeSlider.value
+                    Layout.rightMargin: 25
+                    Layout.leftMargin: 10
+                    Layout.preferredHeight: -1
+                    Layout.preferredWidth: 20
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 24
+                }
+            }
         }
     }
 }

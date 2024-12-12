@@ -29,6 +29,8 @@ public:
     void setOutputButtonImage(int volume);
     void setInputButtonImage(bool muted);
 
+    void setSystemSoundsIcon();
+
 public slots:
     void onPlaybackVolumeChanged(int volume);
     void onRecordingVolumeChanged(int volume);
@@ -40,6 +42,9 @@ public slots:
     void onInputMuteButtonClicked();
 
     void onOutputSliderReleased();
+
+    void onApplicationVolumeSliderValueChanged(QString appID, int volume);
+    void onApplicationMuteButtonClicked(QString appID, bool state);
 
 private slots:
     void onVolumeChangedWithTray(int volume);
@@ -55,12 +60,14 @@ private:
     QQmlApplicationEngine* engine;
     QList<AudioDevice> playbackDevices;
     QList<AudioDevice> recordingDevices;
+    QList<Application> applications;
     int m_playbackVolume = 0;
     int m_recordingVolume = 0;
 
     void animateIn();
     void setupUI();
     void populateComboBoxes();
+    void populateApplicationModel();
     bool isWindows10;
 };
 
