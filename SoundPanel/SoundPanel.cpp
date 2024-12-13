@@ -12,7 +12,7 @@
 SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
     , soundPanelWindow(nullptr)
-    , isWindows10(!Utils::isWindows10())
+    , isWindows10(Utils::isWindows10())
 {
     engine = new QQmlApplicationEngine(this);
     engine->rootContext()->setContextProperty("soundPanel", this);
