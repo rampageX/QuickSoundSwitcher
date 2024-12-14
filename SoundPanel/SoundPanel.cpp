@@ -18,12 +18,18 @@ SoundPanel::SoundPanel(QObject* parent)
 
     QColor windowColor;
     QColor borderColor;
+    QColor contrastedColor;
+    QColor contrastedBorderColor;
     if (Utils::getTheme() == "dark") {
         windowColor = QColor(242, 242, 242);
+        contrastedColor = QColor(238,238,238);
         borderColor = QColor(1, 1, 1, 31);
+        contrastedBorderColor = QColor(224, 224, 224);
     } else {
         windowColor = QColor(36, 36, 36);
+        contrastedColor = QColor(30 ,30 ,30 );
         borderColor = QColor(255, 255, 255, 31);
+        contrastedBorderColor = QColor(25, 25, 25);
     }
 
     QColor accentColor(Utils::getAccentColor("normal"));
@@ -32,6 +38,8 @@ SoundPanel::SoundPanel(QObject* parent)
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
     engine->rootContext()->setContextProperty("borderColor", borderColor);
     engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
+    engine->rootContext()->setContextProperty("contrastedColor", contrastedColor);
+    engine->rootContext()->setContextProperty("contrastedBorderColor", contrastedBorderColor);
 
     setSystemSoundsIcon();
 
@@ -217,7 +225,12 @@ void SoundPanel::setupUI() {
 }
 
 void SoundPanel::setOutputButtonImage(int volume) {
-    QString icon = Utils::getIcon(2, volume, NULL);
+    QString icon;
+    if (isWindows10) {
+        icon = Utils::getIcon(2, volume, NULL);
+    } else {
+        icon = Utils::getIcon(1, volume, NULL);
+    }
 
     engine->rootContext()->setContextProperty("outputIcon", QStringLiteral("qrc") + icon);
 }

@@ -76,7 +76,45 @@ ApplicationWindow {
         border.color: Qt.rgba(255, 255, 255, 0.15)
         border.width: 1
         radius: 12
+
+
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.topMargin: 180
+            anchors.leftMargin: 1
+            anchors.rightMargin: 1
+            anchors.bottomMargin: 1
+            //border.color: Qt.rgba(255, 255, 255, 0.15)
+            //border.width: 1
+            radius: 12
+            color: contrastedColor
+        }
+
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.topMargin: 180
+            anchors.leftMargin: 1
+            anchors.rightMargin: 1
+            height: 12
+            color: contrastedColor
+        }
+
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.topMargin: 180
+            anchors.leftMargin: 1
+            anchors.rightMargin: 1
+            height: 1
+            color: contrastedBorderColor
+        }
     }
+
+
 
     GridLayout {
         id: gridLayout
@@ -145,17 +183,6 @@ ApplicationWindow {
             }
         }
 
-        Rectangle {
-            id: inputSeparator
-            Layout.preferredHeight: 1
-            Layout.bottomMargin: 10
-            Layout.fillWidth: true
-            color: borderColor
-            Layout.columnSpan: 2
-            Layout.leftMargin: -10
-            Layout.rightMargin: -10
-        }
-
         ComboBox {
             id: inputDeviceComboBox
             Layout.preferredHeight: 35
@@ -203,22 +230,8 @@ ApplicationWindow {
             }
         }
 
-        Rectangle {
-            id: appSeparator
-            Layout.preferredHeight: 1
-            Layout.bottomMargin: 10
-            Layout.fillWidth: true
-            color: borderColor
-            Layout.columnSpan: 2
-            Layout.leftMargin: -10
-            Layout.rightMargin: -10
-        }
-
-        Label {
-            text: "Volume mixer"
-            Layout.leftMargin: 10
-            font.pixelSize: 14
-            font.bold: true
+        Item {
+            Layout.preferredHeight: 2
             Layout.columnSpan: 2
         }
 
