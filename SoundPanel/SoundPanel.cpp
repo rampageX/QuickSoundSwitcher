@@ -270,8 +270,13 @@ void SoundPanel::populateApplicationModel() {
 
     // Group applications by executable name
     QMap<QString, QVector<Application>> groupedApps;
+    QVector<Application> systemSoundApps;
     for (const Application &app : applications) {
         if (app.executableName.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
+            continue;
+        }
+        if (app.name == "Windows system sounds") {
+            systemSoundApps.append(app);
             continue;
         }
         groupedApps[app.executableName].append(app);
@@ -279,13 +284,47 @@ void SoundPanel::populateApplicationModel() {
 
     QMetaObject::invokeMethod(engine->rootObjects().first(), "clearApplicationModel");
 
+    // Process system sounds first
+    if (!systemSoundApps.isEmpty()) {
+        QString displayName = systemSoundApps.first().name.isEmpty() ? "Windows system sounds" : systemSoundApps.first().name;
+
+        bool isMuted = std::any_of(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &app) {
+            return app.isMuted;
+        });
+        int volume = 0;
+        if (!systemSoundApps.isEmpty()) {
+            volume = std::max_element(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &a, const Application &b) {
+                         return a.volume < b.volume;
+                     })->volume;
+        }
+
+        QPixmap iconPixmap = systemSoundApps.first().icon.pixmap(16, 16);
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+        iconPixmap.toImage().save(&buffer, "PNG");
+        QString base64Icon = QString::fromUtf8(byteArray.toBase64());
+
+        QStringList appIDs;
+        for (const Application &app : systemSoundApps) {
+            appIDs.append(app.id);
+        }
+
+        QMetaObject::invokeMethod(engine->rootObjects().first(), "addApplication",
+                                  Q_ARG(QVariant, QVariant::fromValue(appIDs.join(";"))),
+                                  Q_ARG(QVariant, QVariant::fromValue(displayName)),
+                                  Q_ARG(QVariant, QVariant::fromValue(isMuted)),
+                                  Q_ARG(QVariant, QVariant::fromValue(volume)),
+                                  Q_ARG(QVariant, QVariant::fromValue(base64Icon)));
+    }
+
+    // Process other grouped applications
     for (auto it = groupedApps.begin(); it != groupedApps.end(); ++it) {
         QString executableName = it.key();
         QVector<Application> appGroup = it.value();
 
         QString displayName = appGroup.first().name.isEmpty() ? executableName : appGroup.first().name;
 
-        // Aggregate mute and volume states
         bool isMuted = std::any_of(appGroup.begin(), appGroup.end(), [](const Application &app) {
             return app.isMuted;
         });
@@ -296,7 +335,6 @@ void SoundPanel::populateApplicationModel() {
                      })->volume;
         }
 
-        // Convert QPixmap to Base64 string
         QPixmap iconPixmap = appGroup.first().icon.pixmap(16, 16);
         QByteArray byteArray;
         QBuffer buffer(&byteArray);
@@ -304,13 +342,11 @@ void SoundPanel::populateApplicationModel() {
         iconPixmap.toImage().save(&buffer, "PNG");
         QString base64Icon = QString::fromUtf8(byteArray.toBase64());
 
-        // Store appIDs for grouped control
         QStringList appIDs;
         for (const Application &app : appGroup) {
             appIDs.append(app.id);
         }
 
-        // Add the grouped entry to QML
         QMetaObject::invokeMethod(engine->rootObjects().first(), "addApplication",
                                   Q_ARG(QVariant, QVariant::fromValue(appIDs.join(";"))),
                                   Q_ARG(QVariant, QVariant::fromValue(displayName)),
