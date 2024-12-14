@@ -81,7 +81,6 @@ void SoundPanel::animateIn()
 
     int scalingFactor = isWindows10 ? 80 : 50;
     int startY = availableGeometry.bottom() - (windowHeight * scalingFactor / 100);
-    //if (isWindows10) startY = availableGeometry.bottom() - (windowHeight * 80 / 100);
 
     int targetY = availableGeometry.bottom() - windowHeight + 1;
     soundPanelWindow->setPosition(panelX, startY);
@@ -266,7 +265,10 @@ void SoundPanel::populateApplicationModel() {
     QMetaObject::invokeMethod(engine->rootObjects().first(), "clearApplicationModel");
 
     for (const Application &app : applications) {
-        // Use app.name if not empty, otherwise use app.executableName
+        if (app.executableName.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
+            continue;
+        }
+
         QString displayName = app.name.isEmpty() ? app.executableName : app.name;
 
         // Convert QPixmap to QByteArray (Base64 encoding)

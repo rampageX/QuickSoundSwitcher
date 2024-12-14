@@ -70,6 +70,7 @@ ApplicationWindow {
     }
 
     Rectangle {
+        id: ioRectangle
         anchors.fill: parent
         color: nativeWindowColor
         border.color: Qt.rgba(255, 255, 255, 0.15)
@@ -228,8 +229,6 @@ ApplicationWindow {
             delegate: RowLayout {
                 Layout.fillWidth: true
                 Layout.columnSpan: 2
-
-
 
                 Button {
                     id: muteButton
