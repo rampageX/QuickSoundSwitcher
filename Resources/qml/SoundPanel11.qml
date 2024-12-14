@@ -114,8 +114,6 @@ ApplicationWindow {
         }
     }
 
-
-
     GridLayout {
         id: gridLayout
         objectName: "gridLayout"
@@ -251,8 +249,10 @@ ApplicationWindow {
                     checkable: true
                     checked: model.isMuted
                     onClicked: {
-                        model.isMuted = !model.isMuted;
-                        soundPanel.onApplicationMuteButtonClicked(model.appID, model.isMuted);
+                        let appIDs = model.appID.split(";");
+                        appIDs.forEach(function(appID) {
+                            soundPanel.onApplicationMuteButtonClicked(appID, muteButton.checked);
+                        });
                     }
 
                     Image {
@@ -272,7 +272,10 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     value: model.volume
                     onValueChanged: {
-                        soundPanel.onApplicationVolumeSliderValueChanged(model.appID, value);
+                        let appIDs = model.appID.split(";");
+                        appIDs.forEach(function(appID) {
+                            soundPanel.onApplicationVolumeSliderValueChanged(appID, volumeSlider.value);
+                        });
                     }
                 }
             }
