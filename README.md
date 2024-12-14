@@ -4,8 +4,9 @@
 [![Github All Releases](https://img.shields.io/github/downloads/odizinne/quicksoundswitcher/total.svg)]()
 [![license](https://img.shields.io/github/license/odizinne/quicksoundswitcher)]()
 
-QuickSoundSwitcher is made to replace windows 10 default sound panel.  
-It provide output and input volume / device / mute control.
+QuickSoundSwitcher is an enhanced audio panel for Windows.  
+It provide output and input volume / device / mute control as well as application volume mixer.  
+It is made with close to native ui for w10 or w11.
 
 ![image](.assets/screenshot.png)
 
