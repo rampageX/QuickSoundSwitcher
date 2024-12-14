@@ -85,13 +85,13 @@ ApplicationWindow {
         anchors.rightMargin: 10
         anchors.topMargin: 10
         anchors.bottomMargin: 10
-        columns: 3
+        columns: 2
         rowSpacing: 5
 
         ComboBox {
             id: outputDeviceComboBox
             Layout.preferredHeight: 35
-            Layout.columnSpan: 3
+            Layout.columnSpan: 2
             Layout.fillWidth: true
             font.pixelSize: 14
             model: ListModel {}
@@ -129,7 +129,6 @@ ApplicationWindow {
             to: 100
             Layout.leftMargin: -10
             Layout.rightMargin: -10
-            Layout.columnSpan: 2
             Layout.fillWidth: true
             Layout.preferredHeight: -1
             onValueChanged: {
@@ -151,7 +150,7 @@ ApplicationWindow {
             Layout.bottomMargin: 10
             Layout.fillWidth: true
             color: borderColor
-            Layout.columnSpan: 3
+            Layout.columnSpan: 2
             Layout.leftMargin: -10
             Layout.rightMargin: -10
         }
@@ -160,7 +159,7 @@ ApplicationWindow {
             id: inputDeviceComboBox
             Layout.preferredHeight: 35
             Layout.fillWidth: true
-            Layout.columnSpan: 3
+            Layout.columnSpan: 2
             font.pixelSize: 14
             model: ListModel {}
             onCurrentTextChanged: {
@@ -196,7 +195,6 @@ ApplicationWindow {
             to: 100
             Layout.leftMargin: -10
             Layout.rightMargin: -10
-            Layout.columnSpan: 2
             Layout.fillWidth: true
             Layout.preferredHeight: -1
             onValueChanged: {
@@ -210,7 +208,7 @@ ApplicationWindow {
             Layout.bottomMargin: 10
             Layout.fillWidth: true
             color: borderColor
-            Layout.columnSpan: 3
+            Layout.columnSpan: 2
             Layout.leftMargin: -10
             Layout.rightMargin: -10
         }
@@ -220,17 +218,18 @@ ApplicationWindow {
             Layout.leftMargin: 10
             font.pixelSize: 14
             font.bold: true
-            Layout.columnSpan: 3
+            Layout.columnSpan: 2
         }
 
         Repeater {
-
             id: appRepeater
             objectName: "appRepeater"
             model: appModel
             delegate: RowLayout {
                 Layout.fillWidth: true
-                Layout.columnSpan: 3
+                Layout.columnSpan: 2
+
+
 
                 Button {
                     id: muteButton
@@ -262,7 +261,6 @@ ApplicationWindow {
                     value: model.volume
                     onValueChanged: {
                         soundPanel.onApplicationVolumeSliderValueChanged(model.appID, value);
-                        //modelData.volume = value; // Update the model
                     }
                 }
             }

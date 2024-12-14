@@ -15,7 +15,6 @@ SoundPanel::SoundPanel(QObject* parent)
     , isWindows10(Utils::isWindows10())
 {
     engine = new QQmlApplicationEngine(this);
-    engine->rootContext()->setContextProperty("soundPanel", this);
 
     QColor windowColor;
     QColor borderColor;
@@ -27,20 +26,17 @@ SoundPanel::SoundPanel(QObject* parent)
         borderColor = QColor(255, 255, 255, 31);
     }
 
-
     QColor accentColor(Utils::getAccentColor("normal"));
+
+    engine->rootContext()->setContextProperty("soundPanel", this);
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
     engine->rootContext()->setContextProperty("borderColor", borderColor);
+    engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
 
     setSystemSoundsIcon();
 
-    if (isWindows10) {
-        engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel.qml")));
-    } else {
-        engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel11.qml")));
-    }
-
-    engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
+    QString uiFile = isWindows10 ? "qrc:/qml/SoundPanel.qml" : "qrc:/qml/SoundPanel11.qml";
+    engine->load(QUrl(uiFile));
 
     soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
 
