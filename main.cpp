@@ -18,7 +18,6 @@ bool isAnotherInstanceRunning(const QString& processName)
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    a.setStyle("fusion");
     a.setQuitOnLastWindowClosed(false);
 
     const QString processName = "QuickSoundSwitcher.exe";

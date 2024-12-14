@@ -22,7 +22,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     createTrayIcon();
     installGlobalMouseHook();
     installKeyboardHook();
-
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
