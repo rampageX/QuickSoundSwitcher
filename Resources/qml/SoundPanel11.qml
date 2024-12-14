@@ -5,7 +5,7 @@ import QtQuick.Controls.FluentWinUI3 2.15
 
 ApplicationWindow {
     id: window
-    width: 360
+    width: 330
     height: gridLayout.implicitHeight
     visible: false
     flags: Qt.FramelessWindowHint
@@ -166,8 +166,8 @@ ApplicationWindow {
             value: soundPanel.playbackVolume
             from: 0
             to: 100
-            Layout.leftMargin: -10
-            Layout.rightMargin: -10
+            Layout.leftMargin: -15
+            Layout.rightMargin: -5
             Layout.fillWidth: true
             Layout.preferredHeight: -1
             onValueChanged: {
@@ -221,8 +221,8 @@ ApplicationWindow {
             value: soundPanel.recordingVolume
             from: 0
             to: 100
-            Layout.leftMargin: -10
-            Layout.rightMargin: -10
+            Layout.leftMargin: -15
+            Layout.rightMargin: -5
             Layout.fillWidth: true
             Layout.preferredHeight: -1
             onValueChanged: {
@@ -267,8 +267,8 @@ ApplicationWindow {
                     id: volumeSlider
                     from: 0
                     to: 100
-                    Layout.leftMargin: -10
-                    Layout.rightMargin: -10
+                    Layout.leftMargin: -15
+                    Layout.rightMargin: -5
                     Layout.fillWidth: true
                     value: model.volume
                     onValueChanged: {
