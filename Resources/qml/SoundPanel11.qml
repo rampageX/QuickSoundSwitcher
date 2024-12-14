@@ -14,6 +14,7 @@ ApplicationWindow {
     property bool blockOutputSignal: false
     property bool blockInputSignal: false
 
+
     ListModel {
         id: appModel
     }
@@ -80,19 +81,15 @@ ApplicationWindow {
         id: gridLayout
         objectName: "gridLayout"
         anchors.fill: parent
-        anchors.leftMargin: 0
-        anchors.rightMargin: 0
-        anchors.topMargin: 0
-        anchors.bottomMargin: 0
+        anchors.leftMargin: 10
+        anchors.rightMargin: 10
+        anchors.topMargin: 10
+        anchors.bottomMargin: 10
         columns: 3
-        rowSpacing: 0
+        rowSpacing: 5
 
         ComboBox {
             id: outputDeviceComboBox
-            Layout.topMargin: 15
-            Layout.bottomMargin: 10
-            Layout.rightMargin: 15
-            Layout.leftMargin: 15
             Layout.preferredHeight: 35
             Layout.columnSpan: 3
             Layout.fillWidth: true
@@ -107,11 +104,9 @@ ApplicationWindow {
 
         Button {
             id: outputeMuteButton
-            Layout.leftMargin: 15
             Layout.preferredHeight: 40
             Layout.preferredWidth: 40
             flat: true
-            Layout.bottomMargin: 10
             onClicked: {
                 soundPanel.onOutputMuteButtonClicked()
             }
@@ -132,12 +127,11 @@ ApplicationWindow {
             value: soundPanel.playbackVolume
             from: 0
             to: 100
+            Layout.leftMargin: -10
+            Layout.rightMargin: -10
             Layout.columnSpan: 2
             Layout.fillWidth: true
             Layout.preferredHeight: -1
-            Layout.bottomMargin: 10
-            Layout.leftMargin: -15
-            Layout.rightMargin: 5
             onValueChanged: {
                 if (pressed) {
                     soundPanel.onPlaybackVolumeChanged(value)
@@ -154,17 +148,16 @@ ApplicationWindow {
         Rectangle {
             id: inputSeparator
             Layout.preferredHeight: 1
+            Layout.bottomMargin: 10
             Layout.fillWidth: true
             color: borderColor
             Layout.columnSpan: 3
+            Layout.leftMargin: -10
+            Layout.rightMargin: -10
         }
 
         ComboBox {
             id: inputDeviceComboBox
-            Layout.topMargin: 15
-            Layout.bottomMargin: 10
-            Layout.rightMargin: 15
-            Layout.leftMargin: 15
             Layout.preferredHeight: 35
             Layout.fillWidth: true
             Layout.columnSpan: 3
@@ -179,11 +172,9 @@ ApplicationWindow {
 
         Button {
             id: inputMuteButton
-            Layout.leftMargin: 15
             Layout.preferredWidth: 40
             Layout.preferredHeight: 40
             flat: true
-            Layout.bottomMargin: 10
             onClicked: {
                 soundPanel.onInputMuteButtonClicked()
             }
@@ -203,12 +194,11 @@ ApplicationWindow {
             value: soundPanel.recordingVolume
             from: 0
             to: 100
+            Layout.leftMargin: -10
+            Layout.rightMargin: -10
             Layout.columnSpan: 2
             Layout.fillWidth: true
             Layout.preferredHeight: -1
-            Layout.bottomMargin: 10
-            Layout.leftMargin: -15
-            Layout.rightMargin: 5
             onValueChanged: {
                 soundPanel.onRecordingVolumeChanged(value)
             }
@@ -217,16 +207,17 @@ ApplicationWindow {
         Rectangle {
             id: appSeparator
             Layout.preferredHeight: 1
+            Layout.bottomMargin: 10
             Layout.fillWidth: true
             color: borderColor
             Layout.columnSpan: 3
-            Layout.bottomMargin: 10
+            Layout.leftMargin: -10
+            Layout.rightMargin: -10
         }
 
         Label {
             text: "Volume mixer"
-            Layout.leftMargin: 25
-            Layout.bottomMargin: 10
+            Layout.leftMargin: 10
             font.pixelSize: 14
             font.bold: true
             Layout.columnSpan: 3
@@ -238,8 +229,6 @@ ApplicationWindow {
             objectName: "appRepeater"
             model: appModel
             delegate: RowLayout {
-                Layout.bottomMargin: 10
-                Layout.leftMargin: 15
                 Layout.fillWidth: true
                 Layout.columnSpan: 3
 
@@ -267,10 +256,10 @@ ApplicationWindow {
                     id: volumeSlider
                     from: 0
                     to: 100
-                    Layout.leftMargin: -15
-                    Layout.rightMargin: 5
-                    value: model.volume
+                    Layout.leftMargin: -10
+                    Layout.rightMargin: -10
                     Layout.fillWidth: true
+                    value: model.volume
                     onValueChanged: {
                         soundPanel.onApplicationVolumeSliderValueChanged(model.appID, value);
                         //modelData.volume = value; // Update the model
@@ -280,7 +269,7 @@ ApplicationWindow {
         }
 
         Item {
-            Layout.preferredHeight: 5
+            Layout.preferredHeight: 15
         }
     }
 }

@@ -8,7 +8,7 @@
 #include <QApplication>
 #include <QTimer>
 #include "QuickSoundSwitcher.h"
-
+#include <QPropertyAnimation>
 SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
     , soundPanelWindow(nullptr)
@@ -27,8 +27,6 @@ SoundPanel::SoundPanel(QObject* parent)
         borderColor = QColor(255, 255, 255, 31);
     }
 
-    engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
-
 
     QColor accentColor(Utils::getAccentColor("normal"));
     engine->rootContext()->setContextProperty("accentColor", accentColor.name());
@@ -41,6 +39,8 @@ SoundPanel::SoundPanel(QObject* parent)
     } else {
         engine->load(QUrl(QStringLiteral("qrc:/qml/SoundPanel11.qml")));
     }
+
+    engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
 
     soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
 
@@ -79,43 +79,29 @@ void SoundPanel::animateIn()
         repeaterSize = 50 * repeater->property("count").toInt();
     }
 
-    int margin = 12;
-    if (isWindows10) margin = 0;
-
+    int margin = isWindows10 ? margin = -1 : margin = 12;
     int windowHeight = soundPanelWindow->height() + repeaterSize;
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
 
-    int startY = availableGeometry.bottom() - (windowHeight * 50 / 100);
+    int scalingFactor = isWindows10 ? 80 : 50;
+    int startY = availableGeometry.bottom() - (windowHeight * scalingFactor / 100);
+    //if (isWindows10) startY = availableGeometry.bottom() - (windowHeight * 80 / 100);
 
-    if (isWindows10) startY = availableGeometry.bottom() - (windowHeight * 80 / 100);
-
-    int targetY = availableGeometry.bottom() - windowHeight - margin;
-
+    int targetY = availableGeometry.bottom() - windowHeight + 1;
     soundPanelWindow->setPosition(panelX, startY);
+
+    QPropertyAnimation *animation = new QPropertyAnimation(soundPanelWindow, "y", this);
+    animation->setDuration(isWindows10 ? 300 : 200);
+    animation->setStartValue(startY);
+    animation->setEndValue(targetY);
+    animation->setEasingCurve(QEasingCurve::OutQuad);
+
+    connect(animation, &QPropertyAnimation::finished, animation, &QObject::deleteLater);
+
     soundPanelWindow->show();
-
-    // Animation settings
-    const int durationMs = 40;
-    const int refreshRate = 1;
-    const int totalSteps = durationMs / refreshRate;
-    int currentStep = 0;
-    QTimer *animationTimer = new QTimer(this);
-
-    animationTimer->start(refreshRate);
-    connect(animationTimer, &QTimer::timeout, this, [=, this]() mutable {
-        int currentY = startY + ((targetY - startY) * currentStep) / totalSteps;
-
-        if (currentY == targetY) {
-            animationTimer->stop();
-            animationTimer->deleteLater();
-            soundPanelWindow->setPosition(panelX, targetY);
-        }
-
-        soundPanelWindow->setPosition(panelX, currentY);
-
-        ++currentStep;
-    });
+    animation->start();
 }
+
 
 int SoundPanel::playbackVolume() const {
     return m_playbackVolume;
