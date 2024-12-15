@@ -235,8 +235,10 @@ ApplicationWindow {
 
         Repeater {
             id: appRepeater
-            objectName: "appRepeater"
             model: appModel
+            onCountChanged: {
+                window.height = gridLayout.implicitHeight + (45 * appRepeater.count)
+            }
             delegate: RowLayout {
                 Layout.fillWidth: true
                 Layout.columnSpan: 2

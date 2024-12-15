@@ -126,7 +126,8 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
 
             if (!soundPanelRect.contains(cursorPos) && !trayIconRect.contains(cursorPos)) {
                 if (instance->soundPanel) {
-                    instance->soundPanel->animateOut();
+                    delete instance->soundPanel;
+                    instance->soundPanel = nullptr;
                 }
             }
         }
@@ -199,9 +200,10 @@ void QuickSoundSwitcher::togglePanel()
     if (!soundPanel) {
         soundPanel = new SoundPanel(this);
         connect(soundPanel, &SoundPanel::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
-        connect(soundPanel, &SoundPanel::panelClosed, this, &QuickSoundSwitcher::onSoundPanelClosed);
+        //connect(soundPanel, &SoundPanel::panelClosed, this, &QuickSoundSwitcher::onSoundPanelClosed);
     } else {
-        soundPanel->animateOut();
+        delete soundPanel;
+        soundPanel = nullptr;
     }
 }
 

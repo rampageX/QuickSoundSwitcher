@@ -31,6 +31,8 @@ SoundPanel::SoundPanel(QObject* parent)
 
 SoundPanel::~SoundPanel()
 {
+    qDebug() << "pass";
+    delete soundPanelWindow;
     delete engine;
 }
 
@@ -102,22 +104,15 @@ void SoundPanel::animateIn()
 
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
-    QObject *gridLayout = engine->rootObjects().first()->findChild<QObject*>("gridLayout");
-    QObject *repeater = gridLayout ? gridLayout->findChild<QObject*>("appRepeater", Qt::FindChildrenRecursively) : nullptr;
-
-    int repeaterSize = 0;
-    if (repeater) {
-        repeaterSize = 50 * repeater->property("count").toInt();
-    }
-
+    int engineHeight = engine->rootObjects().first()->property("height").toInt();
+    soundPanelWindow->resize(330, engineHeight);
     int margin = isWindows10 ? margin = -1 : margin = 12;
-    int windowHeight = soundPanelWindow->height() + repeaterSize;
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
 
     int scalingFactor = isWindows10 ? 80 : 50;
-    int startY = availableGeometry.bottom() - (windowHeight * scalingFactor / 100);
+    int startY = availableGeometry.bottom() - (soundPanelWindow->height() * scalingFactor / 100);
 
-    int targetY = availableGeometry.bottom() - windowHeight + 1;
+    int targetY = availableGeometry.bottom() - soundPanelWindow->height() - margin;
     soundPanelWindow->setPosition(panelX, startY);
 
     QPropertyAnimation *animation = new QPropertyAnimation(soundPanelWindow, "y", this);
@@ -127,9 +122,6 @@ void SoundPanel::animateIn()
     animation->setEasingCurve(QEasingCurve::OutQuad);
 
     connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
-        HWND hwnd = reinterpret_cast<HWND>(soundPanelWindow->winId());
-
-        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         isAnimating = false;
         animation->deleteLater();
     });
@@ -159,6 +151,7 @@ void SoundPanel::animateOut()
     connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
         soundPanelWindow->hide();
         animation->deleteLater();
+        this->deleteLater();
         emit panelClosed();
     });
 

@@ -255,8 +255,10 @@ ApplicationWindow {
 
         Repeater {
             id: appRepeater
-            objectName: "appRepeater"
             model: appModel
+            onCountChanged: {
+                window.height = gridLayout.implicitHeight + (50 * appRepeater.count)
+            }
             delegate: RowLayout {
                 Layout.bottomMargin: 10
                 Layout.leftMargin: 10
@@ -293,7 +295,6 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     onValueChanged: {
                         soundPanel.onApplicationVolumeSliderValueChanged(model.appID, value);
-                        //modelData.volume = value; // Update the model
                     }
                 }
 
