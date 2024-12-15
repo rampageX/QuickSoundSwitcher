@@ -71,46 +71,62 @@ ApplicationWindow {
 
     Rectangle {
         id: ioRectangle
-        anchors.fill: parent
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.left: parent.left
+        height: 182
         color: nativeWindowColor
+        border.color: Qt.rgba(255, 255, 255, 0.15)
+        border.width: 1
+        radius: 12
+    }
+
+    Rectangle {
+        id: appRectangle
+        anchors.fill: parent
+        anchors.topMargin: 193
+        color: singleApp ? contrastedColor : nativeWindowColor
         border.color: Qt.rgba(255, 255, 255, 0.15)
         border.width: 1
         radius: 12
 
 
-
         Rectangle {
-            anchors.fill: parent
-            anchors.topMargin: 180
+            id: bottomContrastRectangle
+            anchors.top: appRepeater.bottom
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.topMargin: 1
             anchors.leftMargin: 1
             anchors.rightMargin: 1
             anchors.bottomMargin: 1
+            height: 51
+            visible: !singleApp
             //border.color: Qt.rgba(255, 255, 255, 0.15)
             //border.width: 1
             radius: 12
             color: contrastedColor
-        }
 
-        Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.topMargin: 180
-            anchors.leftMargin: 1
-            anchors.rightMargin: 1
-            height: 12
-            color: contrastedColor
-        }
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: 1
+                anchors.rightMargin: 1
+                height: 12
+                color: contrastedColor
 
-        Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.topMargin: 180
-            anchors.leftMargin: 1
-            anchors.rightMargin: 1
-            height: 1
-            color: contrastedBorderColor
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: 1
+                    anchors.rightMargin: 1
+                    height: 1
+                    color: contrastedBorderColor
+                }
+            }
         }
     }
 
@@ -229,7 +245,7 @@ ApplicationWindow {
         }
 
         Item {
-            Layout.preferredHeight: 2
+            Layout.preferredHeight: 18
             Layout.columnSpan: 2
         }
 

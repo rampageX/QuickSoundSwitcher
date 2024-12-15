@@ -317,41 +317,8 @@ void SoundPanel::populateApplicationModel() {
 
     QMetaObject::invokeMethod(engine->rootObjects().first(), "clearApplicationModel");
 
-    // Process system sounds first
-    if (!systemSoundApps.isEmpty()) {
-        QString displayName = systemSoundApps.first().name.isEmpty() ? "Windows system sounds" : systemSoundApps.first().name;
-
-        bool isMuted = std::any_of(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &app) {
-            return app.isMuted;
-        });
-        int volume = 0;
-        if (!systemSoundApps.isEmpty()) {
-            volume = std::max_element(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &a, const Application &b) {
-                         return a.volume < b.volume;
-                     })->volume;
-        }
-
-        QPixmap iconPixmap = systemSoundApps.first().icon.pixmap(16, 16);
-        QByteArray byteArray;
-        QBuffer buffer(&byteArray);
-        buffer.open(QIODevice::WriteOnly);
-        iconPixmap.toImage().save(&buffer, "PNG");
-        QString base64Icon = QString::fromUtf8(byteArray.toBase64());
-
-        QStringList appIDs;
-        for (const Application &app : systemSoundApps) {
-            appIDs.append(app.id);
-        }
-
-        QMetaObject::invokeMethod(engine->rootObjects().first(), "addApplication",
-                                  Q_ARG(QVariant, QVariant::fromValue(appIDs.join(";"))),
-                                  Q_ARG(QVariant, QVariant::fromValue(displayName)),
-                                  Q_ARG(QVariant, QVariant::fromValue(isMuted)),
-                                  Q_ARG(QVariant, QVariant::fromValue(volume)),
-                                  Q_ARG(QVariant, QVariant::fromValue(base64Icon)));
-    }
-
-    // Process other grouped applications
+    int addedAppsCount = 0;
+    // Process other grouped applications first
     for (auto it = groupedApps.begin(); it != groupedApps.end(); ++it) {
         QString executableName = it.key();
         QVector<Application> appGroup = it.value();
@@ -386,6 +353,47 @@ void SoundPanel::populateApplicationModel() {
                                   Q_ARG(QVariant, QVariant::fromValue(isMuted)),
                                   Q_ARG(QVariant, QVariant::fromValue(volume)),
                                   Q_ARG(QVariant, QVariant::fromValue(base64Icon)));
+        addedAppsCount++;
+    }
+
+    // Process system sounds last
+    if (!systemSoundApps.isEmpty()) {
+        QString displayName = systemSoundApps.first().name.isEmpty() ? "Windows system sounds" : systemSoundApps.first().name;
+
+        bool isMuted = std::any_of(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &app) {
+            return app.isMuted;
+        });
+        int volume = 0;
+        if (!systemSoundApps.isEmpty()) {
+            volume = std::max_element(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &a, const Application &b) {
+                         return a.volume < b.volume;
+                     })->volume;
+        }
+
+        QPixmap iconPixmap = systemSoundApps.first().icon.pixmap(16, 16);
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+        iconPixmap.toImage().save(&buffer, "PNG");
+        QString base64Icon = QString::fromUtf8(byteArray.toBase64());
+
+        QStringList appIDs;
+        for (const Application &app : systemSoundApps) {
+            appIDs.append(app.id);
+        }
+
+        QMetaObject::invokeMethod(engine->rootObjects().first(), "addApplication",
+                                  Q_ARG(QVariant, QVariant::fromValue(appIDs.join(";"))),
+                                  Q_ARG(QVariant, QVariant::fromValue(displayName)),
+                                  Q_ARG(QVariant, QVariant::fromValue(isMuted)),
+                                  Q_ARG(QVariant, QVariant::fromValue(volume)),
+                                  Q_ARG(QVariant, QVariant::fromValue(base64Icon)));
+        addedAppsCount++;
+    }
+    if (addedAppsCount == 1) {
+        engine->rootContext()->setContextProperty("singleApp", true);
+    } else {
+        engine->rootContext()->setContextProperty("singleApp", false);
     }
 }
 
