@@ -74,7 +74,7 @@ ApplicationWindow {
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.left: parent.left
-        height: 182
+        height: 193
         color: nativeWindowColor
         border.color: Qt.rgba(255, 255, 255, 0.15)
         border.width: 1
@@ -84,7 +84,7 @@ ApplicationWindow {
     Rectangle {
         id: appRectangle
         anchors.fill: parent
-        anchors.topMargin: 193
+        anchors.topMargin: 205
         color: singleApp ? contrastedColor : nativeWindowColor
         border.color: Qt.rgba(255, 255, 255, 0.15)
         border.width: 1
@@ -195,6 +195,16 @@ ApplicationWindow {
                     soundPanel.onOutputSliderReleased()
                 }
             }
+        }
+
+        Rectangle {
+            Layout.columnSpan: 2
+            color: borderColor
+            Layout.preferredHeight: 1
+            Layout.fillWidth: true
+            Layout.leftMargin: -10
+            Layout.rightMargin: -10
+            Layout.bottomMargin: 5
         }
 
         ComboBox {
