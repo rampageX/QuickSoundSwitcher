@@ -127,6 +127,9 @@ void SoundPanel::animateIn()
     animation->setEasingCurve(QEasingCurve::OutQuad);
 
     connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
+        HWND hwnd = reinterpret_cast<HWND>(soundPanelWindow->winId());
+
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         isAnimating = false;
         animation->deleteLater();
     });
