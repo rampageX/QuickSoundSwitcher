@@ -152,7 +152,6 @@ void SoundPanel::animateOut()
         soundPanelWindow->hide();
         animation->deleteLater();
         this->deleteLater();
-        emit panelClosed();
     });
 
     animation->start();
