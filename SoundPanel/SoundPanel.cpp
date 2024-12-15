@@ -9,13 +9,32 @@
 #include <QTimer>
 #include "QuickSoundSwitcher.h"
 #include <QPropertyAnimation>
+
 SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
     , soundPanelWindow(nullptr)
+    , engine(new QQmlApplicationEngine(this))
     , isWindows10(Utils::isWindows10())
+    , isAnimating(false)
 {
-    engine = new QQmlApplicationEngine(this);
+    configureQML();
+    setupUI();
 
+    soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+    animateIn();
+
+    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::outputMuteStateChanged,
+            this, &SoundPanel::onOutputMuteStateChanged);
+    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::volumeChangedWithTray,
+            this, &SoundPanel::onVolumeChangedWithTray);
+}
+
+SoundPanel::~SoundPanel()
+{
+    delete engine;
+}
+
+void SoundPanel::configureQML() {
     QColor windowColor;
     QColor borderColor;
     QColor contrastedColor;
@@ -41,25 +60,29 @@ SoundPanel::SoundPanel(QObject* parent)
     engine->rootContext()->setContextProperty("contrastedColor", contrastedColor);
     engine->rootContext()->setContextProperty("contrastedBorderColor", contrastedBorderColor);
 
-    setSystemSoundsIcon();
 
     QString uiFile = isWindows10 ? "qrc:/qml/SoundPanel.qml" : "qrc:/qml/SoundPanel11.qml";
     engine->load(QUrl(uiFile));
-
-    soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
-
-    setupUI();
-    animateIn();
-
-    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::outputMuteStateChanged,
-            this, &SoundPanel::onOutputMuteStateChanged);
-    connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::volumeChangedWithTray,
-            this, &SoundPanel::onVolumeChangedWithTray);
 }
 
-SoundPanel::~SoundPanel()
-{
-    delete engine;
+void SoundPanel::setupUI() {
+    populateApplicationModel();
+    setSystemSoundsIcon();
+    populateComboBoxes();
+    setPlaybackVolume(AudioManager::getPlaybackVolume());
+    setRecordingVolume(AudioManager::getRecordingVolume());
+
+    int volume = AudioManager::getPlaybackVolume();
+    bool isOutputMuted = AudioManager::getPlaybackMute();
+
+    if (isOutputMuted || volume == 0) {
+        setOutputButtonImage(0);
+    } else {
+        setOutputButtonImage(volume);
+    }
+
+    bool isInputMuted = AudioManager::getRecordingMute();
+    setInputButtonImage(isInputMuted);
 }
 
 void SoundPanel::onVolumeChangedWithTray(int volume) {
@@ -73,6 +96,10 @@ void SoundPanel::onOutputMuteStateChanged(int volumeIcon) {
 
 void SoundPanel::animateIn()
 {
+    if (isAnimating) return;
+
+    isAnimating = true;
+
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
     QObject *gridLayout = engine->rootObjects().first()->findChild<QObject*>("gridLayout");
@@ -99,12 +126,41 @@ void SoundPanel::animateIn()
     animation->setEndValue(targetY);
     animation->setEasingCurve(QEasingCurve::OutQuad);
 
-    connect(animation, &QPropertyAnimation::finished, animation, &QObject::deleteLater);
+    connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
+        isAnimating = false;
+        animation->deleteLater();
+    });
 
     soundPanelWindow->show();
     animation->start();
 }
 
+void SoundPanel::animateOut()
+{
+    if (isAnimating) return;
+
+    isAnimating = true;
+
+    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
+
+    int scalingFactor = isWindows10 ? 80 : 50;
+    int startY = soundPanelWindow->y();
+    int targetY = availableGeometry.bottom() - (soundPanelWindow->height() * scalingFactor / 100);
+
+    QPropertyAnimation *animation = new QPropertyAnimation(soundPanelWindow, "y", this);
+    animation->setDuration(isWindows10 ? 300 : 200);
+    animation->setStartValue(startY);
+    animation->setEndValue(targetY);
+    animation->setEasingCurve(QEasingCurve::InQuad);
+
+    connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
+        soundPanelWindow->hide();
+        animation->deleteLater();
+        emit panelClosed();
+    });
+
+    animation->start();
+}
 
 int SoundPanel::playbackVolume() const {
     return m_playbackVolume;
@@ -203,25 +259,6 @@ void SoundPanel::onRecordingDeviceChanged(const QString &deviceName) {
             break;
         }
     }
-}
-
-void SoundPanel::setupUI() {
-    populateApplicationModel();
-    populateComboBoxes();
-    setPlaybackVolume(AudioManager::getPlaybackVolume());
-    setRecordingVolume(AudioManager::getRecordingVolume());
-
-    int volume = AudioManager::getPlaybackVolume();
-    bool isOutputMuted = AudioManager::getPlaybackMute();
-
-    if (isOutputMuted || volume == 0) {
-        setOutputButtonImage(0);
-    } else {
-        setOutputButtonImage(volume);
-    }
-
-    bool isInputMuted = AudioManager::getRecordingMute();
-    setInputButtonImage(isInputMuted);
 }
 
 void SoundPanel::setOutputButtonImage(int volume) {

@@ -19,6 +19,7 @@ public:
 private slots:
     void onRunAtStartupStateChanged();
     void onOutputMuteChanged();
+    void onSoundPanelClosed();
 
 private:
     QSystemTrayIcon *trayIcon;

@@ -31,6 +31,8 @@ public:
 
     void setSystemSoundsIcon();
 
+    void animateOut();
+
 public slots:
     void onPlaybackVolumeChanged(int volume);
     void onRecordingVolumeChanged(int volume);
@@ -55,6 +57,7 @@ signals:
     void recordingVolumeChanged();
 
     void shouldUpdateTray();
+    void panelClosed();
 
 private:
     QQmlApplicationEngine* engine;
@@ -65,10 +68,12 @@ private:
     int m_recordingVolume = 0;
 
     void animateIn();
+    void configureQML();
     void setupUI();
     void populateComboBoxes();
     void populateApplicationModel();
     bool isWindows10;
+    bool isAnimating;
 };
 
 #endif // MEDIASFLYOUT_H
