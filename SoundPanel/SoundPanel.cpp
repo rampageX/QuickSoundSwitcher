@@ -48,7 +48,7 @@ void SoundPanel::configureQML() {
         contrastedBorderColor = QColor(224, 224, 224);
     } else {
         windowColor = QColor(36, 36, 36);
-        contrastedColor = QColor(30 ,30 ,30 );
+        contrastedColor = QColor(28, 28, 28);
         borderColor = QColor(255, 255, 255, 31);
         contrastedBorderColor = QColor(25, 25, 25);
     }
