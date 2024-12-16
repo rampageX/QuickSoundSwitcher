@@ -13,7 +13,7 @@ HHOOK QuickSoundSwitcher::mouseHook = NULL;
 QuickSoundSwitcher* QuickSoundSwitcher::instance = nullptr;
 
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
-    : QMainWindow(parent)
+    : QWidget(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , soundPanel(nullptr)
 {

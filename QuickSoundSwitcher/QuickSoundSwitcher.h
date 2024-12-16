@@ -5,7 +5,7 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 
-class QuickSoundSwitcher : public QMainWindow
+class QuickSoundSwitcher : public QWidget
 {
     Q_OBJECT
 

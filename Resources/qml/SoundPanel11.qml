@@ -71,15 +71,12 @@ ApplicationWindow {
 
     Rectangle {
         id: ioRectangle
-        //anchors.top: parent.top
-        //anchors.right: parent.right
-        //anchors.left: parent.left
         anchors.fill: parent
-        //height: 193
         color: nativeWindowColor
         border.color: Qt.rgba(255, 255, 255, 0.15)
         border.width: 1
         radius: 12
+
         Rectangle {
             id: bottomContrastRectangle
             anchors.top: appRepeater.bottom
@@ -91,9 +88,6 @@ ApplicationWindow {
             anchors.rightMargin: 1
             anchors.bottomMargin: 1
             height: 51
-            //visible: !singleApp
-            //border.color: Qt.rgba(255, 255, 255, 0.15)
-            //border.width: 1
             radius: 12
             color: contrastedColor
 
@@ -234,12 +228,6 @@ ApplicationWindow {
                 soundPanel.onRecordingVolumeChanged(value)
             }
         }
-
-        //Item {
-        //    Layout.preferredHeight: 1
-        //    Layout.topMargin: -6
-        //    Layout.columnSpan: 2
-        //}
 
         Rectangle {
             Layout.columnSpan: 2

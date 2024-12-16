@@ -74,6 +74,7 @@ private:
     void populateApplicationModel();
     bool isWindows10;
     bool isAnimating;
+    HWND hWnd;
 };
 
 #endif // MEDIASFLYOUT_H

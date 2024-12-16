@@ -16,11 +16,14 @@ SoundPanel::SoundPanel(QObject* parent)
     , engine(new QQmlApplicationEngine(this))
     , isWindows10(Utils::isWindows10())
     , isAnimating(false)
+    , hWnd(nullptr)
 {
     configureQML();
     setupUI();
 
     soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+    hWnd = reinterpret_cast<HWND>(soundPanelWindow->winId());
+
     animateIn();
 
     connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::outputMuteStateChanged,
@@ -122,6 +125,7 @@ void SoundPanel::animateIn()
     animation->setEasingCurve(QEasingCurve::OutQuad);
 
     connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         isAnimating = false;
         animation->deleteLater();
     });
@@ -154,6 +158,7 @@ void SoundPanel::animateOut()
         this->deleteLater();
     });
 
+    SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     animation->start();
 }
 
