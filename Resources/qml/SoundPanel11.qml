@@ -131,6 +131,16 @@ ApplicationWindow {
             Layout.fillWidth: true
             font.pixelSize: 14
             model: ListModel {}
+            contentItem: Text {
+                text: outputDeviceComboBox.currentText
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignLeft
+                font.pixelSize: 14
+                width: parent.width
+                color: palette.text
+            }
+
             onCurrentTextChanged: {
                 if (!window.blockOutputSignal) {
                     soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText);
@@ -189,6 +199,15 @@ ApplicationWindow {
             Layout.columnSpan: 2
             font.pixelSize: 14
             model: ListModel {}
+            contentItem: Text {
+                text: inputDeviceComboBox.currentText
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignLeft
+                font.pixelSize: 14
+                width: parent.width
+                color: palette.text
+            }
             onCurrentTextChanged: {
                 if (!window.blockInputSignal) {
                     soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText);

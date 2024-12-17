@@ -66,7 +66,7 @@ void SoundPanel::configureQML() {
     engine->rootContext()->setContextProperty("contrastedBorderColor", contrastedBorderColor);
 
 
-    QString uiFile = isWindows10 ? "qrc:/qml/SoundPanel.qml" : "qrc:/qml/SoundPanel11.qml";
+    QString uiFile = isWindows10 ? "qrc:/qml/SoundPanel10.qml" : "qrc:/qml/SoundPanel11.qml";
     engine->load(QUrl(uiFile));
 }
 

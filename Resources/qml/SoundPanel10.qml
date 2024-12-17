@@ -104,12 +104,22 @@ ApplicationWindow {
 
         ComboBox {
             id: outputDeviceComboBox
-            Layout.preferredHeight: 35
+            Layout.preferredHeight: 40
             Layout.columnSpan: 3
             Layout.fillWidth: true
             flat: true
             font.pixelSize: 15
             model: ListModel {}
+            contentItem: Text {
+                text: outputDeviceComboBox.currentText
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignLeft
+                font.pixelSize: 15
+                leftPadding: 10
+                width: parent.width
+                color: palette.text
+            }
             onCurrentTextChanged: {
                 if (!window.blockOutputSignal) {
                     soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText);
@@ -190,6 +200,16 @@ ApplicationWindow {
             flat: true
             font.pixelSize: 15
             model: ListModel {}
+            contentItem: Text {
+                text: inputDeviceComboBox.currentText
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignLeft
+                font.pixelSize: 15
+                width: parent.width
+                color: palette.text
+                leftPadding: 10
+            }
             onCurrentTextChanged: {
                 if (!window.blockInputSignal) {
                     soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText);
@@ -272,6 +292,9 @@ ApplicationWindow {
                     flat: true
                     checkable: true
                     checked: model.isMuted
+                    ToolTip.text: model.name
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 1000
                     onClicked: {
                         model.isMuted = !model.isMuted;
                         soundPanel.onApplicationMuteButtonClicked(model.appID, model.isMuted);
@@ -290,7 +313,6 @@ ApplicationWindow {
                     from: 0
                     to: 100
                     stepSize: 1
-                    //Layout.leftMargin: -15
                     value: model.volume
                     Layout.fillWidth: true
                     onValueChanged: {
