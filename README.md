@@ -8,7 +8,8 @@ QuickSoundSwitcher is an enhanced audio panel for Windows.
 It provide output and input volume / device / mute control as well as application volume mixer.  
 It is made with close to native ui for w10 or w11.
 
-![image](.assets/screenshot.png)
+![image](.assets/w11dark.png)
+![image](.assets/w11light.png)
 
 ## Usage
 
