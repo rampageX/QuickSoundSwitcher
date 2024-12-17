@@ -73,7 +73,7 @@ ApplicationWindow {
         id: ioRectangle
         anchors.fill: parent
         color: nativeWindowColor
-        border.color: Qt.rgba(255, 255, 255, 0.15)
+        border.color: windowBorderColor
         border.width: 1
         radius: 12
 
