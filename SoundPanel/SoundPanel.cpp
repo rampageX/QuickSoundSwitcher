@@ -209,8 +209,13 @@ void SoundPanel::populateComboBoxes() {
     int defaultPlaybackIndex = -1;
     for (int i = 0; i < playbackDevices.size(); ++i) {
         const AudioDevice& device = playbackDevices[i];
-        QMetaObject::invokeMethod(engine->rootObjects().first(), "addPlaybackDevice",
-                                  Q_ARG(QVariant, QVariant::fromValue(device.shortName)));
+        if (device.shortName == "") {
+            QMetaObject::invokeMethod(engine->rootObjects().first(), "addPlaybackDevice",
+                                      Q_ARG(QVariant, QVariant::fromValue(device.name)));
+        } else {
+            QMetaObject::invokeMethod(engine->rootObjects().first(), "addPlaybackDevice",
+                                      Q_ARG(QVariant, QVariant::fromValue(device.shortName)));
+        }
 
         if (device.isDefault) {
             defaultPlaybackIndex = i;

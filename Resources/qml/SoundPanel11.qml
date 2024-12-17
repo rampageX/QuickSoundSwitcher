@@ -23,10 +23,10 @@ ApplicationWindow {
         appModel.clear();
     }
 
-    function addApplication(appID, name, isMuted, volume, icon) {
+    function addApplication(appID, displayName, isMuted, volume, icon) {
         appModel.append({
             appID: appID,
-            name: name,
+            name: displayName,
             isMuted: isMuted,
             volume: volume,
             icon: "data:image/png;base64," + icon
@@ -258,6 +258,9 @@ ApplicationWindow {
                     flat: true
                     checkable: true
                     checked: model.isMuted
+                    ToolTip.text: model.name
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 1000
                     onClicked: {
                         let appIDs = model.appID.split(";");
                         appIDs.forEach(function(appID) {
