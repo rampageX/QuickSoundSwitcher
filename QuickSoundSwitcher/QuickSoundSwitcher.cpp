@@ -16,6 +16,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QWidget(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , soundPanel(nullptr)
+    , settings("Odizinne", "QuickSoundSwitcher")
 {
     AudioManager::initialize();
     instance = this;
@@ -37,7 +38,20 @@ void QuickSoundSwitcher::createTrayIcon()
 {
     onOutputMuteChanged();
 
+    if (settings.value("mixerOnly").toBool()) {
+        QString theme = Utils::getTheme();
+        if (theme == "light") {
+            trayIcon->setIcon(QIcon(":/icons/system_light.png"));
+        } else {
+            trayIcon->setIcon(QIcon(":/icons/system_dark.png"));
+        }
+    }
     QMenu *trayMenu = new QMenu(this);
+
+    QAction *mixerOnly = new QAction(tr("Use volume mixer only"), this);
+    mixerOnly->setCheckable(true);
+    mixerOnly->setChecked(settings.value("mixerOnly", false).toBool());
+    connect(mixerOnly, &QAction::triggered, this, &QuickSoundSwitcher::onMixerOnlyStateChanged);
 
     QAction *startupAction = new QAction(tr("Run at startup"), this);
     startupAction->setCheckable(true);
@@ -48,6 +62,7 @@ void QuickSoundSwitcher::createTrayIcon()
     connect(exitAction, &QAction::triggered, this, &QApplication::quit);
 
     trayMenu->addAction(startupAction);
+    trayMenu->addAction(mixerOnly);
     trayMenu->addAction(exitAction);
 
     trayIcon->setContextMenu(trayMenu);
@@ -201,13 +216,26 @@ void QuickSoundSwitcher::togglePanel()
         connect(soundPanel, &SoundPanel::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
         connect(soundPanel, &QObject::destroyed, this, &QuickSoundSwitcher::onSoundPanelClosed);
     } else {
-        //delete soundPanel;
-        //soundPanel = nullptr;
         soundPanel->animateOut();
     }
 }
 
 void QuickSoundSwitcher::onSoundPanelClosed() {
-    //delete soundPanel;
     soundPanel = nullptr;
+}
+
+void QuickSoundSwitcher::onMixerOnlyStateChanged() {
+    QAction *action = qobject_cast<QAction *>(sender());
+    settings.setValue("mixerOnly", action->isChecked());
+
+    if (settings.value("mixerOnly").toBool()) {
+        QString theme = Utils::getTheme();
+        if (theme == "light") {
+            trayIcon->setIcon(QIcon(":/icons/system_light.png"));
+        } else {
+            trayIcon->setIcon(QIcon(":/icons/system_dark.png"));
+        }
+    } else {
+        onOutputMuteChanged();
+    }
 }

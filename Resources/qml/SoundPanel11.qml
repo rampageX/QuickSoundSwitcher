@@ -14,7 +14,6 @@ ApplicationWindow {
     property bool blockOutputSignal: false
     property bool blockInputSignal: false
 
-
     ListModel {
         id: appModel
     }
@@ -87,6 +86,7 @@ ApplicationWindow {
             anchors.leftMargin: 1
             anchors.rightMargin: 1
             anchors.bottomMargin: 1
+            visible: !mixerOnly
             height: 51
             radius: 12
             color: contrastedColor
@@ -126,6 +126,7 @@ ApplicationWindow {
 
         ComboBox {
             id: outputDeviceComboBox
+            visible: !mixerOnly
             Layout.preferredHeight: 35
             Layout.columnSpan: 2
             Layout.fillWidth: true
@@ -150,6 +151,7 @@ ApplicationWindow {
 
         Button {
             id: outputeMuteButton
+            visible: !mixerOnly
             Layout.preferredHeight: 40
             Layout.preferredWidth: 40
             flat: true
@@ -170,6 +172,7 @@ ApplicationWindow {
 
         Slider {
             id: outputSlider
+            visible: !mixerOnly
             value: soundPanel.playbackVolume
             from: 0
             to: 100
@@ -194,6 +197,7 @@ ApplicationWindow {
 
         ComboBox {
             id: inputDeviceComboBox
+            visible: !mixerOnly
             Layout.preferredHeight: 35
             Layout.fillWidth: true
             Layout.columnSpan: 2
@@ -217,6 +221,7 @@ ApplicationWindow {
 
         Button {
             id: inputMuteButton
+            visible: !mixerOnly
             Layout.preferredWidth: 40
             Layout.preferredHeight: 40
             flat: true
@@ -236,6 +241,7 @@ ApplicationWindow {
 
         Slider {
             id: inputSlider
+            visible: !mixerOnly
             value: soundPanel.recordingVolume
             from: 0
             to: 100

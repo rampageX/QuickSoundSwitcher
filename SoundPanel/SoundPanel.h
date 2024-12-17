@@ -7,6 +7,7 @@
 #include <QWindow>
 #include <QIcon>
 #include <QComboBox>
+#include <QSettings>
 
 class SoundPanel : public QObject
 {
@@ -75,6 +76,8 @@ private:
     bool isWindows10;
     bool isAnimating;
     HWND hWnd;
+    QSettings settings;
+    bool mixerOnly;
 };
 
 #endif // MEDIASFLYOUT_H

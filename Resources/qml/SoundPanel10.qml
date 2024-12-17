@@ -104,6 +104,7 @@ ApplicationWindow {
 
         ComboBox {
             id: outputDeviceComboBox
+            visible: !mixerOnly
             Layout.preferredHeight: 40
             Layout.columnSpan: 3
             Layout.fillWidth: true
@@ -129,6 +130,7 @@ ApplicationWindow {
 
         Button {
             id: outputeMuteButton
+            visible: !mixerOnly
             Layout.leftMargin: 10
             Layout.preferredHeight: 40
             Layout.preferredWidth: 40
@@ -151,6 +153,7 @@ ApplicationWindow {
 
         Slider {
             id: outputSlider
+            visible: !mixerOnly
             value: soundPanel.playbackVolume
             from: 0
             to: 100
@@ -173,6 +176,7 @@ ApplicationWindow {
 
         Label {
             id: outputVolume
+            visible: !mixerOnly
             text: String(outputSlider.value)
             Layout.rightMargin: 25
             Layout.leftMargin: 10
@@ -185,6 +189,7 @@ ApplicationWindow {
 
         Rectangle {
             id: inputSeparator
+            visible: !mixerOnly
             Layout.preferredHeight: 1
             Layout.fillWidth: true
             color: borderColor
@@ -193,6 +198,7 @@ ApplicationWindow {
 
         ComboBox {
             id: inputDeviceComboBox
+            visible: !mixerOnly
             Layout.topMargin: -2
             Layout.preferredHeight: 40
             Layout.fillWidth: true
@@ -219,6 +225,7 @@ ApplicationWindow {
 
         Button {
             id: inputMuteButton
+            visible: !mixerOnly
             Layout.leftMargin: 10
             Layout.preferredWidth: 40
             Layout.preferredHeight: 40
@@ -240,6 +247,7 @@ ApplicationWindow {
 
         Slider {
             id: inputSlider
+            visible: !mixerOnly
             value: soundPanel.recordingVolume
             from: 0
             to: 100
@@ -254,6 +262,7 @@ ApplicationWindow {
 
         Label {
             id: inputVolume
+            visible: !mixerOnly
             text: String(inputSlider.value)
             Layout.rightMargin: 25
             Layout.leftMargin: 10
@@ -266,11 +275,18 @@ ApplicationWindow {
 
         Rectangle {
             id: appSeparator
+            visible: !mixerOnly
             Layout.preferredHeight: 1
             Layout.fillWidth: true
             color: borderColor
             Layout.columnSpan: 3
             Layout.bottomMargin: 10
+        }
+
+        Item {
+            visible: mixerOnly
+            Layout.columnSpan: 3
+            Layout.preferredHeight: 10
         }
 
         Repeater {

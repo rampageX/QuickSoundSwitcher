@@ -4,6 +4,7 @@
 #include "SoundPanel.h"
 #include <QMainWindow>
 #include <QSystemTrayIcon>
+#include <QSettings>
 
 class QuickSoundSwitcher : public QWidget
 {
@@ -20,10 +21,12 @@ private slots:
     void onRunAtStartupStateChanged();
     void onOutputMuteChanged();
     void onSoundPanelClosed();
+    void onMixerOnlyStateChanged();
 
 private:
     QSystemTrayIcon *trayIcon;
     SoundPanel* soundPanel;
+    QSettings settings;
     void createTrayIcon();
     void togglePanel();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);

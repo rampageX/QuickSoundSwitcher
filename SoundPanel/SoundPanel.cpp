@@ -17,6 +17,8 @@ SoundPanel::SoundPanel(QObject* parent)
     , isWindows10(Utils::isWindows10())
     , isAnimating(false)
     , hWnd(nullptr)
+    , settings("Odizinne", "QuickSoundSwitcher")
+    , mixerOnly(settings.value("mixerOnly").toBool())
 {
     configureQML();
     setupUI();
@@ -68,6 +70,7 @@ void SoundPanel::configureQML() {
     engine->rootContext()->setContextProperty("windowBorderColor", windowBorderColor);
     engine->rootContext()->setContextProperty("contrastedColor", contrastedColor);
     engine->rootContext()->setContextProperty("contrastedBorderColor", contrastedBorderColor);
+    engine->rootContext()->setContextProperty("mixerOnly", mixerOnly);
 
 
     QString uiFile = isWindows10 ? "qrc:/qml/SoundPanel10.qml" : "qrc:/qml/SoundPanel11.qml";
@@ -77,6 +80,9 @@ void SoundPanel::configureQML() {
 void SoundPanel::setupUI() {
     populateApplicationModel();
     setSystemSoundsIcon();
+
+    if (mixerOnly) return;
+
     populateComboBoxes();
     setPlaybackVolume(AudioManager::getPlaybackVolume());
     setRecordingVolume(AudioManager::getRecordingVolume());
@@ -403,7 +409,7 @@ void SoundPanel::populateApplicationModel() {
                                   Q_ARG(QVariant, QVariant::fromValue(base64Icon)));
         addedAppsCount++;
     }
-    if (addedAppsCount == 1) {
+    if (addedAppsCount == 1 || mixerOnly) {
         engine->rootContext()->setContextProperty("singleApp", true);
     } else {
         engine->rootContext()->setContextProperty("singleApp", false);
