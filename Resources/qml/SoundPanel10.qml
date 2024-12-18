@@ -119,7 +119,7 @@ ApplicationWindow {
                 font.pixelSize: 15
                 leftPadding: 10
                 width: parent.width
-                color: palette.text
+                color: textColor
             }
             onCurrentTextChanged: {
                 if (!window.blockOutputSignal) {
@@ -213,7 +213,7 @@ ApplicationWindow {
                 horizontalAlignment: Text.AlignLeft
                 font.pixelSize: 15
                 width: parent.width
-                color: palette.text
+                color: textColor
                 leftPadding: 10
             }
             onCurrentTextChanged: {

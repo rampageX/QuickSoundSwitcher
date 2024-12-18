@@ -47,18 +47,21 @@ void SoundPanel::configureQML() {
     QColor contrastedColor;
     QColor contrastedBorderColor;
     QColor windowBorderColor;
+    QColor textColor;
     if (Utils::getTheme() == "dark") {
         windowColor = QColor(242, 242, 242);
         contrastedColor = QColor(238,238,238);
         borderColor = QColor(1, 1, 1, 31);
         windowBorderColor = QColor(1, 1, 1, 51);
         contrastedBorderColor = QColor(224, 224, 224);
+        textColor = QColor(0, 0, 0);
     } else {
         windowColor = QColor(36, 36, 36);
         contrastedColor = QColor(28, 28, 28);
         borderColor = QColor(255, 255, 255, 31);
         windowBorderColor = QColor(255, 255, 255, 31);
         contrastedBorderColor = QColor(25, 25, 25);
+        textColor = QColor(255, 255, 255);
     }
 
     QColor accentColor(Utils::getAccentColor("normal"));
@@ -70,6 +73,7 @@ void SoundPanel::configureQML() {
     engine->rootContext()->setContextProperty("windowBorderColor", windowBorderColor);
     engine->rootContext()->setContextProperty("contrastedColor", contrastedColor);
     engine->rootContext()->setContextProperty("contrastedBorderColor", contrastedBorderColor);
+    engine->rootContext()->setContextProperty("textColor", textColor);
     engine->rootContext()->setContextProperty("mixerOnly", mixerOnly);
 
 
