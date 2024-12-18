@@ -36,18 +36,12 @@ SoundPanel::SoundPanel(QObject* parent)
 
 SoundPanel::~SoundPanel()
 {
-    qDebug() << "pass";
     delete soundPanelWindow;
     delete engine;
 }
 
 void SoundPanel::configureQML() {
-    QColor windowColor;
-    QColor borderColor;
-    QColor contrastedColor;
-    QColor contrastedBorderColor;
-    QColor windowBorderColor;
-    QColor textColor;
+    QColor windowColor, borderColor, contrastedColor, contrastedBorderColor, windowBorderColor, textColor;
     if (Utils::getTheme() == "dark") {
         windowColor = QColor(242, 242, 242);
         contrastedColor = QColor(238,238,238);
@@ -413,11 +407,13 @@ void SoundPanel::populateApplicationModel() {
                                   Q_ARG(QVariant, QVariant::fromValue(base64Icon)));
         addedAppsCount++;
     }
+    bool singleApp;
     if (addedAppsCount == 1 || mixerOnly) {
-        engine->rootContext()->setContextProperty("singleApp", true);
+        singleApp = true;
     } else {
-        engine->rootContext()->setContextProperty("singleApp", false);
+        singleApp = false;
     }
+    engine->rootContext()->setContextProperty("singleApp", singleApp);
 }
 
 void SoundPanel::onApplicationVolumeSliderValueChanged(QString appID, int volume) {

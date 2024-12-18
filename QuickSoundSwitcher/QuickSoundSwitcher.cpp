@@ -62,6 +62,7 @@ void QuickSoundSwitcher::createTrayIcon()
     connect(exitAction, &QAction::triggered, this, &QApplication::quit);
 
     trayMenu->addAction(startupAction);
+    trayMenu->addSeparator();
     trayMenu->addAction(mixerOnly);
     trayMenu->addAction(exitAction);
 
