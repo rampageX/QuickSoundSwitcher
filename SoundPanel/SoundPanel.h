@@ -78,6 +78,7 @@ private:
     HWND hWnd;
     QSettings settings;
     bool mixerOnly;
+    bool systemSoundsMuted;
 };
 
 #endif // MEDIASFLYOUT_H

@@ -110,7 +110,7 @@ QString Utils::getAccentColor(const QString &accentKey)
 
 void Utils::playSoundNotification()
 {
-    const wchar_t* soundFile = L"C:\\Windows\\Media\\Windows Background.wav";;
+    const wchar_t* soundFile = L"C:\\Windows\\Media\\Windows Background.wav";
     PlaySound(soundFile, NULL, SND_FILENAME | SND_ASYNC);
 }
 

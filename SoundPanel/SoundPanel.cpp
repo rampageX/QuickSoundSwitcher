@@ -19,6 +19,7 @@ SoundPanel::SoundPanel(QObject* parent)
     , hWnd(nullptr)
     , settings("Odizinne", "QuickSoundSwitcher")
     , mixerOnly(settings.value("mixerOnly").toBool())
+    , systemSoundsMuted(false)
 {
     configureQML();
     setupUI();
@@ -312,7 +313,7 @@ void SoundPanel::onInputMuteButtonClicked() {
 }
 
 void SoundPanel::onOutputSliderReleased() {
-    Utils::playSoundNotification();
+    if (!systemSoundsMuted) Utils::playSoundNotification();
 }
 
 void SoundPanel::populateApplicationModel() {
@@ -405,6 +406,8 @@ void SoundPanel::populateApplicationModel() {
                                   Q_ARG(QVariant, QVariant::fromValue(isMuted)),
                                   Q_ARG(QVariant, QVariant::fromValue(volume)),
                                   Q_ARG(QVariant, QVariant::fromValue(base64Icon)));
+
+        systemSoundsMuted = isMuted;
         addedAppsCount++;
     }
     bool singleApp;
@@ -421,6 +424,8 @@ void SoundPanel::onApplicationVolumeSliderValueChanged(QString appID, int volume
 }
 
 void SoundPanel::onApplicationMuteButtonClicked(QString appID, bool state) {
+    if (appID == "0") systemSoundsMuted = state;
+
     AudioManager::setApplicationMute(appID, state);
 }
 
