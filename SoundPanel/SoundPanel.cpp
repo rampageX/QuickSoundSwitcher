@@ -120,7 +120,7 @@ void SoundPanel::animateIn()
     int margin = isWindows10 ? margin = -1 : margin = 12;
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
 
-    int scalingFactor = isWindows10 ? 80 : 50;
+    int scalingFactor = isWindows10 ? 80 : 0;
     int startY = availableGeometry.bottom() - (soundPanelWindow->height() * scalingFactor / 100);
 
     int targetY = availableGeometry.bottom() - soundPanelWindow->height() - margin;
@@ -150,7 +150,7 @@ void SoundPanel::animateOut()
 
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
-    int scalingFactor = isWindows10 ? 80 : 50;
+    int scalingFactor = isWindows10 ? 80 : 0;
     int startY = soundPanelWindow->y();
     int targetY = availableGeometry.bottom() - (soundPanelWindow->height() * scalingFactor / 100);
 
