@@ -123,6 +123,7 @@ ApplicationWindow {
         anchors.bottomMargin: 10
         columns: 2
         rowSpacing: 5
+        opacity: componentsOpacity
 
         ComboBox {
             id: outputDeviceComboBox

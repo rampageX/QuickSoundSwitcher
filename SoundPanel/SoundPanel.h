@@ -79,6 +79,8 @@ private:
     QSettings settings;
     bool mixerOnly;
     bool systemSoundsMuted;
+
+    void animateOpacity();
 };
 
 #endif // MEDIASFLYOUT_H

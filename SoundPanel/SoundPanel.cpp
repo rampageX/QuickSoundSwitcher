@@ -41,6 +41,31 @@ SoundPanel::~SoundPanel()
     delete engine;
 }
 
+void SoundPanel::animateOpacity()
+{
+    constexpr int fps = 60;               // Target frames per second
+    constexpr int duration = 200;         // Total duration in milliseconds
+    constexpr int interval = 1000 / fps;  // Interval between updates in milliseconds
+    constexpr int steps = duration / interval; // Total number of steps
+    double currentOpacity = 0.0;
+    double stepSize = 1.0 / steps;
+
+    QTimer *timer = new QTimer();
+    QObject::connect(timer, &QTimer::timeout, [=]() mutable {
+        currentOpacity += stepSize;
+        if (currentOpacity >= 1.0) {
+            currentOpacity = 1.0; // Clamp to 1.0
+            engine->rootContext()->setContextProperty("componentsOpacity", currentOpacity);
+            timer->stop();
+            timer->deleteLater();
+        }
+        qDebug() << "Opacity:" << currentOpacity;
+        engine->rootContext()->setContextProperty("componentsOpacity", currentOpacity);
+    });
+
+    timer->start(interval);
+}
+
 void SoundPanel::configureQML() {
     QColor windowColor, borderColor, contrastedColor, contrastedBorderColor, windowBorderColor, textColor;
     if (Utils::getTheme() == "dark") {
@@ -70,6 +95,8 @@ void SoundPanel::configureQML() {
     engine->rootContext()->setContextProperty("contrastedBorderColor", contrastedBorderColor);
     engine->rootContext()->setContextProperty("textColor", textColor);
     engine->rootContext()->setContextProperty("mixerOnly", mixerOnly);
+    engine->rootContext()->setContextProperty("componentsOpacity", 0);
+
 
 
     QString uiFile = isWindows10 ? "qrc:/qml/SoundPanel10.qml" : "qrc:/qml/SoundPanel11.qml";
@@ -134,6 +161,7 @@ void SoundPanel::animateIn()
     animation->setEasingCurve(QEasingCurve::OutQuad);
 
     connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
+        animateOpacity();
         SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         isAnimating = false;
         animation->deleteLater();
