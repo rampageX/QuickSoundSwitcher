@@ -22,12 +22,13 @@ SoundPanel::SoundPanel(QObject* parent)
     , systemSoundsMuted(false)
 {
     configureQML();
-    setupUI();
+    populateApplicationModel();
 
     soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
     hWnd = reinterpret_cast<HWND>(soundPanelWindow->winId());
 
     animateIn();
+    setupUI(); //setup components while animating window since components are hidden until animation completes
 
     connect(static_cast<QuickSoundSwitcher*>(parent), &QuickSoundSwitcher::outputMuteStateChanged,
             this, &SoundPanel::onOutputMuteStateChanged);
@@ -104,7 +105,6 @@ void SoundPanel::configureQML() {
 }
 
 void SoundPanel::setupUI() {
-    populateApplicationModel();
     setSystemSoundsIcon();
 
     if (mixerOnly) return;
