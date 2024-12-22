@@ -260,8 +260,8 @@ ApplicationWindow {
             color: borderColor
             Layout.preferredHeight: 1
             Layout.fillWidth: true
-            Layout.leftMargin: -10
-            Layout.rightMargin: -10
+            Layout.leftMargin: -9
+            Layout.rightMargin: -9
             Layout.bottomMargin: 2
             Layout.topMargin: 2
             visible: !singleApp
