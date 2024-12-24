@@ -44,10 +44,10 @@ SoundPanel::~SoundPanel()
 
 void SoundPanel::animateOpacity()
 {
-    constexpr int fps = 60;               // Target frames per second
-    constexpr int duration = 200;         // Total duration in milliseconds
-    constexpr int interval = 1000 / fps;  // Interval between updates in milliseconds
-    constexpr int steps = duration / interval; // Total number of steps
+    constexpr int fps = 60;
+    constexpr int duration = 200;
+    constexpr int interval = 1000 / fps;
+    constexpr int steps = duration / interval;
     double currentOpacity = 0.0;
     double stepSize = 1.0 / steps;
 
@@ -55,12 +55,11 @@ void SoundPanel::animateOpacity()
     QObject::connect(timer, &QTimer::timeout, [=]() mutable {
         currentOpacity += stepSize;
         if (currentOpacity >= 1.0) {
-            currentOpacity = 1.0; // Clamp to 1.0
+            currentOpacity = 1.0;
             engine->rootContext()->setContextProperty("componentsOpacity", currentOpacity);
             timer->stop();
             timer->deleteLater();
         }
-        qDebug() << "Opacity:" << currentOpacity;
         engine->rootContext()->setContextProperty("componentsOpacity", currentOpacity);
     });
 
@@ -97,8 +96,6 @@ void SoundPanel::configureQML() {
     engine->rootContext()->setContextProperty("textColor", textColor);
     engine->rootContext()->setContextProperty("mixerOnly", mixerOnly);
     engine->rootContext()->setContextProperty("componentsOpacity", 0);
-
-
 
     QString uiFile = isWindows10 ? "qrc:/qml/SoundPanel10.qml" : "qrc:/qml/SoundPanel11.qml";
     engine->load(QUrl(uiFile));
