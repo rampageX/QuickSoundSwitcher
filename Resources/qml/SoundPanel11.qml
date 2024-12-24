@@ -168,6 +168,8 @@ ApplicationWindow {
                 anchors.centerIn: parent
                 source: outputIcon
                 fillMode: Image.PreserveAspectFit
+                sourceSize.width: 16
+                sourceSize.height: 16
             }
         }
 
@@ -237,6 +239,8 @@ ApplicationWindow {
                 anchors.centerIn: parent
                 source: inputIcon
                 fillMode: Image.PreserveAspectFit
+                sourceSize.width: 16
+                sourceSize.height: 16
             }
         }
 
@@ -299,6 +303,8 @@ ApplicationWindow {
                         anchors.centerIn: parent
                         width: 16
                         height: 16
+                        sourceSize.width: 16
+                        sourceSize.height: 16
                     }
                 }
 
