@@ -302,11 +302,7 @@ void SoundPanel::onRecordingDeviceChanged(const QString &deviceName) {
 
 void SoundPanel::setOutputButtonImage(int volume) {
     QString icon;
-    if (isWindows10) {
-        icon = Utils::getIcon(2, volume, NULL);
-    } else {
-        icon = Utils::getIcon(1, volume, NULL);
-    }
+    icon = Utils::getIcon(2, volume, NULL);
 
     engine->rootContext()->setContextProperty("outputIcon", QStringLiteral("qrc") + icon);
 }
