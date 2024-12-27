@@ -11,6 +11,12 @@ It is made with close to native ui for w10 or w11.
 ![image](.assets/w11dark.png)
 ![image](.assets/w11light.png)
 
+If you like my work, please let me know by supporting me:
+
+<a href="https://ko-fi.com/yourusername" target="_blank">
+  <img src="https://cdn.prod.website-files.com/5c14e387dab576fe667689cf/670f5a01cf2da94a032117b9_support_me_on_kofi_red-p-500.png" alt="Support me on Ko-fi" width="17%">
+</a>  
+
 ## Usage
 
 Left click on the tray icon to reveal the panel.  
