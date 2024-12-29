@@ -10,23 +10,6 @@
 #include "QuickSoundSwitcher.h"
 #include <QPropertyAnimation>
 
-bool isTransparencyEffectEnabled() {
-    HKEY hKey;
-    DWORD value = 0;
-    DWORD valueSize = sizeof(value);
-    const wchar_t* subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
-    const wchar_t* valueName = L"EnableTransparency";
-
-    if (RegOpenKeyEx(HKEY_CURRENT_USER, subKey, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-        if (RegQueryValueEx(hKey, valueName, nullptr, nullptr, reinterpret_cast<LPBYTE>(&value), &valueSize) == ERROR_SUCCESS) {
-            RegCloseKey(hKey);
-            return value != 0;
-        }
-        RegCloseKey(hKey);
-    }
-    return false;
-}
-
 SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
     , soundPanelWindow(nullptr)
@@ -320,7 +303,11 @@ void SoundPanel::onRecordingDeviceChanged(const QString &deviceName) {
 
 void SoundPanel::setOutputButtonImage(int volume) {
     QString icon;
-    icon = Utils::getIcon(2, volume, NULL);
+    if (isWindows10) {
+        icon = Utils::getIcon(1, volume, NULL);
+    } else {
+        icon = Utils::getIcon(2, volume, NULL);
+    }
 
     engine->rootContext()->setContextProperty("outputIcon", QStringLiteral("qrc") + icon);
 }
