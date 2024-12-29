@@ -9,6 +9,24 @@
 #include <QTimer>
 #include "QuickSoundSwitcher.h"
 #include <QPropertyAnimation>
+#include <qstylehelper.hpp>
+
+bool isTransparencyEffectEnabled() {
+    HKEY hKey;
+    DWORD value = 0;
+    DWORD valueSize = sizeof(value);
+    const wchar_t* subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+    const wchar_t* valueName = L"EnableTransparency";
+
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, subKey, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        if (RegQueryValueEx(hKey, valueName, nullptr, nullptr, reinterpret_cast<LPBYTE>(&value), &valueSize) == ERROR_SUCCESS) {
+            RegCloseKey(hKey);
+            return value != 0;
+        }
+        RegCloseKey(hKey);
+    }
+    return false;
+}
 
 SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
@@ -26,6 +44,21 @@ SoundPanel::SoundPanel(QObject* parent)
 
     soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
     hWnd = reinterpret_cast<HWND>(soundPanelWindow->winId());
+
+    bool useAcrylic = false;
+    if (isWindows10 && isTransparencyEffectEnabled()) {
+        QStyleHelper::setAcrylicBlurWindow(QGuiApplication::allWindows());
+        QStyleHelper::setMica(QGuiApplication::allWindows(), false);
+        useAcrylic = true;
+        QColor windowColor;
+        if (Utils::getTheme() == "dark") {
+            windowColor = QColor(242, 242, 242, 0);
+        } else {
+            windowColor = QColor(31, 31, 31, 0);
+        }
+        engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
+    }
+    engine->rootContext()->setContextProperty("useAcrylic", useAcrylic);
 
     animateIn();
     setupUI(); //setup components while animating window since components are hidden until animation completes
@@ -145,7 +178,7 @@ void SoundPanel::animateIn()
     int margin = isWindows10 ? margin = -1 : margin = 12;
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
 
-    int scalingFactor = isWindows10 ? 80 : 0;
+    int scalingFactor = isWindows10 ? 70 : 0;
     int startY = availableGeometry.bottom() - (soundPanelWindow->height() * scalingFactor / 100);
 
     int targetY = availableGeometry.bottom() - soundPanelWindow->height() - margin;
@@ -176,7 +209,7 @@ void SoundPanel::animateOut()
 
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
-    int scalingFactor = isWindows10 ? 80 : 0;
+    int scalingFactor = isWindows10 ? 70 : 0;
     int startY = soundPanelWindow->y();
     int targetY = availableGeometry.bottom() - (soundPanelWindow->height() * scalingFactor / 100);
 

@@ -11,7 +11,8 @@ INCLUDEPATH += \
     SoundPanel \
     QuickSoundSwitcher \
     ShortcutManager \
-    Utils
+    Utils \
+    Dependencies
 
 SOURCES += \
     AudioManager/AudioManager.cpp \
@@ -27,7 +28,8 @@ HEADERS += \
     SoundPanel/SoundPanel.h \
     QuickSoundSwitcher/QuickSoundSwitcher.h \
     ShortcutManager/ShortcutManager.h \
-    Utils/Utils.h
+    Utils/Utils.h \
+    Dependencies/qstylehelper.hpp
 
 RESOURCES += Resources/resources.qrc
 
