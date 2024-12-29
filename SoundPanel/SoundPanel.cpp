@@ -9,7 +9,6 @@
 #include <QTimer>
 #include "QuickSoundSwitcher.h"
 #include <QPropertyAnimation>
-#include <qstylehelper.hpp>
 
 bool isTransparencyEffectEnabled() {
     HKEY hKey;
@@ -44,21 +43,6 @@ SoundPanel::SoundPanel(QObject* parent)
 
     soundPanelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
     hWnd = reinterpret_cast<HWND>(soundPanelWindow->winId());
-
-    bool useAcrylic = false;
-    if (isWindows10 && isTransparencyEffectEnabled()) {
-        QStyleHelper::setAcrylicBlurWindow(QGuiApplication::allWindows());
-        QStyleHelper::setMica(QGuiApplication::allWindows(), false);
-        useAcrylic = true;
-        QColor windowColor;
-        if (Utils::getTheme() == "dark") {
-            windowColor = QColor(242, 242, 242, 0);
-        } else {
-            windowColor = QColor(31, 31, 31, 0);
-        }
-        engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
-    }
-    engine->rootContext()->setContextProperty("useAcrylic", useAcrylic);
 
     animateIn();
     setupUI(); //setup components while animating window since components are hidden until animation completes
@@ -110,6 +94,7 @@ void SoundPanel::configureQML() {
         textColor = QColor(0, 0, 0);
     } else {
         windowColor = QColor(36, 36, 36);
+        if (isWindows10) windowColor = QColor(39, 39, 39);
         contrastedColor = QColor(28, 28, 28);
         borderColor = QColor(255, 255, 255, 31);
         windowBorderColor = QColor(255, 255, 255, 31);
