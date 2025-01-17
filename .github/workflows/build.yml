@@ -112,6 +112,16 @@ jobs:
           name: QuickSoundSwitcher_msvc_64
           path: build/QuickSoundSwitcher_msvc_64.zip
 
+      - name: Ls
+        shell: pwsh
+        run: |
+          ls
+
+      - name: Ls build folder
+        shell: pwsh
+        run: |
+          ls build
+
       - name: Create Installer 
         shell: pwsh
         run: |
