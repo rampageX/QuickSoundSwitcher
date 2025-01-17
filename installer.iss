@@ -1,8 +1,8 @@
-#define AppName "QuickSoundSwticher"
+#define AppName "QuickSoundSwitcher"
 #define AppVersion "1.0.0"
 #define AppPublisher "Odizinne"
-#define AppURL "https://github.com/Odizinne/QuickSoundSwticher"
-#define AppExeName "QuickSoundSwticher.exe"
+#define AppURL "https://github.com/Odizinne/QuickSoundSwitcher"
+#define AppExeName "QuickSoundSwitcher.exe"
 #define AppIcon "Resources\icons\icon.ico"
 
 [Setup]
@@ -16,7 +16,7 @@ AppUpdatesURL={#AppURL}
 DefaultDirName={localappdata}\Programs\{#AppName}
 DefaultGroupName={#AppName}
 PrivilegesRequired=lowest
-OutputBaseFilename=QuickSoundSwticher_installer
+OutputBaseFilename=QuickSoundSwitcher_installer
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -33,7 +33,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "build\QuickSoundSwticher\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "build\QuickSoundSwitcher\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\{#AppExeName}"
