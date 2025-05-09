@@ -98,7 +98,7 @@ void SoundPanel::configureQML() {
     engine->rootContext()->setContextProperty("mixerOnly", mixerOnly);
     engine->rootContext()->setContextProperty("componentsOpacity", 0);
 
-    QString uiFile = isWindows10 ? "qrc:/qml/SoundPanel10.qml" : "qrc:/qml/SoundPanel11.qml";
+    QString uiFile = !isWindows10 ? "qrc:/qml/SoundPanel10.qml" : "qrc:/qml/SoundPanel11.qml";
     engine->load(QUrl(uiFile));
 }
 
