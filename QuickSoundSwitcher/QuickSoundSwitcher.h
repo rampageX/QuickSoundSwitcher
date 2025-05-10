@@ -41,7 +41,7 @@ private:
     static const int HOTKEY_ID = 1;
 
 signals:
-    void outputMuteStateChanged(int volumeIcon);
+    void outputMuteStateChanged(bool mutedState);
     void volumeChangedWithTray(int volume);
 };
 

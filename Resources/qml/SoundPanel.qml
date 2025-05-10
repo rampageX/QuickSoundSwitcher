@@ -11,8 +11,6 @@ ApplicationWindow {
     flags: Qt.FramelessWindowHint
     color: "transparent"
     Material.theme: Material.System
-    property bool blockOutputSignal: false
-    property bool blockInputSignal: false
 
     ListModel {
         id: appModel
@@ -49,15 +47,11 @@ ApplicationWindow {
     }
 
     function setPlaybackDeviceCurrentIndex(index) {
-        blockOutputSignal = true;
         outputDeviceComboBox.currentIndex = index;
-        blockOutputSignal = false;
     }
 
     function setRecordingDeviceCurrentIndex(index) {
-        blockInputSignal = true;
         inputDeviceComboBox.currentIndex = index;
-        blockInputSignal = false;
     }
 
     Rectangle {
@@ -117,10 +111,8 @@ ApplicationWindow {
                         leftPadding: 10
                         width: parent.width
                     }
-                    onCurrentTextChanged: {
-                        if (!window.blockOutputSignal) {
-                            soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText);
-                        }
+                    onActivated: {
+                        soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText);
                     }
                 }
 
@@ -132,7 +124,19 @@ ApplicationWindow {
                         Layout.preferredHeight: 40
                         Layout.preferredWidth: 40
                         flat: true
-                        icon.source: outputIcon
+                        property string volumeIcon: {
+                            if (soundPanel.playbackMuted || soundPanel.playbackVolume === 0) {
+                                return "qrc:/icons/panel_volume_0.png"
+                            } else if (soundPanel.playbackVolume <= 33) {
+                                return "qrc:/icons/panel_volume_33.png"
+                            } else if (soundPanel.playbackVolume <= 66) {
+                                return "qrc:/icons/panel_volume_66.png"
+                            } else {
+                                return "qrc:/icons/panel_volume_100.png"
+                            }
+                        }
+
+                        icon.source: volumeIcon
                         onClicked: {
                             soundPanel.onOutputMuteButtonClicked()
                         }
@@ -149,6 +153,7 @@ ApplicationWindow {
                         onValueChanged: {
                             if (pressed) {
                                 soundPanel.onPlaybackVolumeChanged(value)
+                                soundPanel.playbackVolume = value
                             }
                         }
 
@@ -178,10 +183,8 @@ ApplicationWindow {
                         width: parent.width
                         leftPadding: 10
                     }
-                    onCurrentTextChanged: {
-                        if (!window.blockInputSignal) {
-                            soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText);
-                        }
+                    onActivated: {
+                        soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText);
                     }
                 }
 
@@ -193,7 +196,7 @@ ApplicationWindow {
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         flat: true
-                        icon.source: inputIcon
+                        icon.source: soundPanel.recordingMuted ? "qrc:/icons/mic_muted.png" : "qrc:/icons/mic.png"
                         onClicked: {
                             soundPanel.onInputMuteButtonClicked()
                         }
@@ -209,6 +212,7 @@ ApplicationWindow {
                         Layout.preferredHeight: 40
                         onValueChanged: {
                             soundPanel.onRecordingVolumeChanged(value)
+                            soundPanel.recordingVolume = value
                         }
                     }
                 }
@@ -249,13 +253,14 @@ ApplicationWindow {
                             id: muteRoundButton
                             Layout.preferredWidth: 40
                             Layout.preferredHeight: 40
-                            flat: true
+                            flat: !checked
                             checkable: true
+                            highlighted: checked
                             checked: applicationUnitLayout.model.isMuted
                             ToolTip.text: applicationUnitLayout.model.name
                             ToolTip.visible: hovered
                             ToolTip.delay: 1000
-                            icon.source: applicationUnitLayout.model.name === "Windows system sounds" ? "qrc:/icons/system.png" : applicationUnitLayout.model.icon
+                            icon.source: applicationUnitLayout.model.name === "Windows system sounds" ? "qrc:/icons/system_light.png" : applicationUnitLayout.model.icon
                             icon.color: applicationUnitLayout.model.name === "Windows system sounds" ? undefined : "transparent"
                             onClicked: {
                                 applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted;
