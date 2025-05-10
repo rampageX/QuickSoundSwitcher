@@ -67,39 +67,11 @@ void SoundPanel::animateOpacity()
 }
 
 void SoundPanel::configureQML() {
-    QColor windowColor, borderColor, contrastedColor, contrastedBorderColor, windowBorderColor, textColor;
-    if (Utils::getTheme() == "dark") {
-        windowColor = QColor(242, 242, 242);
-        contrastedColor = QColor(238,238,238);
-        borderColor = QColor(1, 1, 1, 31);
-        windowBorderColor = QColor(1, 1, 1, 51);
-        contrastedBorderColor = QColor(224, 224, 224);
-        textColor = QColor(0, 0, 0);
-    } else {
-        windowColor = QColor(36, 36, 36);
-        if (isWindows10) windowColor = QColor(39, 39, 39);
-        contrastedColor = QColor(28, 28, 28);
-        borderColor = QColor(255, 255, 255, 31);
-        windowBorderColor = QColor(255, 255, 255, 31);
-        contrastedBorderColor = QColor(25, 25, 25);
-        textColor = QColor(255, 255, 255);
-    }
-
-    QColor accentColor(Utils::getAccentColor("normal"));
-
     engine->rootContext()->setContextProperty("soundPanel", this);
-    engine->rootContext()->setContextProperty("accentColor", accentColor.name());
-    engine->rootContext()->setContextProperty("borderColor", borderColor);
-    engine->rootContext()->setContextProperty("nativeWindowColor", windowColor);
-    engine->rootContext()->setContextProperty("windowBorderColor", windowBorderColor);
-    engine->rootContext()->setContextProperty("contrastedColor", contrastedColor);
-    engine->rootContext()->setContextProperty("contrastedBorderColor", contrastedBorderColor);
-    engine->rootContext()->setContextProperty("textColor", textColor);
     engine->rootContext()->setContextProperty("mixerOnly", mixerOnly);
     engine->rootContext()->setContextProperty("componentsOpacity", 0);
 
-    QString uiFile = !isWindows10 ? "qrc:/qml/SoundPanel10.qml" : "qrc:/qml/SoundPanel11.qml";
-    engine->load(QUrl(uiFile));
+    engine->load(QUrl("qrc:/qml/SoundPanel10.qml"));
 }
 
 void SoundPanel::setupUI() {
@@ -303,11 +275,7 @@ void SoundPanel::onRecordingDeviceChanged(const QString &deviceName) {
 
 void SoundPanel::setOutputButtonImage(int volume) {
     QString icon;
-    if (isWindows10) {
-        icon = Utils::getIcon(1, volume, NULL);
-    } else {
-        icon = Utils::getIcon(2, volume, NULL);
-    }
+    icon = Utils::getIcon(2, volume, NULL);
 
     engine->rootContext()->setContextProperty("outputIcon", QStringLiteral("qrc") + icon);
 }
@@ -345,13 +313,14 @@ void SoundPanel::onOutputSliderReleased() {
 void SoundPanel::populateApplicationModel() {
     applications = AudioManager::enumerateAudioApplications();
 
-    // Group applications by executable name
     QMap<QString, QVector<Application>> groupedApps;
     QVector<Application> systemSoundApps;
     for (const Application &app : applications) {
-        if (app.executableName.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
+        if (app.executableName.isEmpty() ||
+            app.executableName.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
             continue;
         }
+
         if (app.name == "Windows system sounds") {
             systemSoundApps.append(app);
             continue;

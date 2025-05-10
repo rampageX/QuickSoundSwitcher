@@ -32,14 +32,6 @@ ApplicationWindow {
                         });
     }
 
-    function setOutputImageSource(source) {
-        outputImage.source = source;
-    }
-
-    function setInputImageSource(source) {
-        inputImage.source = source;
-    }
-
     function clearPlaybackDevices() {
         outputDeviceComboBox.model.clear();
     }
@@ -93,9 +85,11 @@ ApplicationWindow {
             Layout.bottomMargin: -10
             Layout.leftMargin: 10
             color: Material.accent
+            visible: !mixerOnly
         }
 
         Pane {
+            visible: !mixerOnly
             Layout.fillWidth: true
             Material.background: Material.theme === Material.Dark ? "#2B2B2B" : "#FFFFFF"
             Material.elevation: 6
@@ -108,14 +102,13 @@ ApplicationWindow {
 
                 ComboBox {
                     id: outputDeviceComboBox
-                    visible: !mixerOnly
                     Layout.preferredHeight: 40
                     Layout.columnSpan: 3
                     Layout.fillWidth: true
                     flat: true
                     font.pixelSize: 15
                     model: ListModel {}
-                    contentItem: Text {
+                    contentItem: Label {
                         text: outputDeviceComboBox.currentText
                         elide: Text.ElideRight
                         verticalAlignment: Text.AlignVCenter
@@ -123,7 +116,6 @@ ApplicationWindow {
                         font.pixelSize: 15
                         leftPadding: 10
                         width: parent.width
-                        color: textColor
                     }
                     onCurrentTextChanged: {
                         if (!window.blockOutputSignal) {
@@ -137,19 +129,17 @@ ApplicationWindow {
                     Layout.preferredHeight: 40
                     RoundButton {
                         id: outputeMuteRoundButton
-                        visible: !mixerOnly
                         Layout.preferredHeight: 40
                         Layout.preferredWidth: 40
                         flat: true
                         icon.source: outputIcon
                         onClicked: {
-                            soundPanel.onOutputMuteRoundButtonClicked()
+                            soundPanel.onOutputMuteButtonClicked()
                         }
                     }
 
                     Slider {
                         id: outputSlider
-                        visible: !mixerOnly
                         value: soundPanel.playbackVolume
                         from: 0
                         to: 100
@@ -172,7 +162,6 @@ ApplicationWindow {
 
                 ComboBox {
                     id: inputDeviceComboBox
-                    visible: !mixerOnly
                     Layout.topMargin: -2
                     Layout.preferredHeight: 40
                     Layout.fillWidth: true
@@ -180,14 +169,13 @@ ApplicationWindow {
                     flat: true
                     font.pixelSize: 15
                     model: ListModel {}
-                    contentItem: Text {
+                    contentItem: Label {
                         text: inputDeviceComboBox.currentText
                         elide: Text.ElideRight
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignLeft
                         font.pixelSize: 15
                         width: parent.width
-                        color: textColor
                         leftPadding: 10
                     }
                     onCurrentTextChanged: {
@@ -202,19 +190,17 @@ ApplicationWindow {
                     Layout.preferredHeight: 40
                     RoundButton {
                         id: inputMuteRoundButton
-                        visible: !mixerOnly
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         flat: true
                         icon.source: inputIcon
                         onClicked: {
-                            soundPanel.onInputMuteRoundButtonClicked()
+                            soundPanel.onInputMuteButtonClicked()
                         }
                     }
 
                     Slider {
                         id: inputSlider
-                        visible: !mixerOnly
                         value: soundPanel.recordingVolume
                         from: 0
                         to: 100
@@ -257,6 +243,7 @@ ApplicationWindow {
                         id: applicationUnitLayout
                         Layout.preferredHeight: 40
                         Layout.fillWidth: true
+                        required property var model
 
                         RoundButton {
                             id: muteRoundButton
@@ -264,15 +251,15 @@ ApplicationWindow {
                             Layout.preferredHeight: 40
                             flat: true
                             checkable: true
-                            checked: model.isMuted
-                            ToolTip.text: model.name
+                            checked: applicationUnitLayout.model.isMuted
+                            ToolTip.text: applicationUnitLayout.model.name
                             ToolTip.visible: hovered
                             ToolTip.delay: 1000
-                            icon.source: model.name === "Windows system sounds" ? systemSoundsIcon : model.icon
-                            icon.color: model.name === "Windows system sounds" ? undefined : "transparent"
+                            icon.source: applicationUnitLayout.model.name === "Windows system sounds" ? "qrc:/icons/system.png" : applicationUnitLayout.model.icon
+                            icon.color: applicationUnitLayout.model.name === "Windows system sounds" ? undefined : "transparent"
                             onClicked: {
-                                model.isMuted = !model.isMuted;
-                                soundPanel.onApplicationMuteRoundButtonClicked(model.appID, model.isMuted);
+                                applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted;
+                                soundPanel.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted);
                             }
                         }
 
@@ -281,11 +268,11 @@ ApplicationWindow {
                             from: 0
                             to: 100
                             stepSize: 1
-                            value: model.volume
+                            value: applicationUnitLayout.model.volume
                             Layout.fillWidth: true
                             Layout.preferredHeight: 40
                             onValueChanged: {
-                                soundPanel.onApplicationVolumeSliderValueChanged(model.appID, value);
+                                soundPanel.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value);
                             }
                         }
                     }
