@@ -16,6 +16,5 @@
         <file>icons/panel_volume_0.png</file>
         <file>icons/system_dark.png</file>
         <file>icons/system_light.png</file>
-        <file>qml/SoundPanel.qml</file>
     </qresource>
 </RCC>

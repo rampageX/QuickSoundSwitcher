@@ -1,7 +1,7 @@
 #ifndef MEDIASFLYOUT_H
 #define MEDIASFLYOUT_H
 
-#include "AudioManager.h"
+#include "audiomanager.h"
 #include <QObject>
 #include <QQmlApplicationEngine>
 #include <QWindow>

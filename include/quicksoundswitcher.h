@@ -1,7 +1,7 @@
 #ifndef QUICKSOUNDSWITCHER_H
 #define QUICKSOUNDSWITCHER_H
 
-#include "SoundPanel.h"
+#include "soundpanel.h"
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QSettings>

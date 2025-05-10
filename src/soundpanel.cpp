@@ -1,5 +1,6 @@
-#include "SoundPanel.h"
-#include "Utils.h"
+#include "soundpanel.h"
+#include "utils.h"
+#include "quicksoundswitcher.h"
 #include <QQmlContext>
 #include <QQuickItem>
 #include <QIcon>
@@ -7,7 +8,6 @@
 #include <QBuffer>
 #include <QApplication>
 #include <QTimer>
-#include "QuickSoundSwitcher.h"
 #include <QPropertyAnimation>
 
 SoundPanel::SoundPanel(QObject* parent)
@@ -47,7 +47,7 @@ void SoundPanel::configureQML() {
     engine->rootContext()->setContextProperty("mixerOnly", mixerOnly);
     engine->rootContext()->setContextProperty("componentsOpacity", 0);
 
-    engine->load(QUrl("qrc:/qml/SoundPanel.qml"));
+    engine->loadFromModule("Odizinne.QuickSoundSwitcher", "SoundPanel");
 }
 
 void SoundPanel::setupUI() {

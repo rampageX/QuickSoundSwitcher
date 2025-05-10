@@ -1,7 +1,7 @@
-#include "QuickSoundSwitcher.h"
-#include "Utils.h"
-#include "AudioManager.h"
-#include "ShortcutManager.h"
+#include "quicksoundswitcher.h"
+#include "utils.h"
+#include "audiomanager.h"
+#include "shortcutmanager.h"
 #include <QMenu>
 #include <QApplication>
 #include <QScreen>
