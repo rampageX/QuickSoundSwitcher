@@ -2,7 +2,7 @@ name: Build and release
 
 on:
   workflow_dispatch:
-  
+
 env:
   QT_VERSION: '6.9.0'
 
@@ -35,6 +35,13 @@ jobs:
           cmake --build . --config Release 
           cmake --install . --config Release
 
+      - name: Zip binaries folder
+        shell: pwsh
+        run: |
+          $zipFile = "build/QuickSoundSwitcher_msvc_64.zip"
+          $folder = "build/install"
+          Compress-Archive -Path $folder -DestinationPath $zipFile
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -51,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: QuickSoundSwitcher_Installer
-          path: Output/QuickSoundSwitcher_Installer.exe
+          path: tools/Output/QuickSoundSwitcher_Installer.exe
 
   release:
     runs-on: ubuntu-latest

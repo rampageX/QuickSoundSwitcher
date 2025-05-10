@@ -52,4 +52,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: QuickSoundSwitcher_Installer
-          path: Output/QuickSoundSwitcher_Installer.exe
+          path: tools/Output/QuickSoundSwitcher_Installer.exe
