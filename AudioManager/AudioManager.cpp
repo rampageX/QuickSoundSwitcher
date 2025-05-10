@@ -131,7 +131,6 @@ void setVolume(EDataFlow dataFlow, int volume) {
 
 int getVolume(EDataFlow dataFlow) {
 
-    AudioManager::initialize();
     CComPtr<IMMDeviceEnumerator> pEnumerator;
     CComPtr<IMMDevice> pDevice;
     CComPtr<IAudioEndpointVolume> pVolumeControl;
