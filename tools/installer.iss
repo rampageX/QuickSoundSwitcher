@@ -25,7 +25,8 @@ DisableProgramGroupPage=yes
 DisableWelcomePage=yes
 SetupIconFile={#AppIcon}
 UninstallDisplayIcon={app}\{#AppExeName}
-VersionInfoCopyright=© 2025 Odizinne
+VersionInfoCopyright="© 2025 Odizinne"
+VersionInfoDescription="QuickSoundSwitcher Installer"
 VersionInfoVersion={#AppVersion}
 
 [Languages]
