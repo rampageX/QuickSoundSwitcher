@@ -77,6 +77,7 @@ qt_add_translations(${CMAKE_PROJECT_NAME}
         i18n/QuickSoundSwitcher_fr.ts
         i18n/QuickSoundSwitcher_de.ts
         i18n/QuickSoundSwitcher_ko.ts
+        i18n/QuickSoundSwitcher_it.ts
         i18n/QuickSoundSwitcher_zh_CN.ts
     RESOURCE_PREFIX "/i18n"
     LUPDATE_OPTIONS "-no-obsolete"
