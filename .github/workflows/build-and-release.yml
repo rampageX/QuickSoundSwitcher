@@ -35,11 +35,23 @@ jobs:
           cmake --build . --config Release 
           cmake --install . --config Release
 
+      - name: Rename release folder
+        shell: pwsh
+        run: |
+          $releaseDir = "build/install"
+          $newDir = "QuickSoundSwitcher"
+          if (Test-Path $releaseDir) {
+              Rename-Item -Path $releaseDir -NewName $newDir
+          } else {
+              Write-Error "Release folder not found!"
+              exit 1
+          }
+
       - name: Zip binaries folder
         shell: pwsh
         run: |
           $zipFile = "build/QuickSoundSwitcher_msvc_64.zip"
-          $folder = "build/install"
+          $folder = "build/QuickSoundSwitcher"
           Compress-Archive -Path $folder -DestinationPath $zipFile
 
       - name: Upload Artifacts
