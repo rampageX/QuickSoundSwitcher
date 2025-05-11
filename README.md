@@ -22,26 +22,6 @@ Click anywhere to close the panel.
 
 ## Installation
 
-### Using OPM
-
-- Install OPM  
-In windows terminal:
-```
-Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/Odizinne/opm/refs/heads/main/opm_install.ps1')
-```
-
-- Open a new windows terminal
-
-- Install QuickSoundSwitcher  
-In windows terminal:
-```
-opm update
-opm install quicksoundswitcher
-```
-
-**QuickSoundSwitcher** will be available in your start menu.
-
-### Manually
-
-Download latest release, extract it, and run `QuickSoundSwitcher.exe`.
+Download latest version [here](https://github.com/Odizinne/QuickSoundSwitcher/releases/latest).  
+Use the provided installer or download the archive, extract it, and run `bin/QuickSoundSwitcher.exe`.
 
