@@ -12,7 +12,7 @@ It provide output and input volume / device / mute control as well as applicatio
 If you like my work, please consider supporting me:
 
 <a href="https://ko-fi.com/odizinne" target="_blank">
-  <img src="https://cdn.prod.website-files.com/5c14e387dab576fe667689cf/670f5a01cf2da94a032117b9_support_me_on_kofi_red-p-500.png" alt="Support me on Ko-fi" width="17%">
+  <img src="https://cdn.prod.website-files.com/5c14e387dab576fe667689cf/670f5a01cf2da94a032117b9_support_me_on_kofi_red-p-500.png" alt="Support me on Ko-fi" width="25%">
 </a>  
 
 ## Usage
