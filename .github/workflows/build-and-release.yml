@@ -48,6 +48,28 @@ jobs:
           name: QuickSoundSwitcher_msvc_64
           path: build/QuickSoundSwitcher_msvc_64.zip
 
+      - name: Get latest Git tag and bump version
+        id: get_version
+        shell: bash
+        run: |
+          git fetch --tags  # Fetch all tags
+          # Get the latest tag sorted by version, falling back to "0" if none exist
+          TAG=$(git tag --sort=-v:refname | head -n 1 || echo "0")
+          # Extract the numeric part of the tag
+          VERSION_NUM=$(echo $TAG | grep -o '[0-9]\+' | tail -n 1)
+          # Increment the version number
+          NEXT_VERSION=$((VERSION_NUM + 1))
+          echo "New version: $NEXT_VERSION"
+          echo "TagVersion=${NEXT_VERSION}" >> $GITHUB_ENV
+
+      - name: Update .iss version
+        shell: pwsh
+        run: |
+          # Use the version number calculated in the previous step
+          $content = Get-Content tools/installer.iss
+          $new = $content -replace '(?<=#define AppVersion ")[^"]+', "${{ env.TagVersion }}"
+          Set-Content tools/installer.iss -Value $new
+
       - name: Create Installer 
         shell: pwsh
         run: |

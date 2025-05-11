@@ -25,6 +25,8 @@ DisableProgramGroupPage=yes
 DisableWelcomePage=yes
 SetupIconFile={#AppIcon}
 UninstallDisplayIcon={app}\{#AppExeName}
+VersionInfoCopyright=© 2025 Odizinne
+VersionInfoVersion={#AppVersion}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
