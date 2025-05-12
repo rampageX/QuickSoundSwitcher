@@ -273,6 +273,7 @@ ApplicationWindow {
                             from: 0
                             to: 100
                             stepSize: 1
+                            enabled: !muteRoundButton.highlighted
                             value: applicationUnitLayout.model.volume
                             Layout.fillWidth: true
                             Layout.preferredHeight: 40
