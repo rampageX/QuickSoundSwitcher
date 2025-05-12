@@ -251,6 +251,7 @@ ApplicationWindow {
 
                         RoundButton {
                             id: muteRoundButton
+                            Material.accent: Material.Grey
                             Layout.preferredWidth: 40
                             Layout.preferredHeight: 40
                             flat: !checked
@@ -260,6 +261,7 @@ ApplicationWindow {
                             ToolTip.text: applicationUnitLayout.model.name
                             ToolTip.visible: hovered
                             ToolTip.delay: 1000
+                            opacity: highlighted ? 0.3 : 1
                             icon.source: applicationUnitLayout.model.name === "Windows system sounds" ? "qrc:/icons/system_light.png" : applicationUnitLayout.model.icon
                             icon.color: applicationUnitLayout.model.name === "Windows system sounds" ? undefined : "transparent"
                             onClicked: {
