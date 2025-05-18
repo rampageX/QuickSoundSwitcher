@@ -81,7 +81,6 @@ private:
     void setupUI();
     void populateComboBoxes();
     void populateApplicationModel();
-    bool isWindows10;
     bool isAnimating;
     HWND hWnd;
     QSettings settings;

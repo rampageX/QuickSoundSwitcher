@@ -14,7 +14,6 @@ SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
     , soundPanelWindow(nullptr)
     , engine(new QQmlApplicationEngine(this))
-    , isWindows10(Utils::isWindows10())
     , isAnimating(false)
     , hWnd(nullptr)
     , settings("Odizinne", "QuickSoundSwitcher")
@@ -83,16 +82,15 @@ void SoundPanel::animateIn()
 
     soundPanelWindow->resize(330, engineHeight);
 
-    int margin = isWindows10 ? -1 : 12;
+    int margin = 12;
     int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
-    int scalingFactor = isWindows10 ? 70 : 0;
-    int startY = availableGeometry.bottom() - (soundPanelWindow->height() * scalingFactor / 100);
+    int startY = availableGeometry.bottom() - (soundPanelWindow->height());
     int targetY = availableGeometry.bottom() - soundPanelWindow->height() - margin;
 
     soundPanelWindow->setPosition(panelX, startY);
 
     QPropertyAnimation *animation = new QPropertyAnimation(soundPanelWindow, "y", this);
-    animation->setDuration(isWindows10 ? 300 : 200);
+    animation->setDuration(200);
     animation->setStartValue(startY);
     animation->setEndValue(targetY);
     animation->setEasingCurve(QEasingCurve::OutQuad);
@@ -116,12 +114,11 @@ void SoundPanel::animateOut()
 
     QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
 
-    int scalingFactor = isWindows10 ? 70 : 0;
     int startY = soundPanelWindow->y();
-    int targetY = availableGeometry.bottom() - (soundPanelWindow->height() * scalingFactor / 100);
+    int targetY = availableGeometry.bottom() - (soundPanelWindow->height());
 
     QPropertyAnimation *animation = new QPropertyAnimation(soundPanelWindow, "y", this);
-    animation->setDuration(isWindows10 ? 300 : 200);
+    animation->setDuration(200);
     animation->setStartValue(startY);
     animation->setEndValue(targetY);
     animation->setEasingCurve(QEasingCurve::InQuad);
