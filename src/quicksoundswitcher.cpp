@@ -22,7 +22,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     AudioManager::initialize();
     instance = this;
     createTrayIcon();
-    installGlobalMouseHook();
     installKeyboardHook();
 
     bool firstRun = settings.value("firstRun", true).toBool();
@@ -243,8 +242,10 @@ void QuickSoundSwitcher::togglePanel()
         soundPanel = new SoundPanel(this);
         connect(soundPanel, &SoundPanel::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
         connect(soundPanel, &QObject::destroyed, this, &QuickSoundSwitcher::onSoundPanelClosed);
+        installGlobalMouseHook();
     } else {
         soundPanel->animateOut();
+        uninstallGlobalMouseHook();
     }
 }
 
