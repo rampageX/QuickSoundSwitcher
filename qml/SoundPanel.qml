@@ -54,6 +54,13 @@ ApplicationWindow {
         inputDeviceComboBox.currentIndex = index;
     }
 
+    Connections {
+        target: soundPanel
+        function onLayoutOpacity() {
+            mainLayout.opacity = 1
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: Material.theme === Material.Dark ? "#1C1C1C" : "#E3E3E3"
@@ -73,6 +80,13 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.margins: 15
         spacing: 15
+        opacity: 0
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 300
+                easing.type: Easing.OutQuad
+            }
+        }
 
         Label {
             text: qsTr("Audio devices")

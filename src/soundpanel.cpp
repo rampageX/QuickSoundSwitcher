@@ -100,6 +100,7 @@ void SoundPanel::animateIn()
     connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
         SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         isAnimating = false;
+        emit layoutOpacity();
         animation->deleteLater();
     });
 

@@ -64,6 +64,7 @@ signals:
 
     void shouldUpdateTray();
     void panelClosed();
+    void layoutOpacity();
 
 private:
     QQmlApplicationEngine* engine;
