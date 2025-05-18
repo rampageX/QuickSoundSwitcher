@@ -14,7 +14,6 @@ SoundPanel::SoundPanel(QObject* parent)
     : QObject(parent)
     , soundPanelWindow(nullptr)
     , engine(new QQmlApplicationEngine(this))
-    , isAnimating(false)
     , hWnd(nullptr)
     , settings("Odizinne", "QuickSoundSwitcher")
     , mixerOnly(settings.value("mixerOnly").toBool())
@@ -69,68 +68,27 @@ void SoundPanel::onOutputMuteStateChanged(bool mutedState) {
 
 void SoundPanel::animateIn()
 {
-    if (isAnimating) return;
-    isAnimating = true;
-
-    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
-
-    QList<QObject*> rootObjects = engine->rootObjects();
-    int engineHeight = 0;
-    if (!rootObjects.isEmpty()) {
-        engineHeight = rootObjects[0]->property("height").toInt();
-    }
-
-    soundPanelWindow->resize(330, engineHeight);
-
-    int margin = 12;
-    int panelX = availableGeometry.right() - soundPanelWindow->width() + 1 - margin;
-    int startY = availableGeometry.bottom() - (soundPanelWindow->height());
-    int targetY = availableGeometry.bottom() - soundPanelWindow->height() - margin;
-
-    soundPanelWindow->setPosition(panelX, startY);
-
-    QPropertyAnimation *animation = new QPropertyAnimation(soundPanelWindow, "y", this);
-    animation->setDuration(200);
-    animation->setStartValue(startY);
-    animation->setEndValue(targetY);
-    animation->setEasingCurve(QEasingCurve::OutQuad);
-
-    connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-        isAnimating = false;
-        emit layoutOpacity();
-        animation->deleteLater();
-    });
-
-    soundPanelWindow->show();
-    animation->start();
+    emit showPanel();
 }
 
 void SoundPanel::animateOut()
 {
-    if (isAnimating) return;
+    emit hidePanel();
+}
 
-    isAnimating = true;
+void SoundPanel::onAnimationInFinished()
+{
+    SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+}
 
-    QRect availableGeometry = QApplication::primaryScreen()->availableGeometry();
+void SoundPanel::onAnimationOutFinished()
+{
+    this->deleteLater();
+}
 
-    int startY = soundPanelWindow->y();
-    int targetY = availableGeometry.bottom() - (soundPanelWindow->height());
-
-    QPropertyAnimation *animation = new QPropertyAnimation(soundPanelWindow, "y", this);
-    animation->setDuration(200);
-    animation->setStartValue(startY);
-    animation->setEndValue(targetY);
-    animation->setEasingCurve(QEasingCurve::InQuad);
-
-    connect(animation, &QPropertyAnimation::finished, this, [this, animation]() {
-        soundPanelWindow->hide();
-        animation->deleteLater();
-        this->deleteLater();
-    });
-
+void SoundPanel::setNotTopmost()
+{
     SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-    animation->start();
 }
 
 int SoundPanel::playbackVolume() const {

@@ -2,62 +2,143 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
+import QtQuick.Window
 
 ApplicationWindow {
-    id: window
-    width: 400
+    id: panel
+    width: 350
     height: mainLayout.implicitHeight
     visible: false
     flags: Qt.FramelessWindowHint
     color: "transparent"
     Material.theme: Material.System
+    property bool isAnimatingIn: false
+    property bool isAnimatingOut: false
+    property int margin: 12
+    property int taskbarHeight: 52
+
+    PropertyAnimation {
+        id: showAnimation
+        target: panel
+        property: "y"
+        duration: 200
+        easing.type: Easing.OutQuad
+        onFinished: {
+            soundPanel.onAnimationInFinished()
+            panel.isAnimatingIn = false
+            mainLayout.opacity = 1
+        }
+    }
+
+    PropertyAnimation {
+        id: hideAnimation
+        target: panel
+        property: "y"
+        duration: 200
+        easing.type: Easing.InQuad
+        onFinished: {
+            panel.visible = false
+            panel.isAnimatingOut = false
+            soundPanel.onAnimationOutFinished()
+        }
+    }
+
+    function showPanel() {
+        if (isAnimatingIn || isAnimatingOut) {
+            return
+        }
+
+        isAnimatingIn = true
+        mainLayout.opacity = 0
+
+        const screenWidth = Screen.width
+        const screenHeight = Screen.height
+
+        const panelX = screenWidth - width - margin
+        const startY = screenHeight - taskbarHeight
+        const targetY = screenHeight - height - margin - taskbarHeight
+
+        const safeX = Math.min(Math.max(panelX, 0), screenWidth - width)
+        const safeTargetY = Math.min(Math.max(targetY, 0), screenHeight - height - taskbarHeight)
+
+        panel.x = safeX
+        panel.y = startY
+
+        panel.visible = true
+
+        showAnimation.from = startY
+        showAnimation.to = safeTargetY
+        showAnimation.start()
+    }
+
+    function hidePanel() {
+        if (isAnimatingIn || isAnimatingOut) {
+            return
+        }
+
+        isAnimatingOut = true
+
+        const startY = panel.y
+        const targetY = Screen.height - taskbarHeight
+
+        hideAnimation.from = startY
+        hideAnimation.to = targetY
+
+        soundPanel.setNotTopmost()
+        hideAnimation.start()
+    }
 
     ListModel {
         id: appModel
     }
 
     function clearApplicationModel() {
-        appModel.clear();
+        appModel.clear()
     }
 
     function addApplication(appID, name, isMuted, volume, icon) {
         appModel.append({
-                            appID: appID,
-                            name: name,
-                            isMuted: isMuted,
-                            volume: volume,
-                            icon: "data:image/png;base64," + icon
-                        });
+            appID: appID,
+            name: name,
+            isMuted: isMuted,
+            volume: volume,
+            icon: "data:image/png;base64," + icon
+        })
     }
 
     function clearPlaybackDevices() {
-        outputDeviceComboBox.model.clear();
+        outputDeviceComboBox.model.clear()
     }
 
     function addPlaybackDevice(deviceName) {
-        outputDeviceComboBox.model.append({name: deviceName});
+        outputDeviceComboBox.model.append({name: deviceName})
     }
 
     function clearRecordingDevices() {
-        inputDeviceComboBox.model.clear();
+        inputDeviceComboBox.model.clear()
     }
 
     function addRecordingDevice(deviceName) {
-        inputDeviceComboBox.model.append({name: deviceName});
+        inputDeviceComboBox.model.append({name: deviceName})
     }
 
     function setPlaybackDeviceCurrentIndex(index) {
-        outputDeviceComboBox.currentIndex = index;
+        outputDeviceComboBox.currentIndex = index
     }
 
     function setRecordingDeviceCurrentIndex(index) {
-        inputDeviceComboBox.currentIndex = index;
+        inputDeviceComboBox.currentIndex = index
     }
 
     Connections {
         target: soundPanel
-        function onLayoutOpacity() {
-            mainLayout.opacity = 1
+
+        function onShowPanel() {
+            panel.showPanel()
+        }
+
+        function onHidePanel() {
+            panel.hidePanel()
         }
     }
 
@@ -126,7 +207,7 @@ ApplicationWindow {
                         width: parent.width
                     }
                     onActivated: {
-                        soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText);
+                        soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText)
                     }
                 }
 
@@ -198,7 +279,7 @@ ApplicationWindow {
                         leftPadding: 10
                     }
                     onActivated: {
-                        soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText);
+                        soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText)
                     }
                 }
 
@@ -255,7 +336,7 @@ ApplicationWindow {
                     id: appRepeater
                     model: appModel
                     onCountChanged: {
-                        window.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30
+                        panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30
                     }
                     delegate: RowLayout {
                         id: applicationUnitLayout
@@ -279,8 +360,8 @@ ApplicationWindow {
                             icon.source: applicationUnitLayout.model.name === "Windows system sounds" ? "qrc:/icons/system_light.png" : applicationUnitLayout.model.icon
                             icon.color: applicationUnitLayout.model.name === "Windows system sounds" ? undefined : "transparent"
                             onClicked: {
-                                applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted;
-                                soundPanel.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted);
+                                applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted
+                                soundPanel.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted)
                             }
                         }
 
@@ -294,7 +375,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 40
                             onValueChanged: {
-                                soundPanel.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value);
+                                soundPanel.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
                             }
                         }
                     }

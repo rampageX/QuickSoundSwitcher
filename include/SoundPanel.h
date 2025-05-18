@@ -1,5 +1,5 @@
-#ifndef MEDIASFLYOUT_H
-#define MEDIASFLYOUT_H
+#ifndef SOUNGPANEL_H
+#define SOUNGPANEL_H
 
 #include "audiomanager.h"
 #include <QObject>
@@ -51,6 +51,9 @@ public slots:
 
     void onApplicationVolumeSliderValueChanged(QString appID, int volume);
     void onApplicationMuteButtonClicked(QString appID, bool state);
+    void onAnimationInFinished();
+    void onAnimationOutFinished();
+    void setNotTopmost();
 
 private slots:
     void onVolumeChangedWithTray(int volume);
@@ -64,7 +67,8 @@ signals:
 
     void shouldUpdateTray();
     void panelClosed();
-    void layoutOpacity();
+    void showPanel();
+    void hidePanel();
 
 private:
     QQmlApplicationEngine* engine;
@@ -88,4 +92,4 @@ private:
     bool systemSoundsMuted;
 };
 
-#endif // MEDIASFLYOUT_H
+#endif // SOUNGPANEL_H
