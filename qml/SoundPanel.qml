@@ -7,7 +7,7 @@ import QtQuick.Window
 
 ApplicationWindow {
     id: panel
-    width: 350
+    width: 380
     height: mainLayout.implicitHeight
     visible: false
     flags: Qt.FramelessWindowHint
@@ -27,7 +27,7 @@ ApplicationWindow {
         id: showAnimation
         target: panel
         property: "y"
-        duration: 200
+        duration: 250
         easing.type: Easing.OutQuad
         onFinished: {
             soundPanel.onAnimationInFinished()
@@ -40,7 +40,7 @@ ApplicationWindow {
         id: hideAnimation
         target: panel
         property: "y"
-        duration: 200
+        duration: 250
         easing.type: Easing.InQuad
         onFinished: {
             panel.visible = false
@@ -176,6 +176,7 @@ ApplicationWindow {
         }
 
         Label {
+            id: deviceLabel
             text: qsTr("Audio devices")
             Layout.bottomMargin: -10
             Layout.leftMargin: 10
@@ -184,6 +185,7 @@ ApplicationWindow {
         }
 
         Pane {
+            id: devicePane
             visible: !settings.mixerOnly
             Layout.fillWidth: true
             Material.background: Material.theme === Material.Dark ? "#2B2B2B" : "#FFFFFF"
@@ -342,7 +344,11 @@ ApplicationWindow {
                     id: appRepeater
                     model: appModel
                     onCountChanged: {
-                        panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30
+                        if (settings.mixerOnly) {
+                            panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30 - (deviceLabel.implicitHeight + devicePane.implicitHeight + 15 + 5)
+                        } else {
+                            panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30
+                        }
                     }
                     delegate: RowLayout {
                         id: applicationUnitLayout
