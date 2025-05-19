@@ -1,4 +1,5 @@
 import QtQuick
+import QtCore
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
@@ -16,6 +17,11 @@ ApplicationWindow {
     property bool isAnimatingOut: false
     property int margin: 12
     property int taskbarHeight: 52
+
+    Settings {
+        id: settings
+        property bool mixerOnly: false
+    }
 
     PropertyAnimation {
         id: showAnimation
@@ -174,11 +180,11 @@ ApplicationWindow {
             Layout.bottomMargin: -10
             Layout.leftMargin: 10
             color: Material.accent
-            visible: !mixerOnly
+            visible: !settings.mixerOnly
         }
 
         Pane {
-            visible: !mixerOnly
+            visible: !settings.mixerOnly
             Layout.fillWidth: true
             Material.background: Material.theme === Material.Dark ? "#2B2B2B" : "#FFFFFF"
             Material.elevation: 6

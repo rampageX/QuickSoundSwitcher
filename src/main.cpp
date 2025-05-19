@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     a.setQuitOnLastWindowClosed(false);
     a.setOrganizationName("Odizinne");
-    a.setApplicationName("Boxy");
+    a.setApplicationName("QuickSoundSwitcher");
 
     const QString processName = "QuickSoundSwitcher.exe";
     if (isAnotherInstanceRunning(processName)) {

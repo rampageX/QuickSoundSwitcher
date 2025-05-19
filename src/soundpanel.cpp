@@ -42,8 +42,6 @@ SoundPanel::~SoundPanel()
 
 void SoundPanel::configureQML() {
     engine->rootContext()->setContextProperty("soundPanel", this);
-    engine->rootContext()->setContextProperty("mixerOnly", mixerOnly);
-    engine->rootContext()->setContextProperty("componentsOpacity", 0);
 
     engine->loadFromModule("Odizinne.QuickSoundSwitcher", "SoundPanel");
 }
