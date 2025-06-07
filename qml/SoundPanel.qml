@@ -21,6 +21,7 @@ ApplicationWindow {
     Settings {
         id: settings
         property bool mixerOnly: false
+        property bool linkIO: false
     }
 
     PropertyAnimation {
@@ -104,12 +105,12 @@ ApplicationWindow {
 
     function addApplication(appID, name, isMuted, volume, icon) {
         appModel.append({
-            appID: appID,
-            name: name,
-            isMuted: isMuted,
-            volume: volume,
-            icon: "data:image/png;base64," + icon
-        })
+                            appID: appID,
+                            name: name,
+                            isMuted: isMuted,
+                            volume: volume,
+                            icon: "data:image/png;base64," + icon
+                        })
     }
 
     function clearPlaybackDevices() {
@@ -216,6 +217,18 @@ ApplicationWindow {
                     }
                     onActivated: {
                         soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText)
+                        if (settings.linkIO) {
+                            const selectedText = outputDeviceComboBox.currentText
+
+                            for (let i = 0; i < inputDeviceComboBox.count; ++i) {
+                                if (inputDeviceComboBox.textAt(i) === selectedText) {
+                                    inputDeviceComboBox.currentIndex = i
+                                    break
+                                }
+                            }
+
+                            soundPanel.onRecordingDeviceChanged(outputDeviceComboBox.currentText)
+                        }
                     }
                 }
 
@@ -288,8 +301,22 @@ ApplicationWindow {
                     }
                     onActivated: {
                         soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText)
+
+                        if (settings.linkIO) {
+                            const selectedText = inputDeviceComboBox.currentText
+
+                            for (let i = 0; i < outputDeviceComboBox.count; ++i) {
+                                if (outputDeviceComboBox.textAt(i) === selectedText) {
+                                    outputDeviceComboBox.currentIndex = i
+                                    break
+                                }
+                            }
+
+                            soundPanel.onPlaybackDeviceChanged(inputDeviceComboBox.currentText)
+                        }
                     }
                 }
+
 
                 RowLayout {
                     Layout.fillWidth: true

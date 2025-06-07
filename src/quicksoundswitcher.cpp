@@ -64,6 +64,11 @@ void QuickSoundSwitcher::createTrayIcon()
     mixerOnly->setChecked(settings.value("mixerOnly", false).toBool());
     connect(mixerOnly, &QAction::triggered, this, &QuickSoundSwitcher::onMixerOnlyStateChanged);
 
+    QAction *linkIO = new QAction(tr("Link Input / Output devices"), this);
+    linkIO->setCheckable(true);
+    linkIO->setChecked(settings.value("linkIO", false).toBool());
+    connect(linkIO, &QAction::triggered, this, &QuickSoundSwitcher::onLinkIOStateChanged);
+
     QAction *startupAction = new QAction(tr("Run at startup"), this);
     startupAction->setCheckable(true);
     startupAction->setChecked(ShortcutManager::isShortcutPresent("QuickSoundSwitcher.lnk"));
@@ -75,6 +80,7 @@ void QuickSoundSwitcher::createTrayIcon()
     trayMenu->addAction(startupAction);
     trayMenu->addSeparator();
     trayMenu->addAction(mixerOnly);
+    trayMenu->addAction(linkIO);
     trayMenu->addAction(exitAction);
 
     trayIcon->setContextMenu(trayMenu);
@@ -267,4 +273,9 @@ void QuickSoundSwitcher::onMixerOnlyStateChanged() {
     } else {
         onOutputMuteChanged();
     }
+}
+
+void QuickSoundSwitcher::onLinkIOStateChanged() {
+    QAction *action = qobject_cast<QAction *>(sender());
+    settings.setValue("linkIO", action->isChecked());
 }

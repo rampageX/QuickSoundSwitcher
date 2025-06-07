@@ -22,6 +22,7 @@ private slots:
     void onOutputMuteChanged();
     void onSoundPanelClosed();
     void onMixerOnlyStateChanged();
+    void onLinkIOStateChanged();
 
 private:
     QSystemTrayIcon *trayIcon;
