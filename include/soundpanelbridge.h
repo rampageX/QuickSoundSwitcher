@@ -1,27 +1,31 @@
-#ifndef SOUNGPANEL_H
-#define SOUNGPANEL_H
+#ifndef SOUNDPANELBRIDGE_H
+#define SOUNDPANELBRIDGE_H
 
 #include "audiomanager.h"
 #include <QObject>
-#include <QQmlApplicationEngine>
-#include <QWindow>
-#include <QIcon>
-#include <QComboBox>
+#include <QQmlEngine>
+#include <QtQml/qqmlregistration.h>
 #include <QSettings>
 
-class SoundPanel : public QObject
+class SoundPanelBridge : public QObject
 {
     Q_OBJECT
+    QML_ELEMENT
+    QML_SINGLETON
+
     Q_PROPERTY(int playbackVolume READ playbackVolume WRITE setPlaybackVolume NOTIFY playbackVolumeChanged)
     Q_PROPERTY(int recordingVolume READ recordingVolume WRITE setRecordingVolume NOTIFY recordingVolumeChanged)
     Q_PROPERTY(bool playbackMuted READ playbackMuted WRITE setPlaybackMuted NOTIFY playbackMutedChanged)
     Q_PROPERTY(bool recordingMuted READ recordingMuted WRITE setRecordingMuted NOTIFY recordingMutedChanged)
+    Q_PROPERTY(bool mixerOnly READ mixerOnly NOTIFY mixerOnlyChanged)
 
 public:
-    explicit SoundPanel(QObject* parent = nullptr);
-    ~SoundPanel() override;
+    explicit SoundPanelBridge(QObject* parent = nullptr);
+    ~SoundPanelBridge() override;
 
-    QWindow* soundPanelWindow;
+    // Singleton factory function
+    static SoundPanelBridge* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
+    static SoundPanelBridge* instance();
 
     int playbackVolume() const;
     void setPlaybackVolume(int volume);
@@ -35,43 +39,40 @@ public:
     bool recordingMuted() const;
     void setRecordingMuted(bool muted);
 
-    void animateOut();
+    bool mixerOnly() const;
+
+    Q_INVOKABLE void initializeData();
+    Q_INVOKABLE void refreshData();
 
 public slots:
     void onPlaybackVolumeChanged(int volume);
     void onRecordingVolumeChanged(int volume);
-
     void onPlaybackDeviceChanged(const QString &deviceName);
     void onRecordingDeviceChanged(const QString &deviceName);
-
     void onOutputMuteButtonClicked();
     void onInputMuteButtonClicked();
-
     void onOutputSliderReleased();
-
     void onApplicationVolumeSliderValueChanged(QString appID, int volume);
     void onApplicationMuteButtonClicked(QString appID, bool state);
-    void onAnimationInFinished();
-    void onAnimationOutFinished();
-    void setNotTopmost();
 
-private slots:
-    void onVolumeChangedWithTray(int volume);
-    void onOutputMuteStateChanged(bool mutedState);
+    // External updates (called from QuickSoundSwitcher)
+    void updateVolumeFromTray(int volume);
+    void updateMuteStateFromTray(bool muted);
+    void refreshMixerOnlyState();
 
 signals:
     void playbackVolumeChanged();
     void recordingVolumeChanged();
     void playbackMutedChanged();
     void recordingMutedChanged();
-
+    void mixerOnlyChanged();
     void shouldUpdateTray();
-    void panelClosed();
-    void showPanel();
-    void hidePanel();
+    void playbackDevicesChanged(const QVariantList& devices);
+    void recordingDevicesChanged(const QVariantList& devices);
+    void applicationsChanged(const QVariantList& applications);
 
 private:
-    QQmlApplicationEngine* engine;
+    static SoundPanelBridge* m_instance;
     QList<AudioDevice> playbackDevices;
     QList<AudioDevice> recordingDevices;
     QList<Application> applications;
@@ -79,17 +80,14 @@ private:
     int m_recordingVolume = 0;
     bool m_playbackMuted = false;
     bool m_recordingMuted = false;
-
-    void animateIn();
-    void configureQML();
-    void setupUI();
-    void populateComboBoxes();
-    void populateApplicationModel();
-    bool isAnimating;
-    HWND hWnd;
     QSettings settings;
-    bool mixerOnly;
     bool systemSoundsMuted;
+
+    void populatePlaybackDevices();
+    void populateRecordingDevices();
+    void populateApplications();
+    QVariantList convertDevicesToVariant(const QList<AudioDevice>& devices);
+    QVariantList convertApplicationsToVariant(const QList<Application>& apps);
 };
 
-#endif // SOUNGPANEL_H
+#endif // SOUNDPANELBRIDGE_H

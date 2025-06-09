@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 import QtQuick.Window
+import Odizinne.QuickSoundSwitcher
 
 ApplicationWindow {
     id: panel
@@ -18,6 +19,10 @@ ApplicationWindow {
     property int margin: 12
     property int taskbarHeight: 52
 
+    signal hideAnimationFinished()
+    signal showAnimationFinished()
+    signal hideAnimationStarted()
+
     Settings {
         id: settings
         property bool mixerOnly: false
@@ -31,9 +36,9 @@ ApplicationWindow {
         duration: 250
         easing.type: Easing.OutQuad
         onFinished: {
-            soundPanel.onAnimationInFinished()
             panel.isAnimatingIn = false
             mainLayout.opacity = 1
+            panel.showAnimationFinished()
         }
     }
 
@@ -46,7 +51,7 @@ ApplicationWindow {
         onFinished: {
             panel.visible = false
             panel.isAnimatingOut = false
-            soundPanel.onAnimationOutFinished()
+            panel.hideAnimationFinished()
         }
     }
 
@@ -84,6 +89,7 @@ ApplicationWindow {
         }
 
         isAnimatingOut = true
+        panel.hideAnimationStarted()
 
         const startY = panel.y
         const targetY = Screen.height - taskbarHeight
@@ -91,61 +97,67 @@ ApplicationWindow {
         hideAnimation.from = startY
         hideAnimation.to = targetY
 
-        soundPanel.setNotTopmost()
         hideAnimation.start()
+    }
+
+    ListModel {
+        id: playbackDeviceModel
+    }
+
+    ListModel {
+        id: recordingDeviceModel
     }
 
     ListModel {
         id: appModel
     }
 
-    function clearApplicationModel() {
-        appModel.clear()
-    }
-
-    function addApplication(appID, name, isMuted, volume, icon) {
-        appModel.append({
-                            appID: appID,
-                            name: name,
-                            isMuted: isMuted,
-                            volume: volume,
-                            icon: "data:image/png;base64," + icon
-                        })
-    }
-
-    function clearPlaybackDevices() {
-        outputDeviceComboBox.model.clear()
-    }
-
-    function addPlaybackDevice(deviceName) {
-        outputDeviceComboBox.model.append({name: deviceName})
-    }
-
-    function clearRecordingDevices() {
-        inputDeviceComboBox.model.clear()
-    }
-
-    function addRecordingDevice(deviceName) {
-        inputDeviceComboBox.model.append({name: deviceName})
-    }
-
-    function setPlaybackDeviceCurrentIndex(index) {
-        outputDeviceComboBox.currentIndex = index
-    }
-
-    function setRecordingDeviceCurrentIndex(index) {
-        inputDeviceComboBox.currentIndex = index
-    }
-
     Connections {
-        target: soundPanel
+        target: SoundPanelBridge
 
-        function onShowPanel() {
-            panel.showPanel()
+        function onPlaybackDevicesChanged(devices) {
+            playbackDeviceModel.clear()
+            let defaultIndex = -1
+            for (let i = 0; i < devices.length; i++) {
+                playbackDeviceModel.append({
+                    id: devices[i].id,
+                    name: devices[i].name,
+                    shortName: devices[i].shortName,
+                    isDefault: devices[i].isDefault
+                })
+                if (devices[i].isDefault) {
+                    defaultIndex = i
+                }
+            }
+            if (defaultIndex !== -1) {
+                outputDeviceComboBox.currentIndex = defaultIndex
+            }
         }
 
-        function onHidePanel() {
-            panel.hidePanel()
+        function onRecordingDevicesChanged(devices) {
+            recordingDeviceModel.clear()
+            let defaultIndex = -1
+            for (let i = 0; i < devices.length; i++) {
+                recordingDeviceModel.append({
+                    id: devices[i].id,
+                    name: devices[i].name,
+                    shortName: devices[i].shortName,
+                    isDefault: devices[i].isDefault
+                })
+                if (devices[i].isDefault) {
+                    defaultIndex = i
+                }
+            }
+            if (defaultIndex !== -1) {
+                inputDeviceComboBox.currentIndex = defaultIndex
+            }
+        }
+
+        function onApplicationsChanged(apps) {
+            appModel.clear()
+            for (let i = 0; i < apps.length; i++) {
+                appModel.append(apps[i])
+            }
         }
     }
 
@@ -182,12 +194,12 @@ ApplicationWindow {
             Layout.bottomMargin: -10
             Layout.leftMargin: 10
             color: Material.accent
-            visible: !settings.mixerOnly
+            visible: !SoundPanelBridge.mixerOnly
         }
 
         Pane {
             id: devicePane
-            visible: !settings.mixerOnly
+            visible: !SoundPanelBridge.mixerOnly
             Layout.fillWidth: true
             Material.background: Material.theme === Material.Dark ? "#2B2B2B" : "#FFFFFF"
             Material.elevation: 6
@@ -205,7 +217,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     flat: true
                     font.pixelSize: 15
-                    model: ListModel {}
+                    model: playbackDeviceModel
+                    textRole: "shortName"
                     contentItem: Label {
                         text: outputDeviceComboBox.currentText
                         elide: Text.ElideRight
@@ -216,7 +229,7 @@ ApplicationWindow {
                         width: parent.width
                     }
                     onActivated: {
-                        soundPanel.onPlaybackDeviceChanged(outputDeviceComboBox.currentText)
+                        SoundPanelBridge.onPlaybackDeviceChanged(outputDeviceComboBox.currentText)
                         if (settings.linkIO) {
                             const selectedText = outputDeviceComboBox.currentText
 
@@ -227,7 +240,7 @@ ApplicationWindow {
                                 }
                             }
 
-                            soundPanel.onRecordingDeviceChanged(outputDeviceComboBox.currentText)
+                            SoundPanelBridge.onRecordingDeviceChanged(outputDeviceComboBox.currentText)
                         }
                     }
                 }
@@ -241,11 +254,11 @@ ApplicationWindow {
                         Layout.preferredWidth: 40
                         flat: true
                         property string volumeIcon: {
-                            if (soundPanel.playbackMuted || soundPanel.playbackVolume === 0) {
+                            if (SoundPanelBridge.playbackMuted || SoundPanelBridge.playbackVolume === 0) {
                                 return "qrc:/icons/panel_volume_0.png"
-                            } else if (soundPanel.playbackVolume <= 33) {
+                            } else if (SoundPanelBridge.playbackVolume <= 33) {
                                 return "qrc:/icons/panel_volume_33.png"
-                            } else if (soundPanel.playbackVolume <= 66) {
+                            } else if (SoundPanelBridge.playbackVolume <= 66) {
                                 return "qrc:/icons/panel_volume_66.png"
                             } else {
                                 return "qrc:/icons/panel_volume_100.png"
@@ -254,13 +267,13 @@ ApplicationWindow {
 
                         icon.source: volumeIcon
                         onClicked: {
-                            soundPanel.onOutputMuteButtonClicked()
+                            SoundPanelBridge.onOutputMuteButtonClicked()
                         }
                     }
 
                     Slider {
                         id: outputSlider
-                        value: soundPanel.playbackVolume
+                        value: SoundPanelBridge.playbackVolume
                         from: 0
                         to: 100
                         stepSize: 1
@@ -268,14 +281,13 @@ ApplicationWindow {
                         Layout.preferredHeight: 40
                         onValueChanged: {
                             if (pressed) {
-                                soundPanel.onPlaybackVolumeChanged(value)
-                                soundPanel.playbackVolume = value
+                                SoundPanelBridge.onPlaybackVolumeChanged(value)
                             }
                         }
 
                         onPressedChanged: {
                             if (!pressed) {
-                                soundPanel.onOutputSliderReleased()
+                                SoundPanelBridge.onOutputSliderReleased()
                             }
                         }
                     }
@@ -289,7 +301,8 @@ ApplicationWindow {
                     Layout.columnSpan: 3
                     flat: true
                     font.pixelSize: 15
-                    model: ListModel {}
+                    model: recordingDeviceModel
+                    textRole: "shortName"
                     contentItem: Label {
                         text: inputDeviceComboBox.currentText
                         elide: Text.ElideRight
@@ -300,7 +313,7 @@ ApplicationWindow {
                         leftPadding: 10
                     }
                     onActivated: {
-                        soundPanel.onRecordingDeviceChanged(inputDeviceComboBox.currentText)
+                        SoundPanelBridge.onRecordingDeviceChanged(inputDeviceComboBox.currentText)
 
                         if (settings.linkIO) {
                             const selectedText = inputDeviceComboBox.currentText
@@ -312,11 +325,10 @@ ApplicationWindow {
                                 }
                             }
 
-                            soundPanel.onPlaybackDeviceChanged(inputDeviceComboBox.currentText)
+                            SoundPanelBridge.onPlaybackDeviceChanged(inputDeviceComboBox.currentText)
                         }
                     }
                 }
-
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -326,23 +338,22 @@ ApplicationWindow {
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         flat: true
-                        icon.source: soundPanel.recordingMuted ? "qrc:/icons/mic_muted.png" : "qrc:/icons/mic.png"
+                        icon.source: SoundPanelBridge.recordingMuted ? "qrc:/icons/mic_muted.png" : "qrc:/icons/mic.png"
                         onClicked: {
-                            soundPanel.onInputMuteButtonClicked()
+                            SoundPanelBridge.onInputMuteButtonClicked()
                         }
                     }
 
                     Slider {
                         id: inputSlider
-                        value: soundPanel.recordingVolume
+                        value: SoundPanelBridge.recordingVolume
                         from: 0
                         to: 100
                         stepSize: 1
                         Layout.fillWidth: true
                         Layout.preferredHeight: 40
                         onValueChanged: {
-                            soundPanel.onRecordingVolumeChanged(value)
-                            soundPanel.recordingVolume = value
+                            SoundPanelBridge.onRecordingVolumeChanged(value)
                         }
                     }
                 }
@@ -371,7 +382,7 @@ ApplicationWindow {
                     id: appRepeater
                     model: appModel
                     onCountChanged: {
-                        if (settings.mixerOnly) {
+                        if (SoundPanelBridge.mixerOnly) {
                             panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30 - (deviceLabel.implicitHeight + devicePane.implicitHeight + 15 + 5)
                         } else {
                             panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30
@@ -400,7 +411,7 @@ ApplicationWindow {
                             icon.color: applicationUnitLayout.model.name === "Windows system sounds" ? undefined : "transparent"
                             onClicked: {
                                 applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted
-                                soundPanel.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted)
+                                SoundPanelBridge.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted)
                             }
                         }
 
@@ -414,7 +425,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 40
                             onValueChanged: {
-                                soundPanel.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
+                                SoundPanelBridge.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
                             }
                         }
                     }

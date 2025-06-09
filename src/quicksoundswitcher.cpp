@@ -1,4 +1,5 @@
 #include "quicksoundswitcher.h"
+#include "soundpanelbridge.h"
 #include "utils.h"
 #include "audiomanager.h"
 #include "shortcutmanager.h"
@@ -6,6 +7,9 @@
 #include <QApplication>
 #include <QScreen>
 #include <QRect>
+#include <QWindow>
+#include <QQmlContext>
+#include <QTimer>
 #include <Windows.h>
 
 HHOOK QuickSoundSwitcher::keyboardHook = NULL;
@@ -16,7 +20,9 @@ static bool validMouseDown = false;
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QWidget(parent)
     , trayIcon(new QSystemTrayIcon(this))
-    , soundPanel(nullptr)
+    , engine(nullptr)
+    , panelWindow(nullptr)
+    , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
 {
     AudioManager::initialize();
@@ -25,7 +31,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     installKeyboardHook();
 
     bool firstRun = settings.value("firstRun", true).toBool();
-
     if (firstRun) {
         settings.setValue("firstRun", false);
         trayIcon->showMessage(
@@ -41,8 +46,69 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     AudioManager::cleanup();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
-    delete soundPanel;
+    destroyQMLEngine();
     instance = nullptr;
+}
+
+void QuickSoundSwitcher::setWindowTopmost()
+{
+    if (panelWindow) {
+        HWND hWnd = reinterpret_cast<HWND>(panelWindow->winId());
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+}
+
+void QuickSoundSwitcher::setWindowNotTopmost()
+{
+    if (panelWindow) {
+        HWND hWnd = reinterpret_cast<HWND>(panelWindow->winId());
+        SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+}
+
+void QuickSoundSwitcher::createQMLEngine()
+{
+    if (engine) {
+        destroyQMLEngine();
+    }
+
+    engine = new QQmlApplicationEngine(this);
+
+    // Register the singleton bridge
+    qmlRegisterSingletonType<SoundPanelBridge>("Odizinne.QuickSoundSwitcher", 1, 0, "SoundPanelBridge",
+                                               &SoundPanelBridge::create);
+
+    engine->loadFromModule("Odizinne.QuickSoundSwitcher", "SoundPanel");
+
+    if (!engine->rootObjects().isEmpty()) {
+        panelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
+        if (panelWindow) {
+            panelWindow->setProperty("visible", false);
+
+            // Connect to animation signals
+            connect(panelWindow, SIGNAL(hideAnimationFinished()),
+                    this, SLOT(onPanelHideAnimationFinished()));
+            connect(panelWindow, SIGNAL(showAnimationFinished()),
+                    this, SLOT(setWindowTopmost()));
+            connect(panelWindow, SIGNAL(hideAnimationStarted()),
+                    this, SLOT(setWindowNotTopmost()));
+        }
+    }
+
+    // Connect to singleton bridge for tray updates
+    if (SoundPanelBridge::instance()) {
+        connect(SoundPanelBridge::instance(), &SoundPanelBridge::shouldUpdateTray,
+                this, &QuickSoundSwitcher::onOutputMuteChanged);
+    }
+}
+
+void QuickSoundSwitcher::destroyQMLEngine()
+{
+    if (engine) {
+        engine->deleteLater();
+        engine = nullptr;
+    }
+    panelWindow = nullptr;
 }
 
 void QuickSoundSwitcher::createTrayIcon()
@@ -57,6 +123,7 @@ void QuickSoundSwitcher::createTrayIcon()
             trayIcon->setIcon(QIcon(":/icons/system_dark.png"));
         }
     }
+
     QMenu *trayMenu = new QMenu(this);
 
     QAction *mixerOnly = new QAction(tr("Use volume mixer only"), this);
@@ -144,15 +211,16 @@ void QuickSoundSwitcher::uninstallKeyboardHook()
     }
 }
 
-LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
     if (nCode == HC_ACTION) {
         if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {
             QPoint cursorPos = QCursor::pos();
             QRect trayIconRect = instance->trayIcon->geometry();
             QRect soundPanelRect;
 
-            if (instance->soundPanel && instance->soundPanel->soundPanelWindow) {
-                soundPanelRect = instance->soundPanel->soundPanelWindow->geometry();
+            if (instance->panelWindow && instance->isPanelVisible) {
+                soundPanelRect = instance->panelWindow->geometry();
             } else {
                 soundPanelRect = QRect();
             }
@@ -164,8 +232,8 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
             QRect trayIconRect = instance->trayIcon->geometry();
             QRect soundPanelRect;
 
-            if (instance->soundPanel && instance->soundPanel->soundPanelWindow) {
-                soundPanelRect = instance->soundPanel->soundPanelWindow->geometry();
+            if (instance->panelWindow && instance->isPanelVisible) {
+                soundPanelRect = instance->panelWindow->geometry();
             } else {
                 soundPanelRect = QRect();
             }
@@ -173,8 +241,8 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
             validMouseDown = false;
 
             if (!soundPanelRect.contains(cursorPos) && !trayIconRect.contains(cursorPos)) {
-                if (instance->soundPanel) {
-                    instance->soundPanel->animateOut();
+                if (instance->isPanelVisible) {
+                    instance->hidePanel();
                 }
             }
         }
@@ -218,50 +286,103 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
         newVolume = originalVolume - 2;
     }
 
+    // Clamp the volume to valid range
+    newVolume = qMax(0, qMin(100, newVolume));
+
+    AudioManager::setPlaybackVolume(newVolume);
+
     if (AudioManager::getPlaybackMute()) {
         AudioManager::setPlaybackMute(false);
     }
 
     trayIcon->setIcon(QIcon(Utils::getIcon(1, newVolume, NULL)));
-    emit volumeChangedWithTray(newVolume) ;
+
+    // Update the bridge with the new volume if it exists
+    if (SoundPanelBridge::instance()) {
+        SoundPanelBridge::instance()->updateVolumeFromTray(newVolume);
+    }
 }
 
 void QuickSoundSwitcher::toggleMuteWithKey()
 {
-    bool muted = !AudioManager::getPlaybackMute();
+    bool currentMuted = AudioManager::getPlaybackMute();
+    bool newMuted = !currentMuted;
     int volume = AudioManager::getPlaybackVolume();
 
+    AudioManager::setPlaybackMute(newMuted);
+
     int volumeIcon;
-    if (volume == 0 || muted) {
+    if (volume == 0 || newMuted) {
         volumeIcon = 0;
     } else {
         volumeIcon = volume;
     }
 
     trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
-    emit outputMuteStateChanged(muted);
+
+    // Update the bridge with the new mute state if it exists
+    if (SoundPanelBridge::instance()) {
+        SoundPanelBridge::instance()->updateMuteStateFromTray(newMuted);
+    }
 }
 
 void QuickSoundSwitcher::togglePanel()
 {
-    if (!soundPanel) {
-        soundPanel = new SoundPanel(this);
-        connect(soundPanel, &SoundPanel::shouldUpdateTray, this, &QuickSoundSwitcher::onOutputMuteChanged);
-        connect(soundPanel, &QObject::destroyed, this, &QuickSoundSwitcher::onSoundPanelClosed);
-        installGlobalMouseHook();
+    if (!isPanelVisible) {
+        showPanel();
     } else {
-        soundPanel->animateOut();
-        uninstallGlobalMouseHook();
+        hidePanel();
     }
 }
 
-void QuickSoundSwitcher::onSoundPanelClosed() {
-    soundPanel = nullptr;
+void QuickSoundSwitcher::showPanel()
+{
+    if (!isPanelVisible) {
+        // Create fresh QML engine
+        createQMLEngine();
+
+        if (panelWindow) {
+            // Initialize data through the bridge
+            if (SoundPanelBridge::instance()) {
+                SoundPanelBridge::instance()->initializeData();
+            }
+
+            QMetaObject::invokeMethod(panelWindow, "showPanel");
+            isPanelVisible = true;
+            installGlobalMouseHook();
+        }
+    }
 }
 
-void QuickSoundSwitcher::onMixerOnlyStateChanged() {
+void QuickSoundSwitcher::hidePanel()
+{
+    if (panelWindow && isPanelVisible) {
+        QMetaObject::invokeMethod(panelWindow, "hidePanel");
+        // Note: We don't set isPanelVisible = false here
+        // That happens in onPanelHideAnimationFinished()
+    }
+}
+
+void QuickSoundSwitcher::onPanelHideAnimationFinished()
+{
+    isPanelVisible = false;
+    uninstallGlobalMouseHook();
+
+    // Destroy the QML engine after the animation is complete
+    QTimer::singleShot(50, this, [this]() {
+        destroyQMLEngine();
+    });
+}
+
+void QuickSoundSwitcher::onMixerOnlyStateChanged()
+{
     QAction *action = qobject_cast<QAction *>(sender());
     settings.setValue("mixerOnly", action->isChecked());
+
+    // Notify the bridge about the mixer only state change if it exists
+    if (SoundPanelBridge::instance()) {
+        SoundPanelBridge::instance()->refreshMixerOnlyState();
+    }
 
     if (settings.value("mixerOnly").toBool()) {
         QString theme = Utils::getTheme();
@@ -275,7 +396,8 @@ void QuickSoundSwitcher::onMixerOnlyStateChanged() {
     }
 }
 
-void QuickSoundSwitcher::onLinkIOStateChanged() {
+void QuickSoundSwitcher::onLinkIOStateChanged()
+{
     QAction *action = qobject_cast<QAction *>(sender());
     settings.setValue("linkIO", action->isChecked());
 }

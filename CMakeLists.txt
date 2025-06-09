@@ -24,7 +24,7 @@ set(SOURCES
     src/audiomanager.cpp
     src/quicksoundswitcher.cpp
     src/shortcutmanager.cpp
-    src/soundpanel.cpp
+    src/soundpanelbridge.cpp
     src/utils.cpp
     src/main.cpp
 )
@@ -34,7 +34,7 @@ set(HEADERS
     include/policyconfig.h
     include/quicksoundswitcher.h
     include/shortcutmanager.h
-    include/soundpanel.h
+    include/soundpanelbridge.h
     include/utils.h
 )
 
