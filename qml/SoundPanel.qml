@@ -377,7 +377,7 @@ ApplicationWindow {
                     model: appModel
                     onCountChanged: {
                         if (SoundPanelBridge.mixerOnly) {
-                            panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30 - (deviceLabel.implicitHeight + devicePane.implicitHeight + 15 + 5)
+                            panel.height = mainLayout.implicitHeight + (45 * appRepeater.count) + 30
                         } else {
                             panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30
                         }
