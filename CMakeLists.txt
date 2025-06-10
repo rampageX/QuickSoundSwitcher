@@ -16,6 +16,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Quick
     Widgets
     LinguistTools
+    Multimedia
 )
 
 qt_standard_project_setup(REQUIRES 6.9)
@@ -79,6 +80,7 @@ target_link_libraries(QuickSoundSwitcher PRIVATE
     Qt::Qml
     Qt::Quick
     Qt::Widgets
+    Qt::Multimedia
     gdi32
     winmm
 )

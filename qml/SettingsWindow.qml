@@ -1,5 +1,7 @@
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import QtQuick
+import QtMultimedia
 import Odizinne.QuickSoundSwitcher
 
 ApplicationWindow {
@@ -17,6 +19,53 @@ ApplicationWindow {
     color: Material.theme === Material.Dark ? "#1C1C1C" : "#E3E3E3"
 
     property int rowHeight: 35
+
+    Component.onCompleted: {
+        updateKeepAliveAudioDevice()
+        if (UserSettings.keepAlive) {
+            startKeepAlive()
+        }
+    }
+
+    MediaDevices {
+        id: mediaDevices
+        onAudioOutputsChanged: {
+            root.updateKeepAliveAudioDevice()
+        }
+    }
+
+    MediaPlayer {
+        id: keepAlivePlayer
+        source: "qrc:/sounds/empty.wav"
+        audioOutput: AudioOutput {
+            id: keepAliveAudioOutput
+            volume: 0.01
+            device: mediaDevices.defaultAudioOutput
+        }
+        loops: MediaPlayer.Infinite
+    }
+
+    function updateKeepAliveAudioDevice() {
+        const device = mediaDevices.defaultAudioOutput
+        keepAliveAudioOutput.device = device
+        if (keepAlivePlayer.playbackState === MediaPlayer.PlayingState) {
+            keepAlivePlayer.stop()
+            keepAlivePlayer.play()
+        }
+    }
+
+    function startKeepAlive() {
+        if (keepAlivePlayer.playbackState !== MediaPlayer.PlayingState) {
+            updateKeepAliveAudioDevice()
+            keepAlivePlayer.play()
+        }
+    }
+
+    function stopKeepAlive() {
+        if (keepAlivePlayer.playbackState === MediaPlayer.PlayingState) {
+            keepAlivePlayer.stop()
+        }
+    }
 
     ColumnLayout {
         id: mainLyt
@@ -52,6 +101,27 @@ ApplicationWindow {
             Switch {
                 checked: UserSettings.linkIO
                 onClicked: UserSettings.linkIO = checked
+            }
+        }
+
+        RowLayout {
+            spacing: 15
+            Layout.preferredHeight: root.rowHeight
+            Label {
+                text: qsTr("Sound keepalive")
+                Layout.fillWidth: true
+            }
+
+            Switch {
+                checked: UserSettings.keepAlive
+                onClicked: {
+                    UserSettings.keepAlive = checked
+                    if (checked) {
+                        root.startKeepAlive()
+                    } else {
+                        root.stopKeepAlive()
+                    }
+                }
             }
         }
 
