@@ -20,7 +20,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QWidget(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , engine(nullptr)
-    , settingsEngine(new QQmlApplicationEngine)
+    , settingsEngine(new QQmlApplicationEngine(this))
     , panelWindow(nullptr)
     , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
@@ -39,6 +39,8 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
             QSystemTrayIcon::NoIcon
             );
     }
+
+    settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -108,7 +110,7 @@ void QuickSoundSwitcher::createTrayIcon()
 {
     onOutputMuteChanged();
 
-    if (settings.value("panelMode", 0).toInt() == 1) {  // mixer only
+    if (settings.value("panelMode", 0).toInt() == 1) {
         QString theme = Utils::getTheme();
         if (theme == "light") {
             trayIcon->setIcon(QIcon(":/icons/system_light.png"));

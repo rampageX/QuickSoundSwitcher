@@ -12,7 +12,7 @@ ApplicationWindow {
     width: 450
     minimumWidth: 450
     maximumWidth: 450
-    visible: true
+    visible: false
     transientParent: null
     Material.theme: Material.System
     title: qsTr("QuickSoundSwitcher - Settings")
@@ -57,6 +57,7 @@ ApplicationWindow {
     function startKeepAlive() {
         if (keepAlivePlayer.playbackState !== MediaPlayer.PlayingState) {
             updateKeepAliveAudioDevice()
+            console.log("pass")
             keepAlivePlayer.play()
         }
     }
