@@ -45,11 +45,23 @@ qt_add_executable(QuickSoundSwitcher WIN32 MACOSX_BUNDLE
     resources/appicon.rc
 )
 
+set(QML_FILES
+    qml/SoundPanel.qml
+    qml/SettingsWindow.qml
+)
+
+set(QML_SINGLETONS
+    qml/Singletons/UserSettings.qml
+)
+
+set_source_files_properties(${QML_SINGLETONS}
+    PROPERTIES QT_QML_SINGLETON_TYPE TRUE
+)
+
 qt_add_qml_module(QuickSoundSwitcher
     URI Odizinne.QuickSoundSwitcher
-    VERSION ${PROJECT_VERSION}
-    QML_FILES
-    qml/SoundPanel.qml
+    VERSION 1.0
+    QML_FILES ${QML_FILES} ${QML_SINGLETONS}
 )
 
 # Avoid collision between executable name and QML module directory (QTBUG-98568).

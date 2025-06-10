@@ -23,12 +23,6 @@ ApplicationWindow {
     signal showAnimationFinished()
     signal hideAnimationStarted()
 
-    Settings {
-        id: settings
-        property bool mixerOnly: false
-        property bool linkIO: false
-    }
-
     PropertyAnimation {
         id: showAnimation
         target: panel
@@ -230,7 +224,7 @@ ApplicationWindow {
                     }
                     onActivated: {
                         SoundPanelBridge.onPlaybackDeviceChanged(outputDeviceComboBox.currentText)
-                        if (settings.linkIO) {
+                        if (UserSettings.linkIO) {
                             const selectedText = outputDeviceComboBox.currentText
 
                             for (let i = 0; i < inputDeviceComboBox.count; ++i) {
@@ -315,7 +309,7 @@ ApplicationWindow {
                     onActivated: {
                         SoundPanelBridge.onRecordingDeviceChanged(inputDeviceComboBox.currentText)
 
-                        if (settings.linkIO) {
+                        if (UserSettings.linkIO) {
                             const selectedText = inputDeviceComboBox.currentText
 
                             for (let i = 0; i < outputDeviceComboBox.count; ++i) {
