@@ -21,6 +21,13 @@ ApplicationWindow {
     signal showAnimationFinished()
     signal hideAnimationStarted()
 
+
+    Component.onCompleted: {
+        if (UserSettings.panelMode === 2) {
+            panel.height = mainLayout.implicitHeight + 30
+        }
+    }
+
     PropertyAnimation {
         id: showAnimation
         target: panel
@@ -112,11 +119,11 @@ ApplicationWindow {
             let defaultIndex = -1
             for (let i = 0; i < devices.length; i++) {
                 playbackDeviceModel.append({
-                    id: devices[i].id,
-                    name: devices[i].name,
-                    shortName: devices[i].shortName,
-                    isDefault: devices[i].isDefault
-                })
+                                               id: devices[i].id,
+                                               name: devices[i].name,
+                                               shortName: devices[i].shortName,
+                                               isDefault: devices[i].isDefault
+                                           })
                 if (devices[i].isDefault) {
                     defaultIndex = i
                 }
@@ -131,11 +138,11 @@ ApplicationWindow {
             let defaultIndex = -1
             for (let i = 0; i < devices.length; i++) {
                 recordingDeviceModel.append({
-                    id: devices[i].id,
-                    name: devices[i].name,
-                    shortName: devices[i].shortName,
-                    isDefault: devices[i].isDefault
-                })
+                                                id: devices[i].id,
+                                                name: devices[i].name,
+                                                shortName: devices[i].shortName,
+                                                isDefault: devices[i].isDefault
+                                            })
                 if (devices[i].isDefault) {
                     defaultIndex = i
                 }
@@ -186,12 +193,12 @@ ApplicationWindow {
             Layout.bottomMargin: -10
             Layout.leftMargin: 10
             color: Material.accent
-            visible: !SoundPanelBridge.mixerOnly
+            visible: SoundPanelBridge.panelMode === 0 || SoundPanelBridge.panelMode === 2
         }
 
         Pane {
             id: devicePane
-            visible: !SoundPanelBridge.mixerOnly
+            visible: SoundPanelBridge.panelMode === 0 || SoundPanelBridge.panelMode === 2
             Layout.fillWidth: true
             Material.background: Material.theme === Material.Dark ? "#2B2B2B" : "#FFFFFF"
             Material.elevation: 6
@@ -357,9 +364,11 @@ ApplicationWindow {
             Layout.bottomMargin: -10
             Layout.leftMargin: 10
             color: Material.accent
+            visible: SoundPanelBridge.panelMode === 0 || SoundPanelBridge.panelMode === 1
         }
 
         Pane {
+            visible: SoundPanelBridge.panelMode === 0 || SoundPanelBridge.panelMode === 1
             Layout.fillWidth: true
             Material.background: Material.theme === Material.Dark ? "#2B2B2B" : "#FFFFFF"
             Material.elevation: 6
@@ -374,10 +383,12 @@ ApplicationWindow {
                     id: appRepeater
                     model: appModel
                     onCountChanged: {
-                        if (SoundPanelBridge.mixerOnly) {
+                        if (UserSettings.panelMode === 1) {
                             panel.height = mainLayout.implicitHeight + (45 * appRepeater.count) + 30
-                        } else {
+                        } else if (UserSettings.panelMode === 0) {
                             panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30
+                        } else {
+                            panel.height = mainLayout.implicitHeight + 30
                         }
                     }
                     delegate: RowLayout {

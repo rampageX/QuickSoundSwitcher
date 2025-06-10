@@ -22,14 +22,12 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , engine(nullptr)
     , settingsEngine(new QQmlApplicationEngine)
     , panelWindow(nullptr)
-    , settingsWindow(nullptr)
     , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
 {
     AudioManager::initialize();
     instance = this;
     createTrayIcon();
-    createSettingsEngine();
     installKeyboardHook();
 
     bool firstRun = settings.value("firstRun", true).toBool();
@@ -106,39 +104,11 @@ void QuickSoundSwitcher::destroyQMLEngine()
     panelWindow = nullptr;
 }
 
-void QuickSoundSwitcher::createSettingsEngine()
-{
-    settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
-
-    if (!settingsEngine->rootObjects().isEmpty()) {
-        settingsWindow = qobject_cast<QWindow*>(settingsEngine->rootObjects().first());
-        if (settingsWindow) {
-            settingsWindow->setProperty("visible", false);
-        }
-    }
-}
-
-void QuickSoundSwitcher::showSettingsWindow()
-{
-    if (settingsWindow) {
-        settingsWindow->show();
-        settingsWindow->raise();
-        settingsWindow->requestActivate();
-    }
-}
-
-void QuickSoundSwitcher::hideSettingsWindow()
-{
-    if (settingsWindow) {
-        settingsWindow->hide();
-    }
-}
-
 void QuickSoundSwitcher::createTrayIcon()
 {
     onOutputMuteChanged();
 
-    if (settings.value("mixerOnly").toBool()) {
+    if (settings.value("panelMode", 0).toInt() == 1) {  // mixer only
         QString theme = Utils::getTheme();
         if (theme == "light") {
             trayIcon->setIcon(QIcon(":/icons/system_light.png"));
@@ -175,15 +145,7 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 void QuickSoundSwitcher::onSettingsActionActivated()
 {
     if (isPanelVisible) hidePanel();
-
-    if (settingsWindow) {
-        if (settingsWindow->isVisible()) {
-            settingsWindow->raise();
-            settingsWindow->requestActivate();
-        } else {
-            showSettingsWindow();
-        }
-    }
+    settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()

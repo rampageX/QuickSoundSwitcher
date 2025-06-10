@@ -17,7 +17,7 @@ class SoundPanelBridge : public QObject
     Q_PROPERTY(int recordingVolume READ recordingVolume WRITE setRecordingVolume NOTIFY recordingVolumeChanged)
     Q_PROPERTY(bool playbackMuted READ playbackMuted WRITE setPlaybackMuted NOTIFY playbackMutedChanged)
     Q_PROPERTY(bool recordingMuted READ recordingMuted WRITE setRecordingMuted NOTIFY recordingMutedChanged)
-    Q_PROPERTY(bool mixerOnly READ mixerOnly NOTIFY mixerOnlyChanged)
+    Q_PROPERTY(int panelMode READ panelMode NOTIFY panelModeChanged)
 
 public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
@@ -39,7 +39,7 @@ public:
     bool recordingMuted() const;
     void setRecordingMuted(bool muted);
 
-    bool mixerOnly() const;
+    int panelMode() const;
 
     Q_INVOKABLE void initializeData();
     Q_INVOKABLE void refreshData();
@@ -60,14 +60,14 @@ public slots:
     // External updates (called from QuickSoundSwitcher)
     void updateVolumeFromTray(int volume);
     void updateMuteStateFromTray(bool muted);
-    void refreshMixerOnlyState();
+    void refreshPanelModeState();
 
 signals:
     void playbackVolumeChanged();
     void recordingVolumeChanged();
     void playbackMutedChanged();
     void recordingMutedChanged();
-    void mixerOnlyChanged();
+    void panelModeChanged();
     void shouldUpdateTray();
     void playbackDevicesChanged(const QVariantList& devices);
     void recordingDevicesChanged(const QVariantList& devices);

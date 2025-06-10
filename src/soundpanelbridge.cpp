@@ -100,14 +100,15 @@ void SoundPanelBridge::setRecordingMuted(bool muted)
     }
 }
 
-bool SoundPanelBridge::mixerOnly() const
+int SoundPanelBridge::panelMode() const
 {
-    return settings.value("mixerOnly", false).toBool();
+    return settings.value("panelMode", 0).toInt();
 }
 
 void SoundPanelBridge::initializeData()
 {
-    if (!mixerOnly()) {
+    int mode = panelMode();
+    if (mode == 0 || mode == 2) {  // devices + mixer OR devices only
         populatePlaybackDevices();
         populateRecordingDevices();
         setPlaybackVolume(AudioManager::getPlaybackVolume());
@@ -115,7 +116,9 @@ void SoundPanelBridge::initializeData()
         setPlaybackMuted(AudioManager::getPlaybackMute());
         setRecordingMuted(AudioManager::getRecordingMute());
     }
-    populateApplications();
+    if (mode == 0 || mode == 1) {  // devices + mixer OR mixer only
+        populateApplications();
+    }
 }
 
 void SoundPanelBridge::refreshData()
@@ -358,7 +361,7 @@ void SoundPanelBridge::updateMuteStateFromTray(bool muted)
     setPlaybackMuted(muted);
 }
 
-void SoundPanelBridge::refreshMixerOnlyState()
+void SoundPanelBridge::refreshPanelModeState()
 {
-    emit mixerOnlyChanged();
+    emit panelModeChanged();
 }

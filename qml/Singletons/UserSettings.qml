@@ -3,6 +3,6 @@ pragma Singleton
 import QtCore
 
 Settings {
-    property bool mixerOnly: false
+    property int panelMode: 0
     property bool linkIO: false
 }
