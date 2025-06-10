@@ -20,10 +20,7 @@ public:
     void toggleMuteWithKey();
 
 private slots:
-    void onRunAtStartupStateChanged();
     void onOutputMuteChanged();
-    void onMixerOnlyStateChanged();
-    void onLinkIOStateChanged();
     void onSettingsActionActivated();
     void onPanelHideAnimationFinished();
     void setWindowTopmost();

@@ -1,5 +1,6 @@
 #include "soundpanelbridge.h"
 #include "utils.h"
+#include "shortcutmanager.h"
 #include <QBuffer>
 #include <QPixmap>
 #include <algorithm>
@@ -35,6 +36,16 @@ SoundPanelBridge* SoundPanelBridge::create(QQmlEngine* qmlEngine, QJSEngine* jsE
 SoundPanelBridge* SoundPanelBridge::instance()
 {
     return m_instance;
+}
+
+bool SoundPanelBridge::getShortcutState()
+{
+    return ShortcutManager::isShortcutPresent("QuickSoundSwitcher.lnk");
+}
+
+void SoundPanelBridge::setStartupShortcut(bool enabled)
+{
+    ShortcutManager::manageShortcut(enabled, "QuickSoundSwitcher.lnk");
 }
 
 int SoundPanelBridge::playbackVolume() const

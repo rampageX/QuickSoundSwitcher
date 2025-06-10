@@ -43,6 +43,8 @@ public:
 
     Q_INVOKABLE void initializeData();
     Q_INVOKABLE void refreshData();
+    Q_INVOKABLE bool getShortcutState();
+    Q_INVOKABLE void setStartupShortcut(bool enabled);
 
 public slots:
     void onPlaybackVolumeChanged(int volume);
