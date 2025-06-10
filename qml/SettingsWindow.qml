@@ -57,7 +57,6 @@ ApplicationWindow {
     function startKeepAlive() {
         if (keepAlivePlayer.playbackState !== MediaPlayer.PlayingState) {
             updateKeepAliveAudioDevice()
-            console.log("pass")
             keepAlivePlayer.play()
         }
     }

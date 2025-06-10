@@ -22,6 +22,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , engine(nullptr)
     , settingsEngine(new QQmlApplicationEngine(this))
     , panelWindow(nullptr)
+    , settingsWindow(nullptr)
     , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
 {
@@ -41,6 +42,8 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     }
 
     settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
+    settingsWindow = qobject_cast<QWindow*>(settingsEngine->rootObjects().first());
+
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -147,7 +150,9 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 void QuickSoundSwitcher::onSettingsActionActivated()
 {
     if (isPanelVisible) hidePanel();
-    settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
+    //settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
+    settingsWindow->setProperty("visible", true);
+
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()
