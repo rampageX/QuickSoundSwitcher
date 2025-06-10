@@ -31,11 +31,15 @@ private:
     QQmlApplicationEngine* engine;
     QQmlApplicationEngine* settingsEngine;
     QWindow* panelWindow;
+    QWindow* settingsWindow;
     bool isPanelVisible;
     QSettings settings;
 
     void createQMLEngine();
     void destroyQMLEngine();
+    void createSettingsEngine();
+    void showSettingsWindow();
+    void hideSettingsWindow();
     void createTrayIcon();
     void togglePanel();
     void showPanel();

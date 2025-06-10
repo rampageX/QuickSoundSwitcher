@@ -10,7 +10,7 @@ ApplicationWindow {
     width: 400
     minimumWidth: 400
     maximumWidth: 400
-    visible: true
+    visible: false
     transientParent: null
     Material.theme: Material.System
     title: "QuickSoundSwitcher - Settings"

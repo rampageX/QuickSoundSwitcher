@@ -22,12 +22,14 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , engine(nullptr)
     , settingsEngine(new QQmlApplicationEngine)
     , panelWindow(nullptr)
+    , settingsWindow(nullptr)
     , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
 {
     AudioManager::initialize();
     instance = this;
     createTrayIcon();
+    createSettingsEngine();
     installKeyboardHook();
 
     bool firstRun = settings.value("firstRun", true).toBool();
@@ -104,6 +106,34 @@ void QuickSoundSwitcher::destroyQMLEngine()
     panelWindow = nullptr;
 }
 
+void QuickSoundSwitcher::createSettingsEngine()
+{
+    settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
+
+    if (!settingsEngine->rootObjects().isEmpty()) {
+        settingsWindow = qobject_cast<QWindow*>(settingsEngine->rootObjects().first());
+        if (settingsWindow) {
+            settingsWindow->setProperty("visible", false);
+        }
+    }
+}
+
+void QuickSoundSwitcher::showSettingsWindow()
+{
+    if (settingsWindow) {
+        settingsWindow->show();
+        settingsWindow->raise();
+        settingsWindow->requestActivate();
+    }
+}
+
+void QuickSoundSwitcher::hideSettingsWindow()
+{
+    if (settingsWindow) {
+        settingsWindow->hide();
+    }
+}
+
 void QuickSoundSwitcher::createTrayIcon()
 {
     onOutputMuteChanged();
@@ -145,7 +175,15 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 void QuickSoundSwitcher::onSettingsActionActivated()
 {
     if (isPanelVisible) hidePanel();
-    settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
+
+    if (settingsWindow) {
+        if (settingsWindow->isVisible()) {
+            settingsWindow->raise();
+            settingsWindow->requestActivate();
+        } else {
+            showSettingsWindow();
+        }
+    }
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()
