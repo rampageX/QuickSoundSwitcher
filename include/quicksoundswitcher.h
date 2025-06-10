@@ -24,6 +24,7 @@ private slots:
     void onOutputMuteChanged();
     void onMixerOnlyStateChanged();
     void onLinkIOStateChanged();
+    void onSettingsActionActivated();
     void onPanelHideAnimationFinished();
     void setWindowTopmost();
     void setWindowNotTopmost();
@@ -31,6 +32,7 @@ private slots:
 private:
     QSystemTrayIcon *trayIcon;
     QQmlApplicationEngine* engine;
+    QQmlApplicationEngine* settingsEngine;
     QWindow* panelWindow;
     bool isPanelVisible;
     QSettings settings;

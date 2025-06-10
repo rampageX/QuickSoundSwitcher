@@ -21,6 +21,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QWidget(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , engine(nullptr)
+    , settingsEngine(new QQmlApplicationEngine)
     , panelWindow(nullptr)
     , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
@@ -39,6 +40,8 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
             QSystemTrayIcon::NoIcon
             );
     }
+
+
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -73,11 +76,6 @@ void QuickSoundSwitcher::createQMLEngine()
     }
 
     engine = new QQmlApplicationEngine(this);
-
-    // Register the singleton bridge
-    qmlRegisterSingletonType<SoundPanelBridge>("Odizinne.QuickSoundSwitcher", 1, 0, "SoundPanelBridge",
-                                               &SoundPanelBridge::create);
-
     engine->loadFromModule("Odizinne.QuickSoundSwitcher", "SoundPanel");
 
     if (!engine->rootObjects().isEmpty()) {
@@ -95,7 +93,6 @@ void QuickSoundSwitcher::createQMLEngine()
         }
     }
 
-    // Connect to singleton bridge for tray updates
     if (SoundPanelBridge::instance()) {
         connect(SoundPanelBridge::instance(), &SoundPanelBridge::shouldUpdateTray,
                 this, &QuickSoundSwitcher::onOutputMuteChanged);
@@ -126,6 +123,9 @@ void QuickSoundSwitcher::createTrayIcon()
 
     QMenu *trayMenu = new QMenu(this);
 
+    QAction *settingsaction = new QAction(tr("Settings"), this);
+    connect(settingsaction, &QAction::triggered, this, &QuickSoundSwitcher::onSettingsActionActivated);
+
     QAction *mixerOnly = new QAction(tr("Use volume mixer only"), this);
     mixerOnly->setCheckable(true);
     mixerOnly->setChecked(settings.value("mixerOnly", false).toBool());
@@ -144,6 +144,7 @@ void QuickSoundSwitcher::createTrayIcon()
     QAction *exitAction = new QAction(tr("Exit"), this);
     connect(exitAction, &QAction::triggered, this, &QApplication::quit);
 
+    trayMenu->addAction(settingsaction);
     trayMenu->addAction(startupAction);
     trayMenu->addSeparator();
     trayMenu->addAction(mixerOnly);
@@ -161,6 +162,12 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
     if (reason == QSystemTrayIcon::Trigger) {
         togglePanel();
     }
+}
+
+void QuickSoundSwitcher::onSettingsActionActivated()
+{
+    if (isPanelVisible) hidePanel();
+    settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()
