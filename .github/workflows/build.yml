@@ -30,6 +30,7 @@ jobs:
           version: ${{ env.QT_VERSION }}
           add-tools-to-path: true
           cache: true
+          modules: "qtmultimedia"
 
       - name: Generate and Build with CMake
         shell: pwsh
