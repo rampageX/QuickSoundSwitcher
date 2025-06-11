@@ -49,6 +49,7 @@ qt_add_executable(QuickSoundSwitcher WIN32 MACOSX_BUNDLE
 set(QML_FILES
     qml/SoundPanel.qml
     qml/SettingsWindow.qml
+    qml/KeepAlive.qml
 )
 
 set(QML_SINGLETONS

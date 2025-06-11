@@ -30,6 +30,7 @@ private:
     QSystemTrayIcon *trayIcon;
     QQmlApplicationEngine* engine;
     QQmlApplicationEngine* settingsEngine;
+    QQmlApplicationEngine* keepAliveEngine;
     QWindow* panelWindow;
     QWindow* settingsWindow;
     bool isPanelVisible;
