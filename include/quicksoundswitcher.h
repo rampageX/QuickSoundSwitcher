@@ -23,8 +23,6 @@ private slots:
     void onOutputMuteChanged();
     void onSettingsActionActivated();
     void onPanelHideAnimationFinished();
-    void setWindowTopmost();
-    void setWindowNotTopmost();
 
 private:
     QSystemTrayIcon *trayIcon;

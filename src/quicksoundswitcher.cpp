@@ -56,22 +56,6 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     instance = nullptr;
 }
 
-void QuickSoundSwitcher::setWindowTopmost()
-{
-    if (panelWindow) {
-        HWND hWnd = reinterpret_cast<HWND>(panelWindow->winId());
-        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-    }
-}
-
-void QuickSoundSwitcher::setWindowNotTopmost()
-{
-    if (panelWindow) {
-        HWND hWnd = reinterpret_cast<HWND>(panelWindow->winId());
-        SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-    }
-}
-
 void QuickSoundSwitcher::createQMLEngine()
 {
     if (engine) {
@@ -88,10 +72,6 @@ void QuickSoundSwitcher::createQMLEngine()
 
             connect(panelWindow, SIGNAL(hideAnimationFinished()),
                     this, SLOT(onPanelHideAnimationFinished()));
-            connect(panelWindow, SIGNAL(showAnimationFinished()),
-                    this, SLOT(setWindowTopmost()));
-            connect(panelWindow, SIGNAL(hideAnimationStarted()),
-                    this, SLOT(setWindowNotTopmost()));
         }
     }
 
