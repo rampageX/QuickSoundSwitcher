@@ -9,7 +9,7 @@ ApplicationWindow {
     width: 380
     height: mainLayout.implicitHeight
     visible: false
-    flags: Qt.FramelessWindowHint
+    flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
     Material.theme: Material.System
     property bool isAnimatingIn: false
