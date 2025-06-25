@@ -12,6 +12,7 @@ ApplicationWindow {
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
     Material.theme: Material.System
+    Material.accent: palette.accent
     property bool isAnimatingIn: false
     property bool isAnimatingOut: false
     property int margin: 12
@@ -32,8 +33,8 @@ ApplicationWindow {
         id: showAnimation
         target: panel
         property: "y"
-        duration: 250
-        easing.type: Easing.OutQuad
+        duration: 210
+        easing.type: Easing.OutCubic
         onFinished: {
             panel.isAnimatingIn = false
             mainLayout.opacity = 1
@@ -45,8 +46,8 @@ ApplicationWindow {
         id: hideAnimation
         target: panel
         property: "y"
-        duration: 250
-        easing.type: Easing.InQuad
+        duration: 210
+        easing.type: Easing.InCubic
         onFinished: {
             panel.visible = false
             panel.isAnimatingOut = false
@@ -60,7 +61,7 @@ ApplicationWindow {
         }
 
         isAnimatingIn = true
-        mainLayout.opacity = 0
+        //mainLayout.opacity = 0
 
         const screenWidth = Screen.width
         const screenHeight = Screen.height
@@ -169,8 +170,8 @@ ApplicationWindow {
             color: "transparent"
             radius: Material.MediumScale
             border.width: 1
-            border.color: Material.accent
-            opacity: 0.5
+            border.color: Material.theme === Material.Dark ? "#E3E3E3" : "#1C1C1C"
+            opacity: 0.2
         }
     }
 
@@ -179,7 +180,7 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.margins: 15
         spacing: 15
-        opacity: 0
+        //opacity: 0
         Behavior on opacity {
             NumberAnimation {
                 duration: 300
