@@ -47,6 +47,7 @@ public slots:
     void setApplicationMute(const QString& appId, bool mute);
     void startAudioLevelMonitoring();
     void stopAudioLevelMonitoring();
+    void initializeCache();
 
 signals:
     void playbackDevicesReady(const QList<AudioDevice>& devices);

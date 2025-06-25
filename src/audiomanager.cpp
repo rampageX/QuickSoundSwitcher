@@ -689,12 +689,23 @@ void AudioManager::initialize() {
         QObject::connect(g_worker, &AudioWorker::recordingMuteChanged,
                          [](bool muted) { g_cachedRecordingMute = muted; });
 
-        // Initialize cache with current values
-        g_cachedPlaybackVolume = getVolumeImpl(eRender);
-        g_cachedRecordingVolume = getVolumeImpl(eCapture);
-        g_cachedPlaybackMute = getMuteImpl(eRender);
-        g_cachedRecordingMute = getMuteImpl(eCapture);
+        // Initialize cache asynchronously on worker thread
+        QMetaObject::invokeMethod(g_worker, "initializeCache", Qt::QueuedConnection);
     }
+}
+
+void AudioWorker::initializeCache() {
+    // Initialize cache with current values (runs on worker thread)
+    int playbackVol = getVolumeImpl(eRender);
+    int recordingVol = getVolumeImpl(eCapture);
+    bool playbackMute = getMuteImpl(eRender);
+    bool recordingMute = getMuteImpl(eCapture);
+
+    // Emit signals to update cache
+    emit playbackVolumeChanged(playbackVol);
+    emit recordingVolumeChanged(recordingVol);
+    emit playbackMuteChanged(playbackMute);
+    emit recordingMuteChanged(recordingMute);
 }
 
 void AudioManager::cleanup() {
