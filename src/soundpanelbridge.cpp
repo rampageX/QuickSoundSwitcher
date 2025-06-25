@@ -58,13 +58,9 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
 
         connect(AudioManager::getWorker(), &AudioWorker::defaultEndpointChanged,
                 this, [this](bool success) {
-                    if (success) {
-                        // Refresh volume and mute state after device change using cached values
-                        setPlaybackVolume(AudioManager::getPlaybackVolume());
-                        setRecordingVolume(AudioManager::getRecordingVolume());
-                        setPlaybackMuted(AudioManager::getPlaybackMute());
-                        setRecordingMuted(AudioManager::getRecordingMute());
-                    }
+                    // The volume/mute signals will be emitted separately by the worker
+                    // so we don't need to do anything here
+                    Q_UNUSED(success)
                 });
     }
 }

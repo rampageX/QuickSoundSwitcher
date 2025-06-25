@@ -624,6 +624,21 @@ void AudioWorker::setRecordingMute(bool mute) {
 
 void AudioWorker::setDefaultEndpoint(const QString &deviceId) {
     bool success = setDefaultEndpointImpl(deviceId);
+
+    if (success) {
+        // After successfully changing device, read the new device's volume and mute state
+        int newPlaybackVolume = getVolumeImpl(eRender);
+        int newRecordingVolume = getVolumeImpl(eCapture);
+        bool newPlaybackMute = getMuteImpl(eRender);
+        bool newRecordingMute = getMuteImpl(eCapture);
+
+        // Emit the updated values so the cache and UI get updated
+        emit playbackVolumeChanged(newPlaybackVolume);
+        emit recordingVolumeChanged(newRecordingVolume);
+        emit playbackMuteChanged(newPlaybackMute);
+        emit recordingMuteChanged(newRecordingMute);
+    }
+
     emit defaultEndpointChanged(success);
 }
 
