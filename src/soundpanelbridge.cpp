@@ -11,8 +11,62 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     : QObject(parent)
     , settings("Odizinne", "QuickSoundSwitcher")
     , systemSoundsMuted(false)
+    , m_playbackDevicesReady(false)
+    , m_recordingDevicesReady(false)
+    , m_applicationsReady(false)
+    , m_currentPanelMode(0)
 {
     m_instance = this;
+
+    // Connect to audio worker signals for async operations
+    if (AudioManager::getWorker()) {
+        connect(AudioManager::getWorker(), &AudioWorker::playbackDevicesReady,
+                this, [this](const QList<AudioDevice>& devices) {
+                    playbackDevices = devices;
+                    emit playbackDevicesChanged(convertDevicesToVariant(devices));
+                    m_playbackDevicesReady = true;
+                    checkDataInitializationComplete();
+                });
+
+        connect(AudioManager::getWorker(), &AudioWorker::recordingDevicesReady,
+                this, [this](const QList<AudioDevice>& devices) {
+                    recordingDevices = devices;
+                    emit recordingDevicesChanged(convertDevicesToVariant(devices));
+                    m_recordingDevicesReady = true;
+                    checkDataInitializationComplete();
+                });
+
+        connect(AudioManager::getWorker(), &AudioWorker::applicationsReady,
+                this, [this](const QList<Application>& apps) {
+                    applications = apps;
+                    emit applicationsChanged(convertApplicationsToVariant(apps));
+                    m_applicationsReady = true;
+                    checkDataInitializationComplete();
+                });
+
+        connect(AudioManager::getWorker(), &AudioWorker::playbackVolumeChanged,
+                this, &SoundPanelBridge::setPlaybackVolume);
+
+        connect(AudioManager::getWorker(), &AudioWorker::recordingVolumeChanged,
+                this, &SoundPanelBridge::setRecordingVolume);
+
+        connect(AudioManager::getWorker(), &AudioWorker::playbackMuteChanged,
+                this, &SoundPanelBridge::setPlaybackMuted);
+
+        connect(AudioManager::getWorker(), &AudioWorker::recordingMuteChanged,
+                this, &SoundPanelBridge::setRecordingMuted);
+
+        connect(AudioManager::getWorker(), &AudioWorker::defaultEndpointChanged,
+                this, [this](bool success) {
+                    if (success) {
+                        // Refresh volume and mute state after device change using cached values
+                        setPlaybackVolume(AudioManager::getPlaybackVolume());
+                        setRecordingVolume(AudioManager::getRecordingVolume());
+                        setPlaybackMuted(AudioManager::getPlaybackMute());
+                        setRecordingMuted(AudioManager::getRecordingMute());
+                    }
+                });
+    }
 }
 
 SoundPanelBridge::~SoundPanelBridge()
@@ -108,17 +162,36 @@ int SoundPanelBridge::panelMode() const
 void SoundPanelBridge::initializeData()
 {
     int mode = panelMode();
+    m_currentPanelMode = mode;
+
+    // Reset ready flags
+    m_playbackDevicesReady = false;
+    m_recordingDevicesReady = false;
+    m_applicationsReady = false;
+
     if (mode == 0 || mode == 2) {  // devices + mixer OR devices only
         populatePlaybackDevices();
         populateRecordingDevices();
+
+        // Set initial values from cached state (non-blocking)
         setPlaybackVolume(AudioManager::getPlaybackVolume());
         setRecordingVolume(AudioManager::getRecordingVolume());
         setPlaybackMuted(AudioManager::getPlaybackMute());
         setRecordingMuted(AudioManager::getRecordingMute());
+    } else {
+        // If we don't need devices, mark them as ready
+        m_playbackDevicesReady = true;
+        m_recordingDevicesReady = true;
     }
+
     if (mode == 0 || mode == 1) {  // devices + mixer OR mixer only
         populateApplications();
+    } else {
+        // If we don't need applications, mark as ready
+        m_applicationsReady = true;
     }
+
+    checkDataInitializationComplete();
 }
 
 void SoundPanelBridge::refreshData()
@@ -128,22 +201,17 @@ void SoundPanelBridge::refreshData()
 
 void SoundPanelBridge::populatePlaybackDevices()
 {
-    playbackDevices.clear();
-    AudioManager::enumeratePlaybackDevices(playbackDevices);
-    emit playbackDevicesChanged(convertDevicesToVariant(playbackDevices));
+    AudioManager::enumeratePlaybackDevicesAsync();
 }
 
 void SoundPanelBridge::populateRecordingDevices()
 {
-    recordingDevices.clear();
-    AudioManager::enumerateRecordingDevices(recordingDevices);
-    emit recordingDevicesChanged(convertDevicesToVariant(recordingDevices));
+    AudioManager::enumerateRecordingDevicesAsync();
 }
 
 void SoundPanelBridge::populateApplications()
 {
-    applications = AudioManager::enumerateAudioApplications();
-    emit applicationsChanged(convertApplicationsToVariant(applications));
+    AudioManager::enumerateApplicationsAsync();
 }
 
 QVariantList SoundPanelBridge::convertDevicesToVariant(const QList<AudioDevice>& devices)
@@ -270,28 +338,28 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
 
 void SoundPanelBridge::onPlaybackVolumeChanged(int volume)
 {
-    AudioManager::setPlaybackVolume(volume);
+    AudioManager::setPlaybackVolumeAsync(volume);
+    // Use cached getter (non-blocking)
     if (AudioManager::getPlaybackMute()) {
-        AudioManager::setPlaybackMute(false);
-        setPlaybackMuted(false);
+        AudioManager::setPlaybackMuteAsync(false);
+        // Don't call setPlaybackMuted(false) here - let the signal handle it
     }
-    setPlaybackVolume(volume);
+    // Remove this line: setPlaybackVolume(volume);
     emit shouldUpdateTray();
 }
 
 void SoundPanelBridge::onRecordingVolumeChanged(int volume)
 {
-    AudioManager::setRecordingVolume(volume);
-    setRecordingVolume(volume);
+    AudioManager::setRecordingVolumeAsync(volume);
+    // Remove this line: setRecordingVolume(volume);
 }
 
 void SoundPanelBridge::onPlaybackDeviceChanged(const QString &deviceName)
 {
     for (const AudioDevice& device : playbackDevices) {
         if (device.shortName == deviceName || device.name == deviceName) {
-            AudioManager::setDefaultEndpoint(device.id);
-            setPlaybackVolume(AudioManager::getPlaybackVolume());
-            setPlaybackMuted(AudioManager::getPlaybackMute());
+            AudioManager::setDefaultEndpointAsync(device.id);
+            // Values will be updated via signals when the operation completes
             break;
         }
     }
@@ -301,9 +369,8 @@ void SoundPanelBridge::onRecordingDeviceChanged(const QString &deviceName)
 {
     for (const AudioDevice& device : recordingDevices) {
         if (device.shortName == deviceName || device.name == deviceName) {
-            AudioManager::setDefaultEndpoint(device.id);
-            setRecordingVolume(AudioManager::getRecordingVolume());
-            setRecordingMuted(AudioManager::getRecordingMute());
+            AudioManager::setDefaultEndpointAsync(device.id);
+            // Values will be updated via signals when the operation completes
             break;
         }
     }
@@ -311,17 +378,19 @@ void SoundPanelBridge::onRecordingDeviceChanged(const QString &deviceName)
 
 void SoundPanelBridge::onOutputMuteButtonClicked()
 {
+    // Use cached getter (non-blocking)
     bool isMuted = AudioManager::getPlaybackMute();
-    AudioManager::setPlaybackMute(!isMuted);
-    setPlaybackMuted(!isMuted);
+    AudioManager::setPlaybackMuteAsync(!isMuted);
+    // Remove this line: setPlaybackMuted(!isMuted);
     emit shouldUpdateTray();
 }
 
 void SoundPanelBridge::onInputMuteButtonClicked()
 {
+    // Use cached getter (non-blocking)
     bool isMuted = AudioManager::getRecordingMute();
-    AudioManager::setRecordingMute(!isMuted);
-    setRecordingMuted(!isMuted);
+    AudioManager::setRecordingMuteAsync(!isMuted);
+    // Remove this line: setRecordingMuted(!isMuted);
 }
 
 void SoundPanelBridge::onOutputSliderReleased()
@@ -335,7 +404,7 @@ void SoundPanelBridge::onApplicationVolumeSliderValueChanged(QString appID, int 
 {
     QStringList appIDs = appID.split(";");
     for (const QString& id : appIDs) {
-        AudioManager::setApplicationVolume(id, volume);
+        AudioManager::setApplicationVolumeAsync(id, volume);
     }
 }
 
@@ -347,7 +416,7 @@ void SoundPanelBridge::onApplicationMuteButtonClicked(QString appID, bool state)
 
     QStringList appIDs = appID.split(";");
     for (const QString& id : appIDs) {
-        AudioManager::setApplicationMute(id, state);
+        AudioManager::setApplicationMuteAsync(id, state);
     }
 }
 
@@ -364,4 +433,17 @@ void SoundPanelBridge::updateMuteStateFromTray(bool muted)
 void SoundPanelBridge::refreshPanelModeState()
 {
     emit panelModeChanged();
+}
+
+void SoundPanelBridge::checkDataInitializationComplete()
+{
+    bool needsDevices = (m_currentPanelMode == 0 || m_currentPanelMode == 2);
+    bool needsApplications = (m_currentPanelMode == 0 || m_currentPanelMode == 1);
+
+    bool devicesReady = !needsDevices || (m_playbackDevicesReady && m_recordingDevicesReady);
+    bool applicationsReady = !needsApplications || m_applicationsReady;
+
+    if (devicesReady && applicationsReady) {
+        emit dataInitializationComplete();
+    }
 }

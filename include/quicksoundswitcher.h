@@ -23,6 +23,7 @@ private slots:
     void onOutputMuteChanged();
     void onSettingsActionActivated();
     void onPanelHideAnimationFinished();
+    void onDataInitializationComplete();
 
 private:
     QSystemTrayIcon *trayIcon;

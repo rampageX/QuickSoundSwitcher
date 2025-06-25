@@ -72,6 +72,7 @@ signals:
     void playbackDevicesChanged(const QVariantList& devices);
     void recordingDevicesChanged(const QVariantList& devices);
     void applicationsChanged(const QVariantList& applications);
+    void dataInitializationComplete();
 
 private:
     static SoundPanelBridge* m_instance;
@@ -90,6 +91,13 @@ private:
     void populateApplications();
     QVariantList convertDevicesToVariant(const QList<AudioDevice>& devices);
     QVariantList convertApplicationsToVariant(const QList<Application>& apps);
+
+    bool m_playbackDevicesReady = false;
+    bool m_recordingDevicesReady = false;
+    bool m_applicationsReady = false;
+    int m_currentPanelMode = 0;
+
+    void checkDataInitializationComplete();
 };
 
 #endif // SOUNDPANELBRIDGE_H

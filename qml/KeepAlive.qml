@@ -57,7 +57,7 @@ Item {
         source: "qrc:/sounds/empty.wav"
         audioOutput: AudioOutput {
             id: keepAliveAudioOutput
-            volume: 0.01
+            volume: 0.1
             device: mediaDevices.defaultAudioOutput
         }
         loops: MediaPlayer.Infinite

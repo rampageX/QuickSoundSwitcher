@@ -4,6 +4,10 @@
 #include <QString>
 #include <QList>
 #include <QIcon>
+#include <QObject>
+#include <QThread>
+#include <QMutex>
+#include <QTimer>
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
@@ -26,35 +30,69 @@ struct Application {
     QIcon icon;
 };
 
+class AudioWorker : public QObject
+{
+    Q_OBJECT
+
+public slots:
+    void enumeratePlaybackDevices();
+    void enumerateRecordingDevices();
+    void enumerateApplications();
+    void setPlaybackVolume(int volume);
+    void setRecordingVolume(int volume);
+    void setPlaybackMute(bool mute);
+    void setRecordingMute(bool mute);
+    void setDefaultEndpoint(const QString &deviceId);
+    void setApplicationVolume(const QString& appId, int volume);
+    void setApplicationMute(const QString& appId, bool mute);
+    void startAudioLevelMonitoring();
+    void stopAudioLevelMonitoring();
+
+signals:
+    void playbackDevicesReady(const QList<AudioDevice>& devices);
+    void recordingDevicesReady(const QList<AudioDevice>& devices);
+    void applicationsReady(const QList<Application>& applications);
+    void playbackVolumeChanged(int volume);
+    void recordingVolumeChanged(int volume);
+    void playbackMuteChanged(bool muted);
+    void recordingMuteChanged(bool muted);
+    void playbackAudioLevel(int level);
+    void recordingAudioLevel(int level);
+    void defaultEndpointChanged(bool success);
+    void applicationVolumeChanged(const QString& appId, bool success);
+    void applicationMuteChanged(const QString& appId, bool success);
+
+private:
+    QTimer* m_audioLevelTimer = nullptr;
+    void initializeTimer();
+};
+
 namespace AudioManager
 {
-    void initialize();
-    void cleanup();
+void initialize();
+void cleanup();
 
-    bool setDefaultEndpoint(const QString &deviceId);
+// Async methods
+void enumeratePlaybackDevicesAsync();
+void enumerateRecordingDevicesAsync();
+void enumerateApplicationsAsync();
+void setPlaybackVolumeAsync(int volume);
+void setRecordingVolumeAsync(int volume);
+void setPlaybackMuteAsync(bool mute);
+void setRecordingMuteAsync(bool mute);
+void setDefaultEndpointAsync(const QString &deviceId);
+void setApplicationVolumeAsync(const QString& appId, int volume);
+void setApplicationMuteAsync(const QString& appId, bool mute);
+void startAudioLevelMonitoring();
+void stopAudioLevelMonitoring();
 
-    void enumeratePlaybackDevices(QList<AudioDevice>& playbackDevices);
-    void enumerateRecordingDevices(QList<AudioDevice>& recordingDevices);
+// Cached values (non-blocking, always current)
+int getPlaybackVolume();
+int getRecordingVolume();
+bool getPlaybackMute();
+bool getRecordingMute();
 
-    void setPlaybackVolume(int volume);
-    int getPlaybackVolume();
-
-    void setRecordingVolume(int volume);
-    int getRecordingVolume();
-
-    void setPlaybackMute(bool mute);
-    bool getPlaybackMute();
-
-    void setRecordingMute(bool mute);
-    bool getRecordingMute();
-
-    int getPlaybackAudioLevel();
-    int getRecordingAudioLevel();
-
-    QList<Application> enumerateAudioApplications();
-    bool setApplicationVolume(const QString& appName, int volume);
-    bool setApplicationMute(const QString& appName, bool mute);
-    bool getApplicationMute(const QString &appId);
+AudioWorker* getWorker();
 }
 
 #endif // AUDIOMANAGER_H

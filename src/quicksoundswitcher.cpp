@@ -29,6 +29,15 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
 {
     AudioManager::initialize();
     instance = this;
+
+    // Connect to audio worker for tray icon updates
+    if (AudioManager::getWorker()) {
+        connect(AudioManager::getWorker(), &AudioWorker::playbackVolumeChanged,
+                this, &QuickSoundSwitcher::onOutputMuteChanged);
+        connect(AudioManager::getWorker(), &AudioWorker::playbackMuteChanged,
+                this, &QuickSoundSwitcher::onOutputMuteChanged);
+    }
+
     createTrayIcon();
     installKeyboardHook();
 
@@ -78,6 +87,10 @@ void QuickSoundSwitcher::createQMLEngine()
     if (SoundPanelBridge::instance()) {
         connect(SoundPanelBridge::instance(), &SoundPanelBridge::shouldUpdateTray,
                 this, &QuickSoundSwitcher::onOutputMuteChanged);
+
+        // Connect to data initialization complete signal
+        connect(SoundPanelBridge::instance(), &SoundPanelBridge::dataInitializationComplete,
+                this, &QuickSoundSwitcher::onDataInitializationComplete);
     }
 }
 
@@ -131,13 +144,12 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 void QuickSoundSwitcher::onSettingsActionActivated()
 {
     if (isPanelVisible) hidePanel();
-    //settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
-    //settingsWindow = qobject_cast<QWindow*>(settingsEngine->rootObjects().first());
     settingsWindow->setProperty("visible", true);
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()
 {
+    // Use the cached getters (now non-blocking)
     int volumeIcon;
     if (AudioManager::getPlaybackMute()) {
         volumeIcon = 0;
@@ -245,6 +257,7 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
 
 void QuickSoundSwitcher::adjustOutputVolume(bool up)
 {
+    // Use cached getter (non-blocking)
     int originalVolume = AudioManager::getPlaybackVolume();
     int newVolume;
     if (up) {
@@ -255,12 +268,15 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
 
     newVolume = qMax(0, qMin(100, newVolume));
 
-    AudioManager::setPlaybackVolume(newVolume);
+    // Use async for setting volume
+    AudioManager::setPlaybackVolumeAsync(newVolume);
 
+    // Use cached getter (non-blocking)
     if (AudioManager::getPlaybackMute()) {
-        AudioManager::setPlaybackMute(false);
+        AudioManager::setPlaybackMuteAsync(false);
     }
 
+    // Update tray icon immediately with new volume for responsiveness
     trayIcon->setIcon(QIcon(Utils::getIcon(1, newVolume, NULL)));
 
     if (SoundPanelBridge::instance()) {
@@ -270,11 +286,13 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
 
 void QuickSoundSwitcher::toggleMuteWithKey()
 {
+    // Use cached getters (non-blocking)
     bool currentMuted = AudioManager::getPlaybackMute();
     bool newMuted = !currentMuted;
     int volume = AudioManager::getPlaybackVolume();
 
-    AudioManager::setPlaybackMute(newMuted);
+    // Use async for setting mute
+    AudioManager::setPlaybackMuteAsync(newMuted);
 
     int volumeIcon;
     if (volume == 0 || newMuted) {
@@ -283,6 +301,7 @@ void QuickSoundSwitcher::toggleMuteWithKey()
         volumeIcon = volume;
     }
 
+    // Update tray icon immediately for responsiveness
     trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
 
     if (SoundPanelBridge::instance()) {
@@ -303,15 +322,22 @@ void QuickSoundSwitcher::showPanel()
 {
     if (!isPanelVisible) {
         createQMLEngine();
-        if (panelWindow) {
-            if (SoundPanelBridge::instance()) {
-                SoundPanelBridge::instance()->initializeData();
-            }
+        if (panelWindow && SoundPanelBridge::instance()) {
+            // Start loading data but don't show panel yet
+            SoundPanelBridge::instance()->initializeData();
 
-            QMetaObject::invokeMethod(panelWindow, "showPanel");
             isPanelVisible = true;
             installGlobalMouseHook();
+
+            // Panel will animate in when data is ready (handled by onDataInitializationComplete)
         }
+    }
+}
+
+void QuickSoundSwitcher::onDataInitializationComplete()
+{
+    if (panelWindow && isPanelVisible) {
+        QMetaObject::invokeMethod(panelWindow, "showPanel");
     }
 }
 

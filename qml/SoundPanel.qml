@@ -273,12 +273,13 @@ ApplicationWindow {
 
                     Slider {
                         id: outputSlider
-                        value: SoundPanelBridge.playbackVolume
+                        value: pressed ? value : SoundPanelBridge.playbackVolume  // Only bind when not pressed
                         from: 0
                         to: 100
                         stepSize: 1
                         Layout.fillWidth: true
                         Layout.preferredHeight: 40
+
                         onValueChanged: {
                             if (pressed) {
                                 SoundPanelBridge.onPlaybackVolumeChanged(value)
@@ -287,6 +288,8 @@ ApplicationWindow {
 
                         onPressedChanged: {
                             if (!pressed) {
+                                // Sync final value when released
+                                SoundPanelBridge.onPlaybackVolumeChanged(value)
                                 SoundPanelBridge.onOutputSliderReleased()
                             }
                         }
@@ -346,14 +349,24 @@ ApplicationWindow {
 
                     Slider {
                         id: inputSlider
-                        value: SoundPanelBridge.recordingVolume
+                        value: pressed ? value : SoundPanelBridge.recordingVolume  // Only bind when not pressed
                         from: 0
                         to: 100
                         stepSize: 1
                         Layout.fillWidth: true
                         Layout.preferredHeight: 40
+
                         onValueChanged: {
-                            SoundPanelBridge.onRecordingVolumeChanged(value)
+                            if (pressed) {
+                                SoundPanelBridge.onRecordingVolumeChanged(value)
+                            }
+                        }
+
+                        onPressedChanged: {
+                            if (!pressed) {
+                                // Sync final value when released
+                                SoundPanelBridge.onRecordingVolumeChanged(value)
+                            }
                         }
                     }
                 }
