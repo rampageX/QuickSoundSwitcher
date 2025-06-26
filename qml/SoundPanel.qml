@@ -158,6 +158,10 @@ ApplicationWindow {
         }
     }
 
+    SettingsWindow {
+        id: settingsWindow
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "#242424"
@@ -452,6 +456,10 @@ ApplicationWindow {
                     icon.width: 14
                     icon.height: 14
                     antialiasing: true
+                    onClicked: {
+                        settingsWindow.show()
+                        panel.hidePanel()
+                    }
                 }
             }
         }
