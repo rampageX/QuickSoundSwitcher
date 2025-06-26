@@ -27,6 +27,9 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     AudioManager::initialize();
     instance = this;
 
+    // Initialize QML engine once
+    initializeQMLEngine();
+
     // Connect to audio worker for tray icon updates
     if (AudioManager::getWorker()) {
         connect(AudioManager::getWorker(), &AudioWorker::playbackVolumeChanged,
@@ -58,10 +61,10 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     instance = nullptr;
 }
 
-void QuickSoundSwitcher::createQMLEngine()
+void QuickSoundSwitcher::initializeQMLEngine()
 {
     if (engine) {
-        destroyQMLEngine();
+        return; // Already initialized
     }
 
     engine = new QQmlApplicationEngine(this);
@@ -302,9 +305,8 @@ void QuickSoundSwitcher::togglePanel()
 
 void QuickSoundSwitcher::showPanel()
 {
-    if (!isPanelVisible) {
-        createQMLEngine();
-        if (panelWindow && SoundPanelBridge::instance()) {
+    if (!isPanelVisible && panelWindow) {
+        if (SoundPanelBridge::instance()) {
             // Start loading data but don't show panel yet
             SoundPanelBridge::instance()->initializeData();
 
@@ -334,8 +336,5 @@ void QuickSoundSwitcher::onPanelHideAnimationFinished()
 {
     isPanelVisible = false;
     uninstallGlobalMouseHook();
-
-    QTimer::singleShot(50, this, [this]() {
-        destroyQMLEngine();
-    });
+    // No need to destroy engine anymore - just keep it hidden
 }

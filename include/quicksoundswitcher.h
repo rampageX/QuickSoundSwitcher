@@ -31,7 +31,7 @@ private:
     bool isPanelVisible;
     QSettings settings;
 
-    void createQMLEngine();
+    void initializeQMLEngine();
     void destroyQMLEngine();
     void createTrayIcon();
     void togglePanel();
