@@ -45,6 +45,7 @@ public:
     Q_INVOKABLE void refreshData();
     Q_INVOKABLE bool getShortcutState();
     Q_INVOKABLE void setStartupShortcut(bool enabled);
+    Q_INVOKABLE bool getDarkMode();
 
 public slots:
     void onPlaybackVolumeChanged(int volume);

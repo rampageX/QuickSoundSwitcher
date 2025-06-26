@@ -16,6 +16,7 @@ ApplicationWindow {
     property int margin: 12
     property int taskbarHeight: 52
     property bool dataLoaded: false
+    property bool darkMode: SoundPanelBridge.getDarkMode()
 
     signal hideAnimationFinished()
     signal showAnimationFinished()
@@ -54,6 +55,7 @@ ApplicationWindow {
         }
 
         isAnimatingIn = true
+        panel.darkMode = SoundPanelBridge.getDarkMode()
         panel.visible = true
 
         // Don't start animation yet - wait for data to load
@@ -191,7 +193,7 @@ ApplicationWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: "#242424"
+        color: panel.darkMode ? "#242424" : "#f2f2f2"
         radius: 12
         Rectangle {
             anchors.fill: parent
@@ -382,13 +384,11 @@ ApplicationWindow {
         Rectangle {
             Layout.preferredHeight: 1
             Layout.fillWidth: true
-            color: "#E3E3E3"
-            opacity: 0.2
+            color: panel.darkMode ? "#E3E3E3" : "#A0A0A0"
+            opacity: 0.15
             visible: UserSettings.panelMode === 0
             Layout.rightMargin: -14
             Layout.leftMargin: -14
-            //Layout.topMargin: 5
-            //Layout.bottomMargin: 5
         }
 
         ColumnLayout {
@@ -419,7 +419,7 @@ ApplicationWindow {
                         ToolTip.delay: 1000
                         opacity: highlighted ? 0.3 : 1
                         icon.source: applicationUnitLayout.model.name === "Windows system sounds" ? "qrc:/icons/system_light.png" : applicationUnitLayout.model.icon
-                        icon.color: applicationUnitLayout.model.name === "Windows system sounds" ? undefined : "transparent"
+                        icon.color: applicationUnitLayout.model.name === "Windows system sounds" ? (panel.darkMode ? "white" : "black") : "transparent"
                         onClicked: {
                             applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted
                             SoundPanelBridge.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted)
@@ -443,7 +443,7 @@ ApplicationWindow {
         }
 
         Rectangle {
-            color: "#1c1c1c"
+            color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
             Layout.fillWidth: true
             Layout.fillHeight: true
             bottomLeftRadius: 12
@@ -452,6 +452,16 @@ ApplicationWindow {
             Layout.leftMargin: -14
             Layout.rightMargin: -14
             Layout.bottomMargin: -14
+
+            Rectangle {
+                height: 1
+                color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
+                opacity: 0.15
+                visible: UserSettings.panelMode === 0
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.left: parent.left
+            }
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 10
