@@ -7,7 +7,7 @@ import Odizinne.QuickSoundSwitcher
 ApplicationWindow {
     id: panel
     width: 360
-    height: mainLayout.implicitHeight
+    height: 200  // Initial height
     visible: false
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
@@ -15,17 +15,11 @@ ApplicationWindow {
     property bool isAnimatingOut: false
     property int margin: 12
     property int taskbarHeight: 52
+    property bool dataLoaded: false
 
     signal hideAnimationFinished()
     signal showAnimationFinished()
     signal hideAnimationStarted()
-
-
-    Component.onCompleted: {
-        if (UserSettings.panelMode === 2) {
-            panel.height = mainLayout.implicitHeight + 30
-        }
-    }
 
     PropertyAnimation {
         id: showAnimation
@@ -49,6 +43,7 @@ ApplicationWindow {
         onFinished: {
             panel.visible = false
             panel.isAnimatingOut = false
+            panel.dataLoaded = false  // Reset for next time
             panel.hideAnimationFinished()
         }
     }
@@ -59,21 +54,33 @@ ApplicationWindow {
         }
 
         isAnimatingIn = true
+        panel.visible = true
 
+        // Don't start animation yet - wait for data to load
+        // Just position the panel off-screen for now
+        positionPanelOffScreen()
+    }
+
+    function positionPanelOffScreen() {
         const screenWidth = Screen.width
         const screenHeight = Screen.height
-
         const panelX = screenWidth - width - margin
         const startY = screenHeight - taskbarHeight
-        const targetY = screenHeight - height - margin - taskbarHeight
 
         const safeX = Math.min(Math.max(panelX, 0), screenWidth - width)
-        const safeTargetY = Math.min(Math.max(targetY, 0), screenHeight - height - taskbarHeight)
 
         panel.x = safeX
         panel.y = startY
+    }
 
-        panel.visible = true
+    function startAnimation() {
+        if (!isAnimatingIn) return
+
+        const screenWidth = Screen.width
+        const screenHeight = Screen.height
+        const startY = screenHeight - taskbarHeight
+        const targetY = screenHeight - height - margin - taskbarHeight
+        const safeTargetY = Math.min(Math.max(targetY, 0), screenHeight - height - taskbarHeight)
 
         showAnimation.from = startY
         showAnimation.to = safeTargetY
@@ -129,6 +136,8 @@ ApplicationWindow {
             if (defaultIndex !== -1) {
                 outputDeviceComboBox.currentIndex = defaultIndex
             }
+
+            updatePanelHeight()
         }
 
         function onRecordingDevicesChanged(devices) {
@@ -148,6 +157,8 @@ ApplicationWindow {
             if (defaultIndex !== -1) {
                 inputDeviceComboBox.currentIndex = defaultIndex
             }
+
+            updatePanelHeight()
         }
 
         function onApplicationsChanged(apps) {
@@ -155,7 +166,21 @@ ApplicationWindow {
             for (let i = 0; i < apps.length; i++) {
                 appModel.append(apps[i])
             }
+
+            updatePanelHeight()
         }
+
+        function onDataInitializationComplete() {
+            // All data loaded - now start the animation
+            dataLoaded = true
+            Qt.callLater(startAnimation)
+        }
+    }
+
+    function updatePanelHeight() {
+        Qt.callLater(function() {
+            panel.height = mainLayout.implicitHeight + 30
+        })
     }
 
     KeepAlive {}
@@ -182,7 +207,8 @@ ApplicationWindow {
         id: mainLayout
         anchors.fill: parent
         anchors.margins: 15
-        spacing: 5
+        spacing: 10
+        opacity: 0
         Behavior on opacity {
             NumberAnimation {
                 duration: 300
@@ -192,15 +218,12 @@ ApplicationWindow {
 
         ColumnLayout {
             id: deviceLayout
-            objectName: "gridLayout"
             spacing: 5
             visible: UserSettings.panelMode === 0 || UserSettings.panelMode === 2
-            //Layout.bottomMargin: UserSettings.panelMode === 2 ? -10 : 0
 
             ComboBox {
                 id: outputDeviceComboBox
                 Layout.preferredHeight: 40
-                Layout.columnSpan: 3
                 Layout.fillWidth: true
                 flat: true
                 font.pixelSize: 15
@@ -261,10 +284,9 @@ ApplicationWindow {
 
                 Slider {
                     id: outputSlider
-                    value: pressed ? value : SoundPanelBridge.playbackVolume  // Only bind when not pressed
+                    value: pressed ? value : SoundPanelBridge.playbackVolume
                     from: 0
                     to: 100
-                    //stepSize: 1
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
 
@@ -276,7 +298,6 @@ ApplicationWindow {
 
                     onPressedChanged: {
                         if (!pressed) {
-                            // Sync final value when released
                             SoundPanelBridge.onPlaybackVolumeChanged(value)
                             SoundPanelBridge.onOutputSliderReleased()
                         }
@@ -289,7 +310,6 @@ ApplicationWindow {
                 Layout.topMargin: -2
                 Layout.preferredHeight: 40
                 Layout.fillWidth: true
-                Layout.columnSpan: 3
                 flat: true
                 font.pixelSize: 15
                 model: recordingDeviceModel
@@ -338,10 +358,9 @@ ApplicationWindow {
 
                 Slider {
                     id: inputSlider
-                    value: pressed ? value : SoundPanelBridge.recordingVolume  // Only bind when not pressed
+                    value: pressed ? value : SoundPanelBridge.recordingVolume
                     from: 0
                     to: 100
-                    //stepSize: 1
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
 
@@ -353,7 +372,6 @@ ApplicationWindow {
 
                     onPressedChanged: {
                         if (!pressed) {
-                            // Sync final value when released
                             SoundPanelBridge.onRecordingVolumeChanged(value)
                         }
                     }
@@ -369,28 +387,18 @@ ApplicationWindow {
             visible: UserSettings.panelMode === 0
             Layout.rightMargin: -14
             Layout.leftMargin: -14
-            Layout.topMargin: 5
-            Layout.bottomMargin: 5
+            //Layout.topMargin: 5
+            //Layout.bottomMargin: 5
         }
 
         ColumnLayout {
             id: appLayout
-            objectName: "gridLayout"
             spacing: 5
             visible: UserSettings.panelMode === 0 || UserSettings.panelMode === 1
 
             Repeater {
                 id: appRepeater
                 model: appModel
-                onCountChanged: {
-                    if (UserSettings.panelMode === 1) {
-                        panel.height = mainLayout.implicitHeight + (45 * appRepeater.count) + 30
-                    } else if (UserSettings.panelMode === 0) {
-                        panel.height = mainLayout.implicitHeight + ((45 * appRepeater.count) - 5) + 30
-                    } else {
-                        panel.height = mainLayout.implicitHeight + 30
-                    }
-                }
                 delegate: RowLayout {
                     id: applicationUnitLayout
                     Layout.preferredHeight: 40
@@ -467,4 +475,3 @@ ApplicationWindow {
         }
     }
 }
-

@@ -1,4 +1,4 @@
-import QtQuick.Controls.Material
+import QtQuick.Controls.FluentWinUI3
 import QtQuick.Layouts
 import QtQuick
 import Odizinne.QuickSoundSwitcher
@@ -13,9 +13,7 @@ ApplicationWindow {
     maximumWidth: 450
     visible: false
     transientParent: null
-    Material.theme: Material.System
     title: qsTr("QuickSoundSwitcher - Settings")
-    color: Material.theme === Material.Dark ? "#1C1C1C" : "#E3E3E3"
 
     property int rowHeight: 35
 
@@ -80,7 +78,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
             }
 
-            CheckBox {
+            Switch {
                 checked: SoundPanelBridge.getShortcutState()
                 onClicked: SoundPanelBridge.setStartupShortcut(checked)
             }
