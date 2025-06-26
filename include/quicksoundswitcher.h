@@ -21,25 +21,18 @@ public:
 
 private slots:
     void onOutputMuteChanged();
-    void onSettingsActionActivated();
     void onPanelHideAnimationFinished();
     void onDataInitializationComplete();
 
 private:
     QSystemTrayIcon *trayIcon;
     QQmlApplicationEngine* engine;
-    QQmlApplicationEngine* settingsEngine;
-    QQmlApplicationEngine* keepAliveEngine;
     QWindow* panelWindow;
-    QWindow* settingsWindow;
     bool isPanelVisible;
     QSettings settings;
 
     void createQMLEngine();
     void destroyQMLEngine();
-    void createSettingsEngine();
-    void showSettingsWindow();
-    void hideSettingsWindow();
     void createTrayIcon();
     void togglePanel();
     void showPanel();

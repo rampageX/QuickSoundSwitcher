@@ -20,10 +20,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QWidget(parent)
     , trayIcon(new QSystemTrayIcon(this))
     , engine(nullptr)
-    , settingsEngine(new QQmlApplicationEngine(this))
-    , keepAliveEngine(new QQmlApplicationEngine(this))
     , panelWindow(nullptr)
-    , settingsWindow(nullptr)
     , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
 {
@@ -50,10 +47,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
             QSystemTrayIcon::NoIcon
             );
     }
-
-    settingsEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "SettingsWindow");
-    settingsWindow = qobject_cast<QWindow*>(settingsEngine->rootObjects().first());
-    keepAliveEngine->loadFromModule("Odizinne.QuickSoundSwitcher", "KeepAlive");
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -118,14 +111,9 @@ void QuickSoundSwitcher::createTrayIcon()
 
     QMenu *trayMenu = new QMenu(this);
 
-    QAction *settingsaction = new QAction(tr("Settings"), this);
-    connect(settingsaction, &QAction::triggered, this, &QuickSoundSwitcher::onSettingsActionActivated);
-
     QAction *exitAction = new QAction(tr("Exit"), this);
     connect(exitAction, &QAction::triggered, this, &QApplication::quit);
 
-    trayMenu->addAction(settingsaction);
-    trayMenu->addSeparator();
     trayMenu->addAction(exitAction);
 
     trayIcon->setContextMenu(trayMenu);
@@ -139,12 +127,6 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
     if (reason == QSystemTrayIcon::Trigger) {
         togglePanel();
     }
-}
-
-void QuickSoundSwitcher::onSettingsActionActivated()
-{
-    if (isPanelVisible) hidePanel();
-    settingsWindow->setProperty("visible", true);
 }
 
 void QuickSoundSwitcher::onOutputMuteChanged()

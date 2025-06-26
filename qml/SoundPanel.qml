@@ -158,6 +158,8 @@ ApplicationWindow {
         }
     }
 
+    KeepAlive {}
+
     SettingsWindow {
         id: settingsWindow
     }
