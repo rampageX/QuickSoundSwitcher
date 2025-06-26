@@ -58,9 +58,8 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
 
         connect(AudioManager::getWorker(), &AudioWorker::defaultEndpointChanged,
                 this, [this](bool success) {
-                    // The volume/mute signals will be emitted separately by the worker
-                    // so we don't need to do anything here
-                    Q_UNUSED(success)
+                    m_deviceChangeInProgress = false;
+                    emit deviceChangeInProgressChanged();
                 });
     }
 }
@@ -350,28 +349,6 @@ void SoundPanelBridge::onRecordingVolumeChanged(int volume)
     // Remove this line: setRecordingVolume(volume);
 }
 
-void SoundPanelBridge::onPlaybackDeviceChanged(const QString &deviceName)
-{
-    for (const AudioDevice& device : playbackDevices) {
-        if (device.shortName == deviceName || device.name == deviceName) {
-            AudioManager::setDefaultEndpointAsync(device.id);
-            // Values will be updated via signals when the operation completes
-            break;
-        }
-    }
-}
-
-void SoundPanelBridge::onRecordingDeviceChanged(const QString &deviceName)
-{
-    for (const AudioDevice& device : recordingDevices) {
-        if (device.shortName == deviceName || device.name == deviceName) {
-            AudioManager::setDefaultEndpointAsync(device.id);
-            // Values will be updated via signals when the operation completes
-            break;
-        }
-    }
-}
-
 void SoundPanelBridge::onOutputMuteButtonClicked()
 {
     // Use cached getter (non-blocking)
@@ -447,4 +424,35 @@ void SoundPanelBridge::checkDataInitializationComplete()
 bool SoundPanelBridge::getDarkMode() {
     QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", QSettings::NativeFormat);
     return settings.value("AppsUseLightTheme", 1).toInt() == 0;
+}
+
+bool SoundPanelBridge::deviceChangeInProgress() const
+{
+    return m_deviceChangeInProgress;
+}
+
+void SoundPanelBridge::onPlaybackDeviceChanged(const QString &deviceName)
+{
+    m_deviceChangeInProgress = true;
+    emit deviceChangeInProgressChanged();
+
+    for (const AudioDevice& device : playbackDevices) {
+        if (device.shortName == deviceName || device.name == deviceName) {
+            AudioManager::setDefaultEndpointAsync(device.id);
+            break;
+        }
+    }
+}
+
+void SoundPanelBridge::onRecordingDeviceChanged(const QString &deviceName)
+{
+    m_deviceChangeInProgress = true;
+    emit deviceChangeInProgressChanged();
+
+    for (const AudioDevice& device : recordingDevices) {
+        if (device.shortName == deviceName || device.name == deviceName) {
+            AudioManager::setDefaultEndpointAsync(device.id);
+            break;
+        }
+    }
 }

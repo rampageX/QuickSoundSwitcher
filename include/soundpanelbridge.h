@@ -18,6 +18,7 @@ class SoundPanelBridge : public QObject
     Q_PROPERTY(bool playbackMuted READ playbackMuted WRITE setPlaybackMuted NOTIFY playbackMutedChanged)
     Q_PROPERTY(bool recordingMuted READ recordingMuted WRITE setRecordingMuted NOTIFY recordingMutedChanged)
     Q_PROPERTY(int panelMode READ panelMode NOTIFY panelModeChanged)
+    Q_PROPERTY(bool deviceChangeInProgress READ deviceChangeInProgress NOTIFY deviceChangeInProgressChanged)
 
 public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
@@ -46,6 +47,7 @@ public:
     Q_INVOKABLE bool getShortcutState();
     Q_INVOKABLE void setStartupShortcut(bool enabled);
     Q_INVOKABLE bool getDarkMode();
+    bool deviceChangeInProgress() const;
 
 public slots:
     void onPlaybackVolumeChanged(int volume);
@@ -74,6 +76,7 @@ signals:
     void recordingDevicesChanged(const QVariantList& devices);
     void applicationsChanged(const QVariantList& applications);
     void dataInitializationComplete();
+    void deviceChangeInProgressChanged();
 
 private:
     static SoundPanelBridge* m_instance;
@@ -99,6 +102,7 @@ private:
     int m_currentPanelMode = 0;
 
     void checkDataInitializationComplete();
+    bool m_deviceChangeInProgress = false;
 };
 
 #endif // SOUNDPANELBRIDGE_H
