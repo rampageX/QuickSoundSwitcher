@@ -98,6 +98,7 @@ private:
 
     bool m_playbackDevicesReady = false;
     bool m_recordingDevicesReady = false;
+    bool m_currentPropertiesReady = false;
     bool m_applicationsReady = false;
     int m_currentPanelMode = 0;
 

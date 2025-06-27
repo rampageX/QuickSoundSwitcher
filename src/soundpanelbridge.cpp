@@ -61,6 +61,16 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     m_deviceChangeInProgress = false;
                     emit deviceChangeInProgressChanged();
                 });
+
+        connect(AudioManager::getWorker(), &AudioWorker::currentPropertiesReady,
+                this, [this](int playbackVol, int recordingVol, bool playbackMute, bool recordingMute) {
+                    setPlaybackVolume(playbackVol);
+                    setRecordingVolume(recordingVol);
+                    setPlaybackMuted(playbackMute);
+                    setRecordingMuted(recordingMute);
+                    m_currentPropertiesReady = true;
+                    checkDataInitializationComplete();
+                });
     }
 }
 
@@ -154,27 +164,22 @@ int SoundPanelBridge::panelMode() const
     return settings.value("panelMode", 0).toInt();
 }
 
-void SoundPanelBridge::initializeData()
-{
+void SoundPanelBridge::initializeData() {
     int mode = panelMode();
     m_currentPanelMode = mode;
 
-    // Reset ready flags
     m_playbackDevicesReady = false;
     m_recordingDevicesReady = false;
     m_applicationsReady = false;
+    m_currentPropertiesReady = false;
 
     if (mode == 0 || mode == 2) {  // devices + mixer OR devices only
         populatePlaybackDevices();
         populateRecordingDevices();
 
-        // Set initial values from cached state (non-blocking)
-        setPlaybackVolume(AudioManager::getPlaybackVolume());
-        setRecordingVolume(AudioManager::getRecordingVolume());
-        setPlaybackMuted(AudioManager::getPlaybackMute());
-        setRecordingMuted(AudioManager::getRecordingMute());
+        AudioManager::queryCurrentPropertiesAsync();
     } else {
-        // If we don't need devices, mark them as ready
+        //AudioManager::queryCurrentPropertiesAsync();
         m_playbackDevicesReady = true;
         m_recordingDevicesReady = true;
     }
@@ -182,7 +187,6 @@ void SoundPanelBridge::initializeData()
     if (mode == 0 || mode == 1) {  // devices + mixer OR mixer only
         populateApplications();
     } else {
-        // If we don't need applications, mark as ready
         m_applicationsReady = true;
     }
 
@@ -408,15 +412,15 @@ void SoundPanelBridge::refreshPanelModeState()
     emit panelModeChanged();
 }
 
-void SoundPanelBridge::checkDataInitializationComplete()
-{
+void SoundPanelBridge::checkDataInitializationComplete() {
     bool needsDevices = (m_currentPanelMode == 0 || m_currentPanelMode == 2);
     bool needsApplications = (m_currentPanelMode == 0 || m_currentPanelMode == 1);
 
     bool devicesReady = !needsDevices || (m_playbackDevicesReady && m_recordingDevicesReady);
     bool applicationsReady = !needsApplications || m_applicationsReady;
+    bool propertiesReady = m_currentPropertiesReady;  // Add this check
 
-    if (devicesReady && applicationsReady) {
+    if (devicesReady && applicationsReady && propertiesReady) {
         emit dataInitializationComplete();
     }
 }

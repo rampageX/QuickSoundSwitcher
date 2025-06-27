@@ -633,6 +633,23 @@ void AudioWorker::setDefaultEndpoint(const QString &deviceId) {
     emit defaultEndpointChanged(success);
 }
 
+void AudioWorker::queryCurrentProperties() {
+    // Query fresh values async
+    int playbackVol = getVolumeImpl(eRender);
+    int recordingVol = getVolumeImpl(eCapture);
+    bool playbackMute = getMuteImpl(eRender);
+    bool recordingMute = getMuteImpl(eCapture);
+
+    // Update cache
+    emit playbackVolumeChanged(playbackVol);
+    emit recordingVolumeChanged(recordingVol);
+    emit playbackMuteChanged(playbackMute);
+    emit recordingMuteChanged(recordingMute);
+
+    // Signal that fresh properties are ready
+    emit currentPropertiesReady(playbackVol, recordingVol, playbackMute, recordingMute);
+}
+
 void AudioWorker::setApplicationVolume(const QString& appId, int volume) {
     bool success = setApplicationVolumeImpl(appId, volume);
     emit applicationVolumeChanged(appId, success);
@@ -825,4 +842,10 @@ bool AudioManager::getPlaybackMute() {
 
 bool AudioManager::getRecordingMute() {
     return g_cachedRecordingMute;
+}
+
+void AudioManager::queryCurrentPropertiesAsync() {
+    if (g_worker) {
+        QMetaObject::invokeMethod(g_worker, "queryCurrentProperties", Qt::QueuedConnection);
+    }
 }

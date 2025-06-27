@@ -49,6 +49,7 @@ public slots:
     void stopAudioLevelMonitoring();
     void initializeCache();
     void updateDeviceProperties();
+    void queryCurrentProperties();
 
 signals:
     void playbackDevicesReady(const QList<AudioDevice>& devices);
@@ -63,6 +64,7 @@ signals:
     void defaultEndpointChanged(bool success);
     void applicationVolumeChanged(const QString& appId, bool success);
     void applicationMuteChanged(const QString& appId, bool success);
+    void currentPropertiesReady(int playbackVol, int recordingVol, bool playbackMute, bool recordingMute);
 
 private:
     QTimer* m_audioLevelTimer = nullptr;
@@ -87,6 +89,7 @@ void setApplicationVolumeAsync(const QString& appId, int volume);
 void setApplicationMuteAsync(const QString& appId, bool mute);
 void startAudioLevelMonitoring();
 void stopAudioLevelMonitoring();
+void queryCurrentPropertiesAsync();
 
 // Cached values (non-blocking, always current)
 int getPlaybackVolume();
