@@ -689,13 +689,8 @@ void AudioWorker::updateDeviceProperties() {
 void AudioManager::initialize() {
     QMutexLocker locker(&g_initMutex);
 
-    //HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    //if (FAILED(hr)) {
-    //    throw std::runtime_error("Failed to initialize COM library");
-    //}
-
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    if (FAILED(hr)) {
         throw std::runtime_error("Failed to initialize COM library");
     }
 
