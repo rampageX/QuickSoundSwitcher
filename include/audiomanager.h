@@ -48,6 +48,7 @@ public slots:
     void startAudioLevelMonitoring();
     void stopAudioLevelMonitoring();
     void initializeCache();
+    void updateDeviceProperties();
 
 signals:
     void playbackDevicesReady(const QList<AudioDevice>& devices);

@@ -626,17 +626,8 @@ void AudioWorker::setDefaultEndpoint(const QString &deviceId) {
     bool success = setDefaultEndpointImpl(deviceId);
 
     if (success) {
-        // After successfully changing device, read the new device's volume and mute state
-        int newPlaybackVolume = getVolumeImpl(eRender);
-        int newRecordingVolume = getVolumeImpl(eCapture);
-        bool newPlaybackMute = getMuteImpl(eRender);
-        bool newRecordingMute = getMuteImpl(eCapture);
-
-        // Emit the updated values so the cache and UI get updated
-        emit playbackVolumeChanged(newPlaybackVolume);
-        emit recordingVolumeChanged(newRecordingVolume);
-        emit playbackMuteChanged(newPlaybackMute);
-        emit recordingMuteChanged(newRecordingMute);
+        // Queue the property queries for next event loop iteration (non-blocking)
+        QMetaObject::invokeMethod(this, "updateDeviceProperties", Qt::QueuedConnection);
     }
 
     emit defaultEndpointChanged(success);
@@ -663,6 +654,19 @@ void AudioWorker::stopAudioLevelMonitoring() {
     if (m_audioLevelTimer) {
         m_audioLevelTimer->stop();
     }
+}
+
+void AudioWorker::updateDeviceProperties() {
+    // Now these run async on next event loop - no UI blocking
+    int newPlaybackVolume = getVolumeImpl(eRender);
+    int newRecordingVolume = getVolumeImpl(eCapture);
+    bool newPlaybackMute = getMuteImpl(eRender);
+    bool newRecordingMute = getMuteImpl(eCapture);
+
+    emit playbackVolumeChanged(newPlaybackVolume);
+    emit recordingVolumeChanged(newRecordingVolume);
+    emit playbackMuteChanged(newPlaybackMute);
+    emit recordingMuteChanged(newRecordingMute);
 }
 
 void AudioManager::initialize() {
