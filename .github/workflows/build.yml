@@ -1,8 +1,6 @@
 name: Build
-
 on:
   push:
-
   pull_request:
     branches:
       - main
@@ -18,6 +16,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get version from CMake
+        id: cmake_version
+        uses: DarwinInnovation/cmake-project-version-action@v1.0
+
       - name: Set up Visual Studio shell
         uses: egor-tensin/vs-shell@v2
         with:
@@ -28,9 +30,10 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
+          arch: 'win64_msvc2022_64'
+          modules: 'qtmultimedia'
           add-tools-to-path: true
           cache: true
-          modules: "qtmultimedia"
 
       - name: Generate and Build with CMake
         shell: pwsh
@@ -38,7 +41,7 @@ jobs:
           mkdir -p build
           cd build
           cmake ..
-          cmake --build . --config Release 
+          cmake --build . --config Release
           cmake --install . --config Release
 
       - name: Rename release folder
@@ -56,39 +59,24 @@ jobs:
       - name: Zip binaries folder
         shell: pwsh
         run: |
-          $zipFile = "build/QuickSoundSwitcher_msvc_64.zip"
+          $zipFile = "build/QuickSoundSwitcher_win64_msvc2022.zip"
           $folder = "build/QuickSoundSwitcher"
           Compress-Archive -Path $folder -DestinationPath $zipFile
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: QuickSoundSwitcher_msvc_64
-          path: build/QuickSoundSwitcher_msvc_64.zip
-
-      - name: Get latest Git tag and bump version
-        id: get_version
-        shell: bash
-        run: |
-          git fetch --tags  # Fetch all tags
-          # Get the latest tag sorted by version, falling back to "0" if none exist
-          TAG=$(git tag --sort=-v:refname | head -n 1 || echo "0")
-          # Extract the numeric part of the tag
-          VERSION_NUM=$(echo $TAG | grep -o '[0-9]\+' | tail -n 1)
-          # Increment the version number
-          NEXT_VERSION=$((VERSION_NUM + 1))
-          echo "New version: $NEXT_VERSION"
-          echo "TagVersion=${NEXT_VERSION}" >> $GITHUB_ENV
+          name: QuickSoundSwitcher_win64_msvc2022
+          path: build/QuickSoundSwitcher_win64_msvc2022.zip
 
       - name: Update .iss version
         shell: pwsh
         run: |
-          # Use the version number calculated in the previous step
           $content = Get-Content tools/installer.iss
-          $new = $content -replace '(?<=#define AppVersion ")[^"]+', "${{ env.TagVersion }}"
+          $new = $content -replace '(?<=#define AppVersion ")[^"]+', "${{ steps.cmake_version.outputs.version }}"
           Set-Content tools/installer.iss -Value $new
 
-      - name: Create Installer 
+      - name: Create Installer
         shell: pwsh
         run: |
           $env:Path += ";${env:ProgramFiles(x86)}\Inno Setup 6"
