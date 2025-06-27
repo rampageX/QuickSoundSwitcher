@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.FluentWinUI3
@@ -139,7 +141,7 @@ ApplicationWindow {
                 outputDeviceComboBox.currentIndex = defaultIndex
             }
 
-            updatePanelHeight()
+            panel.updatePanelHeight()
         }
 
         function onRecordingDevicesChanged(devices) {
@@ -160,7 +162,7 @@ ApplicationWindow {
                 inputDeviceComboBox.currentIndex = defaultIndex
             }
 
-            updatePanelHeight()
+            panel.updatePanelHeight()
         }
 
         function onApplicationsChanged(apps) {
@@ -169,13 +171,13 @@ ApplicationWindow {
                 appModel.append(apps[i])
             }
 
-            updatePanelHeight()
+            panel.updatePanelHeight()
         }
 
         function onDataInitializationComplete() {
             // All data loaded - now start the animation
-            dataLoaded = true
-            Qt.callLater(startAnimation)
+            panel.dataLoaded = true
+            Qt.callLater(panel.startAnimation)
         }
     }
 
@@ -424,6 +426,10 @@ ApplicationWindow {
                             applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted
                             SoundPanelBridge.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted)
                         }
+
+                        Component.onCompleted: {
+                            palette.accent = palette.button
+                        }
                     }
 
                     Slider {
@@ -462,6 +468,7 @@ ApplicationWindow {
                 anchors.right: parent.right
                 anchors.left: parent.left
             }
+
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 10
