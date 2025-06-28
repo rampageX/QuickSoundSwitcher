@@ -16,7 +16,7 @@ ApplicationWindow {
     property bool isAnimatingIn: false
     property bool isAnimatingOut: false
     property int margin: 12
-    property int taskbarHeight: 52
+    property int taskbarHeight: UserSettings.taskbarOffset
     property bool dataLoaded: false
     property bool darkMode: SoundPanelBridge.getDarkMode()
     property string taskbarPos: SoundPanelBridge.taskbarPosition
@@ -74,14 +74,6 @@ ApplicationWindow {
                 panelX = screenWidth - width - margin
                 startY = -height
                 break
-            case "left":
-                panelX = -width
-                startY = screenHeight - height - margin - taskbarHeight
-                break
-            case "right":
-                panelX = screenWidth
-                startY = screenHeight - height - margin - taskbarHeight
-                break
             case "bottom":
             default:
                 panelX = screenWidth - width - margin
@@ -107,20 +99,6 @@ ApplicationWindow {
                 startPos = panel.y
                 targetPos = margin + taskbarHeight
                 showAnimation.property = "y"
-                showAnimation.from = startPos
-                showAnimation.to = targetPos
-                break
-            case "left":
-                startPos = panel.x
-                targetPos = margin + taskbarHeight
-                showAnimation.property = "x"
-                showAnimation.from = startPos
-                showAnimation.to = targetPos
-                break
-            case "right":
-                startPos = panel.x
-                targetPos = screenWidth - width - margin - taskbarHeight
-                showAnimation.property = "x"
                 showAnimation.from = startPos
                 showAnimation.to = targetPos
                 break
@@ -152,20 +130,6 @@ ApplicationWindow {
                 startPos = panel.y
                 targetPos = -height
                 hideAnimation.property = "y"
-                hideAnimation.from = startPos
-                hideAnimation.to = targetPos
-                break
-            case "left":
-                startPos = panel.x
-                targetPos = -width
-                hideAnimation.property = "x"
-                hideAnimation.from = startPos
-                hideAnimation.to = targetPos
-                break
-            case "right":
-                startPos = panel.x
-                targetPos = Screen.width
-                hideAnimation.property = "x"
                 hideAnimation.from = startPos
                 hideAnimation.to = targetPos
                 break
@@ -443,7 +407,6 @@ ApplicationWindow {
                     to: 100
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
-
                     onValueChanged: {
                         if (pressed) {
                             SoundPanelBridge.onRecordingVolumeChanged(value)

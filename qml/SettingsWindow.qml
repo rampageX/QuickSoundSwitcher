@@ -83,5 +83,39 @@ ApplicationWindow {
                 onClicked: SoundPanelBridge.setStartupShortcut(checked)
             }
         }
+
+        RowLayout {
+            spacing: 15
+            Layout.preferredHeight: root.rowHeight
+            Label {
+                text: qsTr("Panel position")
+                Layout.fillWidth: true
+            }
+            ComboBox {
+                Layout.preferredHeight: 35
+                Layout.preferredWidth: 150
+                model: [qsTr("Top"), qsTr("Bottom")]
+                currentIndex: UserSettings.panelPosition
+                onActivated: UserSettings.panelPosition = currentIndex
+            }
+        }
+
+        RowLayout {
+            spacing: 15
+            Layout.preferredHeight: root.rowHeight
+            Label {
+                text: qsTr("Taskbar offset")
+                Layout.fillWidth: true
+            }
+            SpinBox {
+                Layout.preferredHeight: 35
+                Layout.preferredWidth: 150
+                from: 0
+                to: 100
+                editable: true
+                value: UserSettings.taskbarOffset
+                onValueModified: UserSettings.taskbarOffset = value
+            }
+        }
     }
 }

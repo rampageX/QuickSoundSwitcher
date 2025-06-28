@@ -468,23 +468,12 @@ QString SoundPanelBridge::taskbarPosition() const
 
 QString SoundPanelBridge::detectTaskbarPosition() const
 {
-    QScreen* screen = QGuiApplication::primaryScreen();
-    if (!screen) {
-        return "bottom";
-    }
-
-    QRect full = screen->geometry();
-    QRect available = screen->availableGeometry();
-
-    if (available.top() > full.top()) {
+    switch (settings.value("panelPosition", 1).toInt()) {
+    case 0:
         return "top";
-    } else if (available.left() > full.left()) {
-        return "left";
-    } else if (available.right() < full.right()) {
-        return "right";
-    } else if (available.bottom() < full.bottom()) {
+    case 1:
+        return "bottom";
+    default:
         return "bottom";
     }
-
-    return "bottom";
 }
