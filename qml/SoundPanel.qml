@@ -19,6 +19,7 @@ ApplicationWindow {
     property int taskbarHeight: 52
     property bool dataLoaded: false
     property bool darkMode: SoundPanelBridge.getDarkMode()
+    property string taskbarPos: SoundPanelBridge.taskbarPosition
 
     signal hideAnimationFinished()
     signal showAnimationFinished()
@@ -27,7 +28,6 @@ ApplicationWindow {
     PropertyAnimation {
         id: showAnimation
         target: panel
-        property: "y"
         duration: 210
         easing.type: Easing.OutCubic
         onFinished: {
@@ -40,7 +40,6 @@ ApplicationWindow {
     PropertyAnimation {
         id: hideAnimation
         target: panel
-        property: "y"
         duration: 210
         easing.type: Easing.InCubic
         onFinished: {
@@ -58,18 +57,37 @@ ApplicationWindow {
 
         isAnimatingIn = true
         panel.darkMode = SoundPanelBridge.getDarkMode()
+        panel.taskbarPos = SoundPanelBridge.taskbarPosition
         panel.visible = true
 
-        // Don't start animation yet - wait for data to load
-        // Just position the panel off-screen for now
+        // Position the panel off-screen based on taskbar position
         positionPanelOffScreen()
     }
 
     function positionPanelOffScreen() {
         const screenWidth = Screen.width
         const screenHeight = Screen.height
-        const panelX = screenWidth - width - margin
-        const startY = screenHeight - taskbarHeight
+        let panelX, startY
+
+        switch (panel.taskbarPos) {
+            case "top":
+                panelX = screenWidth - width - margin
+                startY = -height
+                break
+            case "left":
+                panelX = -width
+                startY = screenHeight - height - margin - taskbarHeight
+                break
+            case "right":
+                panelX = screenWidth
+                startY = screenHeight - height - margin - taskbarHeight
+                break
+            case "bottom":
+            default:
+                panelX = screenWidth - width - margin
+                startY = screenHeight
+                break
+        }
 
         const safeX = Math.min(Math.max(panelX, 0), screenWidth - width)
 
@@ -82,12 +100,40 @@ ApplicationWindow {
 
         const screenWidth = Screen.width
         const screenHeight = Screen.height
-        const startY = screenHeight - taskbarHeight
-        const targetY = screenHeight - height - margin - taskbarHeight
-        const safeTargetY = Math.min(Math.max(targetY, 0), screenHeight - height - taskbarHeight)
+        let startPos, targetPos
 
-        showAnimation.from = startY
-        showAnimation.to = safeTargetY
+        switch (panel.taskbarPos) {
+            case "top":
+                startPos = panel.y
+                targetPos = margin + taskbarHeight
+                showAnimation.property = "y"
+                showAnimation.from = startPos
+                showAnimation.to = targetPos
+                break
+            case "left":
+                startPos = panel.x
+                targetPos = margin + taskbarHeight
+                showAnimation.property = "x"
+                showAnimation.from = startPos
+                showAnimation.to = targetPos
+                break
+            case "right":
+                startPos = panel.x
+                targetPos = screenWidth - width - margin - taskbarHeight
+                showAnimation.property = "x"
+                showAnimation.from = startPos
+                showAnimation.to = targetPos
+                break
+            case "bottom":
+            default:
+                startPos = panel.y
+                targetPos = screenHeight - height - margin - taskbarHeight
+                showAnimation.property = "y"
+                showAnimation.from = startPos
+                showAnimation.to = targetPos
+                break
+        }
+
         showAnimation.start()
     }
 
@@ -99,14 +145,44 @@ ApplicationWindow {
         isAnimatingOut = true
         panel.hideAnimationStarted()
 
-        const startY = panel.y
-        const targetY = Screen.height - taskbarHeight
+        let startPos, targetPos
 
-        hideAnimation.from = startY
-        hideAnimation.to = targetY
+        switch (panel.taskbarPos) {
+            case "top":
+                startPos = panel.y
+                targetPos = -height
+                hideAnimation.property = "y"
+                hideAnimation.from = startPos
+                hideAnimation.to = targetPos
+                break
+            case "left":
+                startPos = panel.x
+                targetPos = -width
+                hideAnimation.property = "x"
+                hideAnimation.from = startPos
+                hideAnimation.to = targetPos
+                break
+            case "right":
+                startPos = panel.x
+                targetPos = Screen.width
+                hideAnimation.property = "x"
+                hideAnimation.from = startPos
+                hideAnimation.to = targetPos
+                break
+            case "bottom":
+            default:
+                startPos = panel.y
+                targetPos = Screen.height
+                hideAnimation.property = "y"
+                hideAnimation.from = startPos
+                hideAnimation.to = targetPos
+                break
+        }
 
         hideAnimation.start()
     }
+
+    // ... rest of the QML code remains the same ...
 
     ListModel {
         id: playbackDeviceModel

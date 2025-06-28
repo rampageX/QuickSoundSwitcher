@@ -6,6 +6,8 @@
 #include <QQmlEngine>
 #include <QtQml/qqmlregistration.h>
 #include <QSettings>
+#include <QScreen>
+#include <QGuiApplication>
 
 class SoundPanelBridge : public QObject
 {
@@ -19,6 +21,7 @@ class SoundPanelBridge : public QObject
     Q_PROPERTY(bool recordingMuted READ recordingMuted WRITE setRecordingMuted NOTIFY recordingMutedChanged)
     Q_PROPERTY(int panelMode READ panelMode NOTIFY panelModeChanged)
     Q_PROPERTY(bool deviceChangeInProgress READ deviceChangeInProgress NOTIFY deviceChangeInProgressChanged)
+    Q_PROPERTY(QString taskbarPosition READ taskbarPosition NOTIFY taskbarPositionChanged)
 
 public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
@@ -41,6 +44,7 @@ public:
     void setRecordingMuted(bool muted);
 
     int panelMode() const;
+    QString taskbarPosition() const;
 
     Q_INVOKABLE void initializeData();
     Q_INVOKABLE void refreshData();
@@ -77,6 +81,7 @@ signals:
     void applicationsChanged(const QVariantList& applications);
     void dataInitializationComplete();
     void deviceChangeInProgressChanged();
+    void taskbarPositionChanged();
 
 private:
     static SoundPanelBridge* m_instance;
@@ -104,6 +109,8 @@ private:
 
     void checkDataInitializationComplete();
     bool m_deviceChangeInProgress = false;
+
+    QString detectTaskbarPosition() const;
 };
 
 #endif // SOUNDPANELBRIDGE_H

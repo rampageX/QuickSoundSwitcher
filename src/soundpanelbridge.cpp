@@ -460,3 +460,31 @@ void SoundPanelBridge::onRecordingDeviceChanged(const QString &deviceName)
         }
     }
 }
+
+QString SoundPanelBridge::taskbarPosition() const
+{
+    return detectTaskbarPosition();
+}
+
+QString SoundPanelBridge::detectTaskbarPosition() const
+{
+    QScreen* screen = QGuiApplication::primaryScreen();
+    if (!screen) {
+        return "bottom";
+    }
+
+    QRect full = screen->geometry();
+    QRect available = screen->availableGeometry();
+
+    if (available.top() > full.top()) {
+        return "top";
+    } else if (available.left() > full.left()) {
+        return "left";
+    } else if (available.right() < full.right()) {
+        return "right";
+    } else if (available.bottom() < full.bottom()) {
+        return "bottom";
+    }
+
+    return "bottom";
+}
