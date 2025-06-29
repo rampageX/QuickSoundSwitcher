@@ -117,5 +117,19 @@ ApplicationWindow {
                 onValueModified: UserSettings.taskbarOffset = value
             }
         }
+
+        RowLayout {
+            spacing: 15
+            Layout.preferredHeight: root.rowHeight
+            Label {
+                text: qsTr("Use short device names")
+                Layout.fillWidth: true
+            }
+
+            Switch {
+                checked: UserSettings.deviceShortName
+                onClicked: UserSettings.deviceShortName = checked
+            }
+        }
     }
 }

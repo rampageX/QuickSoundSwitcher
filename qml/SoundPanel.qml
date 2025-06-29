@@ -272,7 +272,7 @@ ApplicationWindow {
                 flat: true
                 font.pixelSize: 15
                 model: playbackDeviceModel
-                textRole: "shortName"
+                textRole: UserSettings.deviceShortName ? "shortName" : "name"
                 contentItem: Label {
                     text: outputDeviceComboBox.currentText
                     elide: Text.ElideRight
@@ -357,7 +357,7 @@ ApplicationWindow {
                 flat: true
                 font.pixelSize: 15
                 model: recordingDeviceModel
-                textRole: "shortName"
+                textRole: UserSettings.deviceShortName ? "shortName" : "name"
                 contentItem: Label {
                     text: inputDeviceComboBox.currentText
                     elide: Text.ElideRight
