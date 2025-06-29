@@ -8,9 +8,9 @@ ApplicationWindow {
     height: mainLyt.implicitHeight + 30
     minimumHeight: mainLyt.implicitHeight + 30
     maximumHeight: mainLyt.implicitHeight + 30
-    width: 450
-    minimumWidth: 450
-    maximumWidth: 450
+    width: 550
+    minimumWidth: 550
+    maximumWidth: 550
     visible: false
     transientParent: null
     title: qsTr("QuickSoundSwitcher - Settings")
@@ -129,6 +129,22 @@ ApplicationWindow {
             Switch {
                 checked: UserSettings.deviceShortName
                 onClicked: UserSettings.deviceShortName = checked
+            }
+        }
+
+        RowLayout {
+            spacing: 15
+            Layout.preferredHeight: root.rowHeight
+            Label {
+                text: qsTr("Volume value display mode")
+                Layout.fillWidth: true
+            }
+            ComboBox {
+                Layout.preferredHeight: 35
+                Layout.preferredWidth: 150
+                model: [qsTr("Slider tooltip"), qsTr("Label"), qsTr("Hidden")]
+                currentIndex: UserSettings.volumeValueMode
+                onActivated: UserSettings.volumeValueMode = currentIndex
             }
         }
     }

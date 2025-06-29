@@ -334,6 +334,12 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
 
+                    ToolTip {
+                        parent: outputSlider.handle
+                        visible: outputSlider.pressed && (UserSettings.volumeValueMode === 0)
+                        text: Math.round(outputSlider.value).toString()
+                    }
+
                     onValueChanged: {
                         if (pressed) {
                             SoundPanelBridge.onPlaybackVolumeChanged(value)
@@ -346,6 +352,13 @@ ApplicationWindow {
                             SoundPanelBridge.onOutputSliderReleased()
                         }
                     }
+                }
+
+                Label {
+                    text: Math.round(outputSlider.value).toString()
+                    Layout.rightMargin: 5
+                    font.pixelSize: 14
+                    visible: UserSettings.volumeValueMode === 1
                 }
             }
 
@@ -407,6 +420,13 @@ ApplicationWindow {
                     to: 100
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
+
+                    ToolTip {
+                        parent: inputSlider.handle
+                        visible: inputSlider.pressed && (UserSettings.volumeValueMode === 0)
+                        text: Math.round(inputSlider.value).toString()
+                    }
+
                     onValueChanged: {
                         if (pressed) {
                             SoundPanelBridge.onRecordingVolumeChanged(value)
@@ -418,6 +438,13 @@ ApplicationWindow {
                             SoundPanelBridge.onRecordingVolumeChanged(value)
                         }
                     }
+                }
+
+                Label {
+                    text: Math.round(inputSlider.value).toString()
+                    Layout.rightMargin: 5
+                    font.pixelSize: 14
+                    visible: UserSettings.volumeValueMode === 1
                 }
             }
         }
@@ -479,9 +506,23 @@ ApplicationWindow {
                         value: applicationUnitLayout.model.volume
                         Layout.fillWidth: true
                         Layout.preferredHeight: 40
+
+                        ToolTip {
+                            parent: volumeSlider.handle
+                            visible: volumeSlider.pressed && (UserSettings.volumeValueMode === 0)
+                            text: Math.round(volumeSlider.value).toString()
+                        }
+
                         onValueChanged: {
                             SoundPanelBridge.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
                         }
+                    }
+
+                    Label {
+                        text: Math.round(volumeSlider.value).toString()
+                        Layout.rightMargin: 5
+                        font.pixelSize: 14
+                        visible: UserSettings.volumeValueMode === 1
                     }
                 }
             }
