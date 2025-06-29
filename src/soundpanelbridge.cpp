@@ -180,7 +180,7 @@ void SoundPanelBridge::initializeData() {
 
         AudioManager::queryCurrentPropertiesAsync();
     } else {
-        //AudioManager::queryCurrentPropertiesAsync();
+        AudioManager::queryCurrentPropertiesAsync();
         m_playbackDevicesReady = true;
         m_recordingDevicesReady = true;
     }
