@@ -18,6 +18,32 @@ ApplicationWindow {
 
     property int rowHeight: 35
 
+    Popup {
+        anchors.centerIn: parent
+        width: mainPopupLyt.implicitWidth + 50
+        height: implicitHeight + 20
+        id: easterEggDialog
+        modal: true
+        ColumnLayout {
+            id: mainPopupLyt
+            spacing: 15
+            anchors.fill: parent
+
+            Label {
+                text: "You just lost the game"
+                font.bold: true
+                font.pixelSize: 18
+                Layout.alignment: Qt.AlignCenter
+            }
+
+            Button {
+                text: "Too bad"
+                onClicked: easterEggDialog.close()
+                Layout.alignment: Qt.AlignCenter
+            }
+        }
+    }
+
     RowLayout {
         anchors.fill: parent
         anchors.margins: 15
@@ -311,14 +337,33 @@ ApplicationWindow {
                     RowLayout {
                         spacing: 15
                         Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Application version")
-                            Layout.fillWidth: true
-                        }
 
-                        Label {
-                            text: SoundPanelBridge.getAppVersion()
-                            opacity: 0.5
+                        property int clickCount: 0
+
+                        MouseArea {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.rowHeight
+                            onClicked: {
+                                parent.clickCount++
+                                if (parent.clickCount >= 5) {
+                                    easterEggDialog.open()
+                                    parent.clickCount = 0
+                                }
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                spacing: 15
+
+                                Label {
+                                    text: qsTr("Application version")
+                                    Layout.fillWidth: true
+                                }
+                                Label {
+                                    text: SoundPanelBridge.getAppVersion()
+                                    opacity: 0.5
+                                }
+                            }
                         }
                     }
 
