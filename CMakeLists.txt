@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(QuickSoundSwitcher VERSION 1.0.1 LANGUAGES C CXX)
+project(QuickSoundSwitcher VERSION 1.1.0 LANGUAGES C CXX)
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation directory" FORCE)
 set(CMAKE_CXX_STANDARD 20)
@@ -46,6 +46,11 @@ qt_add_executable(QuickSoundSwitcher WIN32 MACOSX_BUNDLE
     resources/appicon.rc
 )
 
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+)
+
 set(QML_FILES
     qml/SoundPanel.qml
     qml/SettingsWindow.qml
@@ -73,6 +78,7 @@ endif()
 
 target_include_directories(QuickSoundSwitcher PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 target_link_libraries(QuickSoundSwitcher PRIVATE

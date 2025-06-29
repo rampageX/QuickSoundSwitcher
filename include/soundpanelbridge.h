@@ -51,6 +51,9 @@ public:
     Q_INVOKABLE bool getShortcutState();
     Q_INVOKABLE void setStartupShortcut(bool enabled);
     Q_INVOKABLE bool getDarkMode();
+    Q_INVOKABLE QString getAppVersion() const;
+    Q_INVOKABLE QString getQtVersion() const;
+
     bool deviceChangeInProgress() const;
 
 public slots:

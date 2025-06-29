@@ -4,6 +4,7 @@
 #include <QBuffer>
 #include <QPixmap>
 #include <algorithm>
+#include "version.h"
 
 SoundPanelBridge* SoundPanelBridge::m_instance = nullptr;
 
@@ -480,4 +481,14 @@ QString SoundPanelBridge::detectTaskbarPosition() const
     default:
         return "bottom";
     }
+}
+
+QString SoundPanelBridge::getAppVersion() const
+{
+    return APP_VERSION_STRING;
+}
+
+QString SoundPanelBridge::getQtVersion() const
+{
+    return QT_VERSION_STRING;
 }
