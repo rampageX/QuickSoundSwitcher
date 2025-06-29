@@ -94,7 +94,7 @@ ApplicationWindow {
             ComboBox {
                 Layout.preferredHeight: 35
                 Layout.preferredWidth: 150
-                model: [qsTr("Top"), qsTr("Bottom")]
+                model: [qsTr("Top"), qsTr("Bottom"), qsTr("Left"), qsTr("Right")]
                 currentIndex: UserSettings.panelPosition
                 onActivated: UserSettings.panelPosition = currentIndex
             }
@@ -115,6 +115,24 @@ ApplicationWindow {
                 editable: true
                 value: UserSettings.taskbarOffset
                 onValueModified: UserSettings.taskbarOffset = value
+            }
+        }
+
+        RowLayout {
+            spacing: 15
+            Layout.preferredHeight: root.rowHeight
+            Label {
+                text: qsTr("Panel margin")
+                Layout.fillWidth: true
+            }
+            SpinBox {
+                Layout.preferredHeight: 35
+                Layout.preferredWidth: 150
+                from: 0
+                to: 100
+                editable: true
+                value: UserSettings.panelMargin
+                onValueModified: UserSettings.panelMargin = value
             }
         }
 

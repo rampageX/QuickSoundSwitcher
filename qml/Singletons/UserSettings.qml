@@ -10,4 +10,5 @@ Settings {
     property int taskbarOffset: 52
     property bool deviceShortName: true
     property int volumeValueMode: 0
+    property int panelMargin: 12
 }

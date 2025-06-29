@@ -15,7 +15,7 @@ ApplicationWindow {
     color: "transparent"
     property bool isAnimatingIn: false
     property bool isAnimatingOut: false
-    property int margin: 12
+    property int margin: UserSettings.panelMargin
     property int taskbarHeight: UserSettings.taskbarOffset
     property bool dataLoaded: false
     property bool darkMode: SoundPanelBridge.getDarkMode()
@@ -65,51 +65,89 @@ ApplicationWindow {
     }
 
     function positionPanelOffScreen() {
-        const screenWidth = Screen.width
-        const screenHeight = Screen.height
-        let panelX, startY
+        const screenWidth = Qt.application.screens[0].width
+        const screenHeight = Qt.application.screens[0].height
+        let startX, startY
 
         switch (panel.taskbarPos) {
             case "top":
-                panelX = screenWidth - width - margin
+                startX = screenWidth - width - margin
                 startY = -height
                 break
             case "bottom":
+                startX = screenWidth - width - margin
+                startY = screenHeight
+                break
+            case "left":
+                startX = -width
+                startY = screenHeight - height - margin
+                break
+            case "right":
+                startX = screenWidth
+                startY = screenHeight - height - margin
+                break
             default:
-                panelX = screenWidth - width - margin
+                startX = screenWidth - width - margin
                 startY = screenHeight
                 break
         }
 
-        const safeX = Math.min(Math.max(panelX, 0), screenWidth - width)
-
-        panel.x = safeX
+        panel.x = startX
         panel.y = startY
     }
 
     function startAnimation() {
         if (!isAnimatingIn) return
 
-        const screenWidth = Screen.width
-        const screenHeight = Screen.height
-        let startPos, targetPos
+        const screenWidth = Qt.application.screens[0].width
+        const screenHeight = Qt.application.screens[0].height
+        let targetX, targetY
 
         switch (panel.taskbarPos) {
             case "top":
-                startPos = panel.y
-                targetPos = margin + taskbarHeight
+                targetX = screenWidth - width - margin
+                targetY = margin + taskbarHeight
                 showAnimation.property = "y"
-                showAnimation.from = startPos
-                showAnimation.to = targetPos
+                showAnimation.from = panel.y
+                showAnimation.to = targetY
                 break
             case "bottom":
-            default:
-                startPos = panel.y
-                targetPos = screenHeight - height - margin - taskbarHeight
+                targetX = screenWidth - width - margin
+                targetY = screenHeight - height - margin - taskbarHeight
                 showAnimation.property = "y"
-                showAnimation.from = startPos
-                showAnimation.to = targetPos
+                showAnimation.from = panel.y
+                showAnimation.to = targetY
                 break
+            case "left":
+                targetX = taskbarHeight
+                targetY = screenHeight - height - margin
+                showAnimation.property = "x"
+                showAnimation.from = panel.x
+                showAnimation.to = targetX
+                break
+            case "right":
+                targetX = screenWidth - width - taskbarHeight
+                targetY = screenHeight - height - margin
+                showAnimation.property = "x"
+                showAnimation.from = panel.x
+                showAnimation.to = targetX
+                break
+            default:
+                targetX = screenWidth - width - margin
+                targetY = screenHeight - height - margin - taskbarHeight
+                showAnimation.property = "y"
+                showAnimation.from = panel.y
+                showAnimation.to = targetY
+                break
+        }
+
+        // For left/right positioning, also set the Y coordinate immediately
+        if (panel.taskbarPos === "left" || panel.taskbarPos === "right") {
+            panel.y = targetY
+        }
+        // For top/bottom positioning, also set the X coordinate immediately
+        if (panel.taskbarPos === "top" || panel.taskbarPos === "bottom") {
+            panel.x = targetX
         }
 
         showAnimation.start()
@@ -123,30 +161,43 @@ ApplicationWindow {
         isAnimatingOut = true
         panel.hideAnimationStarted()
 
-        let startPos, targetPos
+        let targetPos
 
         switch (panel.taskbarPos) {
             case "top":
-                startPos = panel.y
                 targetPos = -height
                 hideAnimation.property = "y"
-                hideAnimation.from = startPos
+                hideAnimation.from = panel.y
                 hideAnimation.to = targetPos
                 break
             case "bottom":
-            default:
-                startPos = panel.y
-                targetPos = Screen.height
+                targetPos = Qt.application.screens[0].height
                 hideAnimation.property = "y"
-                hideAnimation.from = startPos
+                hideAnimation.from = panel.y
+                hideAnimation.to = targetPos
+                break
+            case "left":
+                targetPos = -width
+                hideAnimation.property = "x"
+                hideAnimation.from = panel.x
+                hideAnimation.to = targetPos
+                break
+            case "right":
+                targetPos = Qt.application.screens[0].width
+                hideAnimation.property = "x"
+                hideAnimation.from = panel.x
+                hideAnimation.to = targetPos
+                break
+            default:
+                targetPos = Qt.application.screens[0].height
+                hideAnimation.property = "y"
+                hideAnimation.from = panel.y
                 hideAnimation.to = targetPos
                 break
         }
 
         hideAnimation.start()
     }
-
-    // ... rest of the QML code remains the same ...
 
     ListModel {
         id: playbackDeviceModel

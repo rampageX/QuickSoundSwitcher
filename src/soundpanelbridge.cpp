@@ -473,6 +473,10 @@ QString SoundPanelBridge::detectTaskbarPosition() const
         return "top";
     case 1:
         return "bottom";
+    case 2:
+        return "left";
+    case 3:
+        return "right";
     default:
         return "bottom";
     }
