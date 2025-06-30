@@ -2,6 +2,7 @@
 #include "soundpanelbridge.h"
 #include "utils.h"
 #include "audiomanager.h"
+#include "mediasessionmanager.h"
 #include <QMenu>
 #include <QApplication>
 #include <QScreen>
@@ -9,6 +10,7 @@
 #include <QWindow>
 #include <QQmlContext>
 #include <QTimer>
+#include <QFontMetrics>
 #include <Windows.h>
 
 HHOOK QuickSoundSwitcher::keyboardHook = NULL;
@@ -23,6 +25,10 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , panelWindow(nullptr)
     , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
+    , outputDeviceAction(nullptr)
+    , inputDeviceAction(nullptr)
+    , currentOutputDevice("")
+    , currentInputDevice("")
 {
     AudioManager::initialize();
     MediaSessionManager::initialize();
@@ -37,10 +43,25 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
                 this, &QuickSoundSwitcher::onOutputMuteChanged);
         connect(AudioManager::getWorker(), &AudioWorker::playbackMuteChanged,
                 this, &QuickSoundSwitcher::onOutputMuteChanged);
+
+        // Connect for tray menu updates
+        connect(AudioManager::getWorker(), &AudioWorker::playbackVolumeChanged,
+                this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
+        connect(AudioManager::getWorker(), &AudioWorker::playbackMuteChanged,
+                this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
+        connect(AudioManager::getWorker(), &AudioWorker::recordingVolumeChanged,
+                this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
+        connect(AudioManager::getWorker(), &AudioWorker::recordingMuteChanged,
+                this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
+        connect(AudioManager::getWorker(), &AudioWorker::defaultEndpointChanged,
+                this, &QuickSoundSwitcher::initializeTrayMenuDeviceInfo);
     }
 
     createTrayIcon();
     installKeyboardHook();
+
+    // Initialize device info after a short delay to let everything settle
+    QTimer::singleShot(1000, this, &QuickSoundSwitcher::initializeTrayMenuDeviceInfo);
 
     bool firstRun = settings.value("firstRun", true).toBool();
     if (firstRun) {
@@ -116,15 +137,100 @@ void QuickSoundSwitcher::createTrayIcon()
 
     QMenu *trayMenu = new QMenu(this);
 
+    // Add device info actions (disabled)
+    outputDeviceAction = new QAction(tr("Output: Loading..."), this);
+    //outputDeviceAction->setEnabled(false);
+    trayMenu->addAction(outputDeviceAction);
+
+    inputDeviceAction = new QAction(tr("Input: Loading..."), this);
+    //inputDeviceAction->setEnabled(false);
+    trayMenu->addAction(inputDeviceAction);
+
+    trayMenu->addSeparator();
+
     QAction *exitAction = new QAction(tr("Exit"), this);
     connect(exitAction, &QAction::triggered, this, &QApplication::quit);
-
     trayMenu->addAction(exitAction);
 
     trayIcon->setContextMenu(trayMenu);
     trayIcon->setToolTip("Quick Sound Switcher");
     trayIcon->show();
     connect(trayIcon, &QSystemTrayIcon::activated, this, &QuickSoundSwitcher::trayIconActivated);
+}
+
+void QuickSoundSwitcher::initializeTrayMenuDeviceInfo()
+{
+    if (!AudioManager::getWorker()) return;
+
+    // Get device names
+    connect(AudioManager::getWorker(), &AudioWorker::playbackDevicesReady,
+            this, [this](const QList<AudioDevice>& devices) {
+                for (const AudioDevice& device : devices) {
+                    if (device.isDefault) {
+                        currentOutputDevice = device.shortName.isEmpty() ? device.name : device.shortName;
+                        updateTrayMenuDeviceInfo();
+                        break;
+                    }
+                }
+            }, Qt::SingleShotConnection);
+
+    connect(AudioManager::getWorker(), &AudioWorker::recordingDevicesReady,
+            this, [this](const QList<AudioDevice>& devices) {
+                for (const AudioDevice& device : devices) {
+                    if (device.isDefault) {
+                        currentInputDevice = device.shortName.isEmpty() ? device.name : device.shortName;
+                        updateTrayMenuDeviceInfo();
+                        break;
+                    }
+                }
+            }, Qt::SingleShotConnection);
+
+    AudioManager::enumeratePlaybackDevicesAsync();
+    AudioManager::enumerateRecordingDevicesAsync();
+}
+
+void QuickSoundSwitcher::updateTrayMenuDeviceInfo()
+{
+    if (!outputDeviceAction || !inputDeviceAction) return;
+
+    // Get current volumes and mute states (from cache, non-blocking)
+    int outputVolume = AudioManager::getPlaybackVolume();
+    int inputVolume = AudioManager::getRecordingVolume();
+    bool outputMuted = AudioManager::getPlaybackMute();
+    bool inputMuted = AudioManager::getRecordingMute();
+
+    // Update output device info
+    QString outputText;
+    if (!currentOutputDevice.isEmpty()) {
+        outputText = QString("Output: %1").arg(elideDeviceText(currentOutputDevice, outputVolume, outputMuted));
+    } else {
+        outputText = QString("Output: %1%").arg(outputVolume);
+    }
+    outputDeviceAction->setText(outputText);
+
+    // Update input device info
+    QString inputText;
+    if (!currentInputDevice.isEmpty()) {
+        inputText = QString("Input: %1").arg(elideDeviceText(currentInputDevice, inputVolume, inputMuted));
+    } else {
+        inputText = QString("Input: %1%").arg(inputVolume);
+    }
+    inputDeviceAction->setText(inputText);
+}
+
+QString QuickSoundSwitcher::elideDeviceText(const QString& deviceName, int volume, bool muted)
+{
+    QFontMetrics metrics(QApplication::font());
+
+    // Calculate available width (menu width minus some padding)
+    int maxWidth = 250;
+
+    QString volumeText = QString(" %1%").arg(volume);
+    QString prefix = "Output: "; // Account for the prefix
+    int availableWidth = maxWidth - metrics.horizontalAdvance(prefix + volumeText);
+
+    QString elidedName = metrics.elidedText(deviceName, Qt::ElideRight, availableWidth);
+    return QString("%1%2").arg(elidedName, volumeText);
 }
 
 void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)

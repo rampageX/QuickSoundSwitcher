@@ -53,6 +53,14 @@ ApplicationWindow {
             duration: 150
             easing.type: Easing.OutQuad
         }
+        PropertyAnimation {
+            target: panel
+            property: "y"
+            from: panel.y
+            to: panel.taskbarPos === "bottom" ? panel.y - (outputExpandAnimation.targetHeight + 20) : panel.y
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
     }
 
     ParallelAnimation {
@@ -70,6 +78,14 @@ ApplicationWindow {
             target: panel
             property: "height"
             to: panel.height - outputCollapseAnimation.previousHeight
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "y"
+            from: panel.y
+            to: panel.taskbarPos === "bottom" ? panel.y + outputCollapseAnimation.previousHeight : panel.y
             duration: 150
             easing.type: Easing.OutQuad
         }
@@ -95,6 +111,14 @@ ApplicationWindow {
             duration: 150
             easing.type: Easing.OutQuad
         }
+        PropertyAnimation {
+            target: panel
+            property: "y"
+            from: panel.y
+            to: panel.taskbarPos === "bottom" ? panel.y - (inputExpandAnimation.targetHeight + 20) : panel.y
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
     }
 
     ParallelAnimation {
@@ -112,6 +136,14 @@ ApplicationWindow {
             target: panel
             property: "height"
             to: panel.height - inputCollapseAnimation.previousHeight
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "y"
+            from: panel.y
+            to: panel.taskbarPos === "bottom" ? panel.y + inputCollapseAnimation.previousHeight : panel.y
             duration: 150
             easing.type: Easing.OutQuad
         }

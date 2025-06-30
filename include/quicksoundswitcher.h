@@ -30,6 +30,10 @@ private:
     QWindow* panelWindow;
     bool isPanelVisible;
     QSettings settings;
+    QAction *outputDeviceAction;
+    QAction *inputDeviceAction;
+    QString currentOutputDevice;
+    QString currentInputDevice;
 
     void initializeQMLEngine();
     void destroyQMLEngine();
@@ -38,6 +42,9 @@ private:
     void showPanel();
     void hidePanel();
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
+    void initializeTrayMenuDeviceInfo();
+    void updateTrayMenuDeviceInfo();
+    QString elideDeviceText(const QString& deviceName, int volume, bool muted);
 
     static LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
     static LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
