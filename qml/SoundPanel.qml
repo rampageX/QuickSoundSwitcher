@@ -21,9 +21,19 @@ ApplicationWindow {
     property bool darkMode: SoundPanelBridge.getDarkMode()
     property string taskbarPos: SoundPanelBridge.taskbarPosition
 
+    property bool allowSmoothTransitions: false
+
     signal hideAnimationFinished()
     signal showAnimationFinished()
     signal hideAnimationStarted()
+
+    Behavior on y {
+        enabled: panel.allowSmoothTransitions && !panel.isAnimatingIn && !panel.isAnimatingOut
+        NumberAnimation {
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+    }
 
     onHeightChanged: {
         // Reposition if we're in the middle of showing
@@ -45,9 +55,13 @@ ApplicationWindow {
         target: panel
         duration: 210
         easing.type: Easing.OutCubic
+        onStarted: {
+            panel.allowSmoothTransitions = false  // Disable during show animation
+        }
         onFinished: {
             panel.isAnimatingIn = false
             mainLayout.opacity = 1
+            panel.allowSmoothTransitions = true   // Enable after show animation
             panel.showAnimationFinished()
         }
     }
@@ -57,10 +71,14 @@ ApplicationWindow {
         target: panel
         duration: 210
         easing.type: Easing.InCubic
+        onStarted: {
+            panel.allowSmoothTransitions = false  // Disable during hide animation
+        }
         onFinished: {
             panel.visible = false
             panel.isAnimatingOut = false
-            panel.dataLoaded = false  // Reset for next time
+            panel.dataLoaded = false
+            panel.allowSmoothTransitions = false  // Keep disabled when hidden
             panel.hideAnimationFinished()
         }
     }
@@ -287,9 +305,47 @@ ApplicationWindow {
         }
     }
 
+    function adjustPositionForHeight() {
+        if (!panel.visible || panel.isAnimatingIn || panel.isAnimatingOut) {
+            return
+        }
+
+        const screenWidth = Qt.application.screens[0].width
+        const screenHeight = Qt.application.screens[0].height
+        let newY = panel.y
+
+        // Adjust Y position based on taskbar position to keep panel in bounds
+        switch (panel.taskbarPos) {
+        case "top":
+            // For top taskbar, no adjustment needed (panel grows downward)
+            break
+        case "bottom":
+            // For bottom taskbar, adjust Y to keep bottom edge in same place
+            newY = screenHeight - panel.height - margin - taskbarHeight
+            break
+        case "left":
+        case "right":
+            // For side taskbars, keep bottom edge in same place
+            newY = screenHeight - panel.height - margin
+            break
+        default:
+            newY = screenHeight - panel.height - margin - taskbarHeight
+            break
+        }
+
+        // Only update if position actually needs to change
+        if (Math.abs(newY - panel.y) > 1) {
+            panel.y = newY
+        }
+    }
+
     function updatePanelHeight() {
         Qt.callLater(function() {
-            panel.height = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
+            // Add a small delay to let any other layout changes settle
+            Qt.callLater(function() {
+                const newHeight = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
+                panel.height = newHeight
+            })
         })
     }
 
@@ -537,11 +593,109 @@ ApplicationWindow {
                     }
                 }
 
+                ToolButton {
+                    text: outputDevicesList.expanded ? "−" : "+"
+                    font.pixelSize: 16
+                    font.bold: true
+                    onClicked: {
+                        outputDevicesList.expanded = !outputDevicesList.expanded
+                        if (outputDevicesList.expanded) {
+                            panel.y = panel.y - outputDevicesList.contentHeight
+                        } else {
+                            panel.y = panel.y + outputDevicesList.contentHeight
+                        }
+                    }
+                }
+
                 Label {
                     text: Math.round(outputSlider.value).toString()
                     Layout.rightMargin: 5
                     font.pixelSize: 14
                     visible: UserSettings.volumeValueMode === 1
+                }
+            }
+
+            // Output devices list
+            ListView {
+                id: outputDevicesList
+                Layout.fillWidth: true
+                Layout.preferredHeight: 0
+                clip: true
+                interactive: false
+                property bool expanded: false
+                model: playbackDeviceModel
+
+                onExpandedChanged: {
+                    if (expanded) {
+                        Qt.callLater(function() {
+                            outputDevicesList.Layout.preferredHeight = outputDevicesList.contentHeight
+                        })
+                    } else {
+                        outputDevicesList.Layout.preferredHeight = 0
+                    }
+                }
+
+                Behavior on Layout.preferredHeight {
+                    enabled: panel.allowSmoothTransitions && !panel.isAnimatingIn && !panel.isAnimatingOut
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.OutQuad
+                    }
+                }
+
+                delegate: ItemDelegate {
+                    width: outputDevicesList.width
+                    height: 40
+
+                    required property string name
+                    required property string shortName
+                    required property bool isDefault
+                    required property string id
+
+                    contentItem: RowLayout {
+                        spacing: 10
+
+                        Rectangle {
+                            Layout.preferredWidth: 6
+                            Layout.preferredHeight: 6
+                            radius: 3
+                            color: parent.parent.isDefault ? (panel.darkMode ? "#ffffff" : "#000000") : "transparent"
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Label {
+                            text: UserSettings.deviceShortName ? parent.parent.shortName : parent.parent.name
+                            font.pixelSize: 14
+                            verticalAlignment: Text.AlignVCenter
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    background: Rectangle {
+                        color: parent.hovered ? (panel.darkMode ? "#3c3c3c" : "#e8e8e8") : "transparent"
+                        radius: 6
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 100
+                            }
+                        }
+                    }
+
+                    onClicked: {
+                        SoundPanelBridge.onPlaybackDeviceChanged(name)
+                        if (UserSettings.linkIO) {
+                            for (let i = 0; i < inputDeviceComboBox.count; ++i) {
+                                if (inputDeviceComboBox.textAt(i) === name) {
+                                    inputDeviceComboBox.currentIndex = i
+                                    break
+                                }
+                            }
+                            SoundPanelBridge.onRecordingDeviceChanged(name)
+                        }
+                        outputDevicesList.expanded = false
+                    }
                 }
             }
 
@@ -623,11 +777,109 @@ ApplicationWindow {
                     }
                 }
 
+                ToolButton {
+                    text: inputDevicesList.expanded ? "−" : "+"
+                    font.pixelSize: 16
+                    font.bold: true
+                    onClicked: {
+                        inputDevicesList.expanded = !inputDevicesList.expanded
+                        if (inputDevicesList.expanded) {
+                            panel.y = panel.y - inputDevicesList.contentHeight
+                        } else {
+                            panel.y = panel.y + inputDevicesList.contentHeight
+                        }
+                    }
+                }
+
                 Label {
                     text: Math.round(inputSlider.value).toString()
                     Layout.rightMargin: 5
                     font.pixelSize: 14
                     visible: UserSettings.volumeValueMode === 1
+                }
+            }
+
+            // Input devices list
+            ListView {
+                id: inputDevicesList
+                Layout.fillWidth: true
+                Layout.preferredHeight: 0
+                clip: true
+                interactive: false
+                property bool expanded: false
+                model: recordingDeviceModel
+
+                onExpandedChanged: {
+                    if (expanded) {
+                        Qt.callLater(function() {
+                            inputDevicesList.Layout.preferredHeight = inputDevicesList.contentHeight
+                        })
+                    } else {
+                        inputDevicesList.Layout.preferredHeight = 0
+                    }
+                }
+
+                Behavior on Layout.preferredHeight {
+                    enabled: panel.allowSmoothTransitions && !panel.isAnimatingIn && !panel.isAnimatingOut
+                    NumberAnimation {
+                        duration: 150
+                        easing.type: Easing.OutQuad
+                    }
+                }
+
+                delegate: ItemDelegate {
+                    width: inputDevicesList.width
+                    height: 40
+
+                    required property string name
+                    required property string shortName
+                    required property bool isDefault
+                    required property string id
+
+                    contentItem: RowLayout {
+                        spacing: 10
+
+                        Rectangle {
+                            Layout.preferredWidth: 6
+                            Layout.preferredHeight: 6
+                            radius: 3
+                            color: parent.parent.isDefault ? (panel.darkMode ? "#ffffff" : "#000000") : "transparent"
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Label {
+                            text: UserSettings.deviceShortName ? parent.parent.shortName : parent.parent.name
+                            font.pixelSize: 14
+                            verticalAlignment: Text.AlignVCenter
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    background: Rectangle {
+                        color: parent.hovered ? (panel.darkMode ? "#3c3c3c" : "#e8e8e8") : "transparent"
+                        radius: 6
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 100
+                            }
+                        }
+                    }
+
+                    onClicked: {
+                        SoundPanelBridge.onRecordingDeviceChanged(name)
+                        if (UserSettings.linkIO) {
+                            for (let i = 0; i < outputDeviceComboBox.count; ++i) {
+                                if (outputDeviceComboBox.textAt(i) === name) {
+                                    outputDeviceComboBox.currentIndex = i
+                                    break
+                                }
+                            }
+                            SoundPanelBridge.onPlaybackDeviceChanged(name)
+                        }
+                        inputDevicesList.expanded = false
+                    }
                 }
             }
         }
@@ -714,7 +966,7 @@ ApplicationWindow {
         Rectangle {
             color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.fillHeight: false
             bottomLeftRadius: 12
             bottomRightRadius: 12
             Layout.preferredHeight: 50
