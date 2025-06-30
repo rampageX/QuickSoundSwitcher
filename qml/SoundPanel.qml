@@ -21,15 +21,120 @@ ApplicationWindow {
     property bool darkMode: SoundPanelBridge.getDarkMode()
     property string taskbarPos: SoundPanelBridge.taskbarPosition
 
-    property bool allowSmoothTransitions: false
-
     signal hideAnimationFinished()
     signal showAnimationFinished()
     signal hideAnimationStarted()
 
-    Behavior on y {
-        enabled: panel.allowSmoothTransitions && !panel.isAnimatingIn && !panel.isAnimatingOut
-        NumberAnimation {
+    // Simplified ListView animations
+    ParallelAnimation {
+        id: outputExpandAnimation
+        property int targetHeight: 0
+
+        PropertyAnimation {
+            target: outputDevicesRect
+            property: "Layout.preferredHeight"
+            from: 0
+            to: outputExpandAnimation.targetHeight + 20
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "height"
+            from: panel.height
+            to: panel.height + outputExpandAnimation.targetHeight + 20
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "y"
+            from: panel.y
+            to: panel.y - (outputExpandAnimation.targetHeight + 20)
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+    }
+
+    ParallelAnimation {
+        id: outputCollapseAnimation
+        property int previousHeight: 0
+
+        PropertyAnimation {
+            target: outputDevicesRect
+            property: "Layout.preferredHeight"
+            to: 0
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "height"
+            to: panel.height - outputCollapseAnimation.previousHeight
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "y"
+            to: panel.y + outputCollapseAnimation.previousHeight
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+    }
+
+    ParallelAnimation {
+        id: inputExpandAnimation
+        property int targetHeight: 0
+
+        PropertyAnimation {
+            target: inputDevicesRect
+            property: "Layout.preferredHeight"
+            from: 0
+            to: inputExpandAnimation.targetHeight + 20
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "height"
+            from: panel.height
+            to: panel.height + inputExpandAnimation.targetHeight + 20
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "y"
+            from: panel.y
+            to: panel.y - (inputExpandAnimation.targetHeight + 20)
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+    }
+
+    ParallelAnimation {
+        id: inputCollapseAnimation
+        property int previousHeight: 0
+
+        PropertyAnimation {
+            target: inputDevicesRect
+            property: "Layout.preferredHeight"
+            to: 0
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "height"
+            to: panel.height - inputCollapseAnimation.previousHeight
+            duration: 150
+            easing.type: Easing.OutQuad
+        }
+        PropertyAnimation {
+            target: panel
+            property: "y"
+            to: panel.y + inputCollapseAnimation.previousHeight
             duration: 150
             easing.type: Easing.OutQuad
         }
@@ -55,13 +160,9 @@ ApplicationWindow {
         target: panel
         duration: 210
         easing.type: Easing.OutCubic
-        onStarted: {
-            panel.allowSmoothTransitions = false  // Disable during show animation
-        }
         onFinished: {
             panel.isAnimatingIn = false
             mainLayout.opacity = 1
-            panel.allowSmoothTransitions = true   // Enable after show animation
             panel.showAnimationFinished()
         }
     }
@@ -71,14 +172,10 @@ ApplicationWindow {
         target: panel
         duration: 210
         easing.type: Easing.InCubic
-        onStarted: {
-            panel.allowSmoothTransitions = false  // Disable during hide animation
-        }
         onFinished: {
             panel.visible = false
             panel.isAnimatingOut = false
             panel.dataLoaded = false
-            panel.allowSmoothTransitions = false  // Keep disabled when hidden
             panel.hideAnimationFinished()
         }
     }
@@ -249,7 +346,6 @@ ApplicationWindow {
 
         function onPlaybackDevicesChanged(devices) {
             playbackDeviceModel.clear()
-            let defaultIndex = -1
             for (let i = 0; i < devices.length; i++) {
                 playbackDeviceModel.append({
                                                id: devices[i].id,
@@ -257,20 +353,12 @@ ApplicationWindow {
                                                shortName: devices[i].shortName,
                                                isDefault: devices[i].isDefault
                                            })
-                if (devices[i].isDefault) {
-                    defaultIndex = i
-                }
             }
-            if (defaultIndex !== -1) {
-                outputDeviceComboBox.currentIndex = defaultIndex
-            }
-
             panel.updatePanelHeight()
         }
 
         function onRecordingDevicesChanged(devices) {
             recordingDeviceModel.clear()
-            let defaultIndex = -1
             for (let i = 0; i < devices.length; i++) {
                 recordingDeviceModel.append({
                                                 id: devices[i].id,
@@ -278,14 +366,7 @@ ApplicationWindow {
                                                 shortName: devices[i].shortName,
                                                 isDefault: devices[i].isDefault
                                             })
-                if (devices[i].isDefault) {
-                    defaultIndex = i
-                }
             }
-            if (defaultIndex !== -1) {
-                inputDeviceComboBox.currentIndex = defaultIndex
-            }
-
             panel.updatePanelHeight()
         }
 
@@ -294,7 +375,6 @@ ApplicationWindow {
             for (let i = 0; i < apps.length; i++) {
                 appModel.append(apps[i])
             }
-
             panel.updatePanelHeight()
         }
 
@@ -305,46 +385,23 @@ ApplicationWindow {
         }
     }
 
-    function adjustPositionForHeight() {
-        if (!panel.visible || panel.isAnimatingIn || panel.isAnimatingOut) {
-            return
-        }
-
-        const screenWidth = Qt.application.screens[0].width
-        const screenHeight = Qt.application.screens[0].height
-        let newY = panel.y
-
-        // Adjust Y position based on taskbar position to keep panel in bounds
-        switch (panel.taskbarPos) {
-        case "top":
-            // For top taskbar, no adjustment needed (panel grows downward)
-            break
-        case "bottom":
-            // For bottom taskbar, adjust Y to keep bottom edge in same place
-            newY = screenHeight - panel.height - margin - taskbarHeight
-            break
-        case "left":
-        case "right":
-            // For side taskbars, keep bottom edge in same place
-            newY = screenHeight - panel.height - margin
-            break
-        default:
-            newY = screenHeight - panel.height - margin - taskbarHeight
-            break
-        }
-
-        // Only update if position actually needs to change
-        if (Math.abs(newY - panel.y) > 1) {
-            panel.y = newY
-        }
-    }
-
     function updatePanelHeight() {
         Qt.callLater(function() {
-            // Add a small delay to let any other layout changes settle
             Qt.callLater(function() {
+                const oldHeight = panel.height
                 const newHeight = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
-                panel.height = newHeight
+
+                // Calculate Y offset to keep bottom edge in same place
+                const heightDiff = newHeight - oldHeight
+
+                // Only adjust if we're visible and not animating
+                if (panel.visible && !panel.isAnimatingIn && !panel.isAnimatingOut) {
+                    // Move Y up first, then set new height
+                    panel.y = panel.y - heightDiff
+                    panel.height = newHeight
+                } else {
+                    panel.height = newHeight
+                }
             })
         })
     }
@@ -504,40 +561,6 @@ ApplicationWindow {
             spacing: 5
             visible: UserSettings.panelMode === 0 || UserSettings.panelMode === 2
 
-            ComboBox {
-                id: outputDeviceComboBox
-                Layout.preferredHeight: 40
-                Layout.fillWidth: true
-                flat: true
-                font.pixelSize: 15
-                model: playbackDeviceModel
-                textRole: UserSettings.deviceShortName ? "shortName" : "name"
-                contentItem: Label {
-                    text: outputDeviceComboBox.currentText
-                    elide: Text.ElideRight
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignLeft
-                    font.pixelSize: 15
-                    leftPadding: 10
-                    width: parent.width
-                }
-                onActivated: {
-                    SoundPanelBridge.onPlaybackDeviceChanged(outputDeviceComboBox.currentText)
-                    if (UserSettings.linkIO) {
-                        const selectedText = outputDeviceComboBox.currentText
-
-                        for (let i = 0; i < inputDeviceComboBox.count; ++i) {
-                            if (inputDeviceComboBox.textAt(i) === selectedText) {
-                                inputDeviceComboBox.currentIndex = i
-                                break
-                            }
-                        }
-
-                        SoundPanelBridge.onRecordingDeviceChanged(outputDeviceComboBox.currentText)
-                    }
-                }
-            }
-
             RowLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
@@ -565,30 +588,50 @@ ApplicationWindow {
                     }
                 }
 
-                Slider {
-                    id: outputSlider
-                    value: pressed ? value : SoundPanelBridge.playbackVolume
-                    from: 0
-                    to: 100
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 40
-
-                    ToolTip {
-                        parent: outputSlider.handle
-                        visible: outputSlider.pressed && (UserSettings.volumeValueMode === 0)
-                        text: Math.round(outputSlider.value).toString()
-                    }
-
-                    onValueChanged: {
-                        if (pressed) {
-                            SoundPanelBridge.onPlaybackVolumeChanged(value)
+                ColumnLayout {
+                    spacing: -4
+                    Label {
+                        opacity: 0.5
+                        elide: Text.ElideRight
+                        Layout.preferredWidth: 200
+                        Layout.leftMargin: 18
+                        Layout.rightMargin: 25
+                        text: {
+                            for (let i = 0; i < playbackDeviceModel.count; i++) {
+                                if (playbackDeviceModel.get(i).isDefault) {
+                                    return UserSettings.deviceShortName ?
+                                        playbackDeviceModel.get(i).shortName :
+                                        playbackDeviceModel.get(i).name
+                                }
+                            }
+                            return ""
                         }
                     }
 
-                    onPressedChanged: {
-                        if (!pressed) {
-                            SoundPanelBridge.onPlaybackVolumeChanged(value)
-                            SoundPanelBridge.onOutputSliderReleased()
+                    Slider {
+                        id: outputSlider
+                        value: pressed ? value : SoundPanelBridge.playbackVolume
+                        from: 0
+                        to: 100
+                        Layout.fillWidth: true
+
+                        ToolTip {
+                            parent: outputSlider.handle
+                            visible: outputSlider.pressed && (UserSettings.volumeValueMode === 0)
+                            text: Math.round(outputSlider.value).toString()
+                        }
+
+                        onValueChanged: {
+                            if (pressed) {
+                                SoundPanelBridge.onPlaybackVolumeChanged(value)
+                            }
+                        }
+
+                        onPressedChanged: {
+                            if (!pressed) {
+                                SoundPanelBridge.onPlaybackVolumeChanged(value)
+                                SoundPanelBridge.onOutputSliderReleased()
+                            }
                         }
                     }
                 }
@@ -599,11 +642,6 @@ ApplicationWindow {
                     font.bold: true
                     onClicked: {
                         outputDevicesList.expanded = !outputDevicesList.expanded
-                        if (outputDevicesList.expanded) {
-                            panel.y = panel.y - outputDevicesList.contentHeight
-                        } else {
-                            panel.y = panel.y + outputDevicesList.contentHeight
-                        }
                     }
                 }
 
@@ -615,122 +653,81 @@ ApplicationWindow {
                 }
             }
 
-            // Output devices list
-            ListView {
-                id: outputDevicesList
+            Rectangle {
+                id: outputDevicesRect
                 Layout.fillWidth: true
                 Layout.preferredHeight: 0
-                clip: true
-                interactive: false
-                property bool expanded: false
-                model: playbackDeviceModel
-
-                onExpandedChanged: {
-                    if (expanded) {
-                        Qt.callLater(function() {
-                            outputDevicesList.Layout.preferredHeight = outputDevicesList.contentHeight
-                        })
-                    } else {
-                        outputDevicesList.Layout.preferredHeight = 0
-                    }
+                color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
+                radius: 8
+                Rectangle {
+                    anchors.fill: parent
+                    color: "transparent"
+                    radius: 12
+                    border.width: 1
+                    border.color: "#E3E3E3"
+                    opacity: 0.1
                 }
 
-                Behavior on Layout.preferredHeight {
-                    enabled: panel.allowSmoothTransitions && !panel.isAnimatingIn && !panel.isAnimatingOut
-                    NumberAnimation {
-                        duration: 150
-                        easing.type: Easing.OutQuad
-                    }
-                }
+                ListView {
+                    id: outputDevicesList
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    clip: true
+                    interactive: false
+                    property bool expanded: false
+                    model: playbackDeviceModel
 
-                delegate: ItemDelegate {
-                    width: outputDevicesList.width
-                    height: 40
-
-                    required property string name
-                    required property string shortName
-                    required property bool isDefault
-                    required property string id
-
-                    contentItem: RowLayout {
-                        spacing: 10
-
-                        Rectangle {
-                            Layout.preferredWidth: 6
-                            Layout.preferredHeight: 6
-                            radius: 3
-                            color: parent.parent.isDefault ? (panel.darkMode ? "#ffffff" : "#000000") : "transparent"
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-
-                        Label {
-                            text: UserSettings.deviceShortName ? parent.parent.shortName : parent.parent.name
-                            font.pixelSize: 14
-                            verticalAlignment: Text.AlignVCenter
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
+                    onExpandedChanged: {
+                        if (expanded) {
+                            outputExpandAnimation.targetHeight = contentHeight
+                            outputExpandAnimation.start()
+                        } else {
+                            outputCollapseAnimation.previousHeight = parent.Layout.preferredHeight
+                            outputCollapseAnimation.start()
                         }
                     }
 
-                    background: Rectangle {
-                        color: parent.hovered ? (panel.darkMode ? "#3c3c3c" : "#e8e8e8") : "transparent"
-                        radius: 6
+                    delegate: ItemDelegate {
+                        width: outputDevicesList.width
+                        height: 40
+                        required property var model
+                        required property string name
+                        required property string shortName
+                        required property bool isDefault
+                        required property string id
+                        required property int index
+                        highlighted: model.isDefault
+                        text: UserSettings.deviceShortName ? model.shortName : model.name
 
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 100
+                        onClicked: {
+                            // Update output model to reflect new default device
+                            for (let i = 0; i < playbackDeviceModel.count; i++) {
+                                playbackDeviceModel.setProperty(i, "isDefault", i === index)
                             }
-                        }
-                    }
-
-                    onClicked: {
-                        SoundPanelBridge.onPlaybackDeviceChanged(name)
-                        if (UserSettings.linkIO) {
-                            for (let i = 0; i < inputDeviceComboBox.count; ++i) {
-                                if (inputDeviceComboBox.textAt(i) === name) {
-                                    inputDeviceComboBox.currentIndex = i
-                                    break
+                            SoundPanelBridge.onPlaybackDeviceChanged(name)
+                            if (UserSettings.linkIO) {
+                                // Use the same name format that's being displayed
+                                const selectedDeviceName = UserSettings.deviceShortName ? shortName : name
+                                // Find matching input device by name
+                                let linkedInputIndex = -1
+                                for (let i = 0; i < recordingDeviceModel.count; i++) {
+                                    const inputName = UserSettings.deviceShortName ?
+                                        recordingDeviceModel.get(i).shortName :
+                                        recordingDeviceModel.get(i).name
+                                    if (inputName === selectedDeviceName) {
+                                        linkedInputIndex = i
+                                        break
+                                    }
                                 }
-                            }
-                            SoundPanelBridge.onRecordingDeviceChanged(name)
-                        }
-                        outputDevicesList.expanded = false
-                    }
-                }
-            }
-
-            ComboBox {
-                id: inputDeviceComboBox
-                Layout.topMargin: -2
-                Layout.preferredHeight: 40
-                Layout.fillWidth: true
-                flat: true
-                font.pixelSize: 15
-                model: recordingDeviceModel
-                textRole: UserSettings.deviceShortName ? "shortName" : "name"
-                contentItem: Label {
-                    text: inputDeviceComboBox.currentText
-                    elide: Text.ElideRight
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignLeft
-                    font.pixelSize: 15
-                    width: parent.width
-                    leftPadding: 10
-                }
-                onActivated: {
-                    SoundPanelBridge.onRecordingDeviceChanged(inputDeviceComboBox.currentText)
-
-                    if (UserSettings.linkIO) {
-                        const selectedText = inputDeviceComboBox.currentText
-
-                        for (let i = 0; i < outputDeviceComboBox.count; ++i) {
-                            if (outputDeviceComboBox.textAt(i) === selectedText) {
-                                outputDeviceComboBox.currentIndex = i
-                                break
+                                // If matching input device found, update input model
+                                if (linkedInputIndex !== -1) {
+                                    for (let i = 0; i < recordingDeviceModel.count; i++) {
+                                        recordingDeviceModel.setProperty(i, "isDefault", i === linkedInputIndex)
+                                    }
+                                }
+                                SoundPanelBridge.onRecordingDeviceChanged(name)
                             }
                         }
-
-                        SoundPanelBridge.onPlaybackDeviceChanged(inputDeviceComboBox.currentText)
                     }
                 }
             }
@@ -750,29 +747,49 @@ ApplicationWindow {
                     }
                 }
 
-                Slider {
-                    id: inputSlider
-                    value: pressed ? value : SoundPanelBridge.recordingVolume
-                    from: 0
-                    to: 100
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 40
-
-                    ToolTip {
-                        parent: inputSlider.handle
-                        visible: inputSlider.pressed && (UserSettings.volumeValueMode === 0)
-                        text: Math.round(inputSlider.value).toString()
-                    }
-
-                    onValueChanged: {
-                        if (pressed) {
-                            SoundPanelBridge.onRecordingVolumeChanged(value)
+                ColumnLayout {
+                    spacing: -4
+                    Label {
+                        opacity: 0.5
+                        elide: Text.ElideRight
+                        Layout.preferredWidth: 200
+                        Layout.leftMargin: 18
+                        Layout.rightMargin: 25
+                        text: {
+                            for (let i = 0; i < recordingDeviceModel.count; i++) {
+                                if (recordingDeviceModel.get(i).isDefault) {
+                                    return UserSettings.deviceShortName ?
+                                        recordingDeviceModel.get(i).shortName :
+                                        recordingDeviceModel.get(i).name
+                                }
+                            }
+                            return ""
                         }
                     }
 
-                    onPressedChanged: {
-                        if (!pressed) {
-                            SoundPanelBridge.onRecordingVolumeChanged(value)
+                    Slider {
+                        id: inputSlider
+                        value: pressed ? value : SoundPanelBridge.recordingVolume
+                        from: 0
+                        to: 100
+                        Layout.fillWidth: true
+
+                        ToolTip {
+                            parent: inputSlider.handle
+                            visible: inputSlider.pressed && (UserSettings.volumeValueMode === 0)
+                            text: Math.round(inputSlider.value).toString()
+                        }
+
+                        onValueChanged: {
+                            if (pressed) {
+                                SoundPanelBridge.onRecordingVolumeChanged(value)
+                            }
+                        }
+
+                        onPressedChanged: {
+                            if (!pressed) {
+                                SoundPanelBridge.onRecordingVolumeChanged(value)
+                            }
                         }
                     }
                 }
@@ -783,11 +800,6 @@ ApplicationWindow {
                     font.bold: true
                     onClicked: {
                         inputDevicesList.expanded = !inputDevicesList.expanded
-                        if (inputDevicesList.expanded) {
-                            panel.y = panel.y - inputDevicesList.contentHeight
-                        } else {
-                            panel.y = panel.y + inputDevicesList.contentHeight
-                        }
                     }
                 }
 
@@ -799,86 +811,88 @@ ApplicationWindow {
                 }
             }
 
-            // Input devices list
-            ListView {
-                id: inputDevicesList
+            Rectangle {
+                id: inputDevicesRect
                 Layout.fillWidth: true
                 Layout.preferredHeight: 0
-                clip: true
-                interactive: false
-                property bool expanded: false
-                model: recordingDeviceModel
-
-                onExpandedChanged: {
-                    if (expanded) {
-                        Qt.callLater(function() {
-                            inputDevicesList.Layout.preferredHeight = inputDevicesList.contentHeight
-                        })
-                    } else {
-                        inputDevicesList.Layout.preferredHeight = 0
-                    }
+                color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
+                radius: 12
+                Rectangle {
+                    anchors.fill: parent
+                    color: "transparent"
+                    radius: 12
+                    border.width: 1
+                    border.color: "#E3E3E3"
+                    opacity: 0.1
                 }
 
-                Behavior on Layout.preferredHeight {
-                    enabled: panel.allowSmoothTransitions && !panel.isAnimatingIn && !panel.isAnimatingOut
-                    NumberAnimation {
-                        duration: 150
-                        easing.type: Easing.OutQuad
-                    }
-                }
+                ListView {
+                    id: inputDevicesList
+                    anchors.fill: parent
+                    anchors.margins: 10
+                    clip: true
+                    interactive: false
+                    property bool expanded: false
+                    model: recordingDeviceModel
 
-                delegate: ItemDelegate {
-                    width: inputDevicesList.width
-                    height: 40
-
-                    required property string name
-                    required property string shortName
-                    required property bool isDefault
-                    required property string id
-
-                    contentItem: RowLayout {
-                        spacing: 10
-
-                        Rectangle {
-                            Layout.preferredWidth: 6
-                            Layout.preferredHeight: 6
-                            radius: 3
-                            color: parent.parent.isDefault ? (panel.darkMode ? "#ffffff" : "#000000") : "transparent"
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-
-                        Label {
-                            text: UserSettings.deviceShortName ? parent.parent.shortName : parent.parent.name
-                            font.pixelSize: 14
-                            verticalAlignment: Text.AlignVCenter
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
+                    onExpandedChanged: {
+                        if (expanded) {
+                            inputExpandAnimation.targetHeight = contentHeight
+                            inputExpandAnimation.start()
+                        } else {
+                            inputCollapseAnimation.previousHeight = parent.Layout.preferredHeight
+                            inputCollapseAnimation.start()
                         }
                     }
 
-                    background: Rectangle {
-                        color: parent.hovered ? (panel.darkMode ? "#3c3c3c" : "#e8e8e8") : "transparent"
-                        radius: 6
+                    delegate: ItemDelegate {
+                        width: inputDevicesList.width
+                        height: 40
 
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: 100
+                        required property string name
+                        required property string shortName
+                        required property bool isDefault
+                        required property string id
+                        required property int index
+                        required property var model
+
+                        highlighted: model.isDefault
+                        text: UserSettings.deviceShortName ? model.shortName : model.name
+                        onClicked: {
+                            // Update input model to reflect new default device
+                            for (let i = 0; i < recordingDeviceModel.count; i++) {
+                                recordingDeviceModel.setProperty(i, "isDefault", i === index)
                             }
-                        }
-                    }
 
-                    onClicked: {
-                        SoundPanelBridge.onRecordingDeviceChanged(name)
-                        if (UserSettings.linkIO) {
-                            for (let i = 0; i < outputDeviceComboBox.count; ++i) {
-                                if (outputDeviceComboBox.textAt(i) === name) {
-                                    outputDeviceComboBox.currentIndex = i
-                                    break
+                            SoundPanelBridge.onRecordingDeviceChanged(name)
+
+                            if (UserSettings.linkIO) {
+                                // Use the same name format that's being displayed
+                                const selectedDeviceName = UserSettings.deviceShortName ? shortName : name
+
+                                // Find matching output device by name
+                                let linkedOutputIndex = -1
+                                for (let i = 0; i < playbackDeviceModel.count; i++) {
+                                    const outputName = UserSettings.deviceShortName ?
+                                        playbackDeviceModel.get(i).shortName :
+                                        playbackDeviceModel.get(i).name
+
+                                    if (outputName === selectedDeviceName) {
+                                        linkedOutputIndex = i
+                                        break
+                                    }
                                 }
+
+                                // If matching output device found, update output model
+                                if (linkedOutputIndex !== -1) {
+                                    for (let i = 0; i < playbackDeviceModel.count; i++) {
+                                        playbackDeviceModel.setProperty(i, "isDefault", i === linkedOutputIndex)
+                                    }
+                                }
+
+                                SoundPanelBridge.onPlaybackDeviceChanged(name)
                             }
-                            SoundPanelBridge.onPlaybackDeviceChanged(name)
                         }
-                        inputDevicesList.expanded = false
                     }
                 }
             }
@@ -933,23 +947,34 @@ ApplicationWindow {
                         }
                     }
 
-                    Slider {
-                        id: volumeSlider
-                        from: 0
-                        to: 100
-                        enabled: !muteRoundButton.highlighted
-                        value: applicationUnitLayout.model.volume
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 40
-
-                        ToolTip {
-                            parent: volumeSlider.handle
-                            visible: volumeSlider.pressed && (UserSettings.volumeValueMode === 0)
-                            text: Math.round(volumeSlider.value).toString()
+                    ColumnLayout {
+                        spacing: -4
+                        Label {
+                            opacity: 0.5
+                            elide: Text.ElideRight
+                            Layout.preferredWidth: 200
+                            Layout.leftMargin: 18
+                            Layout.rightMargin: 25
+                            text: applicationUnitLayout.model.name
                         }
 
-                        onValueChanged: {
-                            SoundPanelBridge.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
+                        Slider {
+                            id: volumeSlider
+                            from: 0
+                            to: 100
+                            enabled: !muteRoundButton.highlighted
+                            value: applicationUnitLayout.model.volume
+                            Layout.fillWidth: true
+
+                            ToolTip {
+                                parent: volumeSlider.handle
+                                visible: volumeSlider.pressed && (UserSettings.volumeValueMode === 0)
+                                text: Math.round(volumeSlider.value).toString()
+                            }
+
+                            onValueChanged: {
+                                SoundPanelBridge.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
+                            }
                         }
                     }
 
