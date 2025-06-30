@@ -67,6 +67,10 @@ public:
 
     bool deviceChangeInProgress() const;
 
+    Q_INVOKABLE void playPause();
+    Q_INVOKABLE void nextTrack();
+    Q_INVOKABLE void previousTrack();
+
 public slots:
     void onPlaybackVolumeChanged(int volume);
     void onRecordingVolumeChanged(int volume);

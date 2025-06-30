@@ -23,6 +23,9 @@ public slots:
     void queryMediaInfo();
     void startMonitoring();
     void stopMonitoring();
+    void playPause();
+    void nextTrack();
+    void previousTrack();
 
 signals:
     void mediaInfoChanged(const MediaInfo& info);
@@ -40,6 +43,9 @@ void queryMediaInfoAsync();
 void startMonitoringAsync();
 void stopMonitoringAsync();
 MediaWorker* getWorker();
+void playPauseAsync();
+void nextTrackAsync();
+void previousTrackAsync();
 }
 
 #endif // MEDIASESSIONMANAGER_H

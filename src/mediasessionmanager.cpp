@@ -143,6 +143,47 @@ void MediaWorker::stopMonitoring() {
     }
 }
 
+void MediaWorker::playPause() {
+    try {
+        init_apartment();
+        auto sessionManager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+        auto currentSession = sessionManager.GetCurrentSession();
+
+        if (currentSession) {
+            currentSession.TryTogglePlayPauseAsync().get();
+        }
+    } catch (...) {
+        qDebug() << "Failed to toggle play/pause";
+    }
+}
+
+void MediaWorker::nextTrack() {
+    try {
+        init_apartment();
+        auto sessionManager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+        auto currentSession = sessionManager.GetCurrentSession();
+
+        if (currentSession) {
+            currentSession.TrySkipNextAsync().get();
+        }
+    } catch (...) {
+        qDebug() << "Failed to skip to next track";
+    }
+}
+
+void MediaWorker::previousTrack() {
+    try {
+        init_apartment();
+        auto sessionManager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+        auto currentSession = sessionManager.GetCurrentSession();
+
+        if (currentSession) {
+            currentSession.TrySkipPreviousAsync().get();
+        }
+    } catch (...) {
+        qDebug() << "Failed to skip to previous track";
+    }
+}
 void MediaSessionManager::initialize() {
     QMutexLocker locker(&g_mediaInitMutex);
 
@@ -187,4 +228,22 @@ void MediaSessionManager::stopMonitoringAsync() {
 
 MediaWorker* MediaSessionManager::getWorker() {
     return g_mediaWorker;
+}
+
+void MediaSessionManager::playPauseAsync() {
+    if (g_mediaWorker) {
+        QMetaObject::invokeMethod(g_mediaWorker, "playPause", Qt::QueuedConnection);
+    }
+}
+
+void MediaSessionManager::nextTrackAsync() {
+    if (g_mediaWorker) {
+        QMetaObject::invokeMethod(g_mediaWorker, "nextTrack", Qt::QueuedConnection);
+    }
+}
+
+void MediaSessionManager::previousTrackAsync() {
+    if (g_mediaWorker) {
+        QMetaObject::invokeMethod(g_mediaWorker, "previousTrack", Qt::QueuedConnection);
+    }
 }

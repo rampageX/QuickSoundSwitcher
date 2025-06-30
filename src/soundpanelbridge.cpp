@@ -208,7 +208,7 @@ void SoundPanelBridge::initializeData() {
     m_isMediaPlaying = false;
     emit mediaInfoChanged();
     if (settings.value("displayMediaInfos", true).toBool()) {
-            MediaSessionManager::queryMediaInfoAsync();
+        MediaSessionManager::queryMediaInfoAsync();
     }
 
     checkDataInitializationComplete();
@@ -528,3 +528,20 @@ bool SoundPanelBridge::isMediaPlaying() const {
 QString SoundPanelBridge::mediaArt() const {
     return m_mediaArt;
 }
+
+void SoundPanelBridge::playPause() {
+    MediaSessionManager::playPauseAsync();
+    MediaSessionManager::queryMediaInfoAsync();
+}
+
+void SoundPanelBridge::nextTrack() {
+    MediaSessionManager::nextTrackAsync();
+    MediaSessionManager::queryMediaInfoAsync();
+}
+
+void SoundPanelBridge::previousTrack() {
+    MediaSessionManager::previousTrackAsync();
+    MediaSessionManager::queryMediaInfoAsync();
+}
+
+

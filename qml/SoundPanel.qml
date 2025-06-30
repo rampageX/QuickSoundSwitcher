@@ -70,26 +70,26 @@ ApplicationWindow {
         let startX, startY
 
         switch (panel.taskbarPos) {
-            case "top":
-                startX = screenWidth - width - margin
-                startY = -height
-                break
-            case "bottom":
-                startX = screenWidth - width - margin
-                startY = screenHeight
-                break
-            case "left":
-                startX = -width
-                startY = screenHeight - height - margin
-                break
-            case "right":
-                startX = screenWidth
-                startY = screenHeight - height - margin
-                break
-            default:
-                startX = screenWidth - width - margin
-                startY = screenHeight
-                break
+        case "top":
+            startX = screenWidth - width - margin
+            startY = -height
+            break
+        case "bottom":
+            startX = screenWidth - width - margin
+            startY = screenHeight
+            break
+        case "left":
+            startX = -width
+            startY = screenHeight - height - margin
+            break
+        case "right":
+            startX = screenWidth
+            startY = screenHeight - height - margin
+            break
+        default:
+            startX = screenWidth - width - margin
+            startY = screenHeight
+            break
         }
 
         panel.x = startX
@@ -104,41 +104,41 @@ ApplicationWindow {
         let targetX, targetY
 
         switch (panel.taskbarPos) {
-            case "top":
-                targetX = screenWidth - width - margin
-                targetY = margin + taskbarHeight
-                showAnimation.property = "y"
-                showAnimation.from = panel.y
-                showAnimation.to = targetY
-                break
-            case "bottom":
-                targetX = screenWidth - width - margin
-                targetY = screenHeight - height - margin - taskbarHeight
-                showAnimation.property = "y"
-                showAnimation.from = panel.y
-                showAnimation.to = targetY
-                break
-            case "left":
-                targetX = taskbarHeight
-                targetY = screenHeight - height - margin
-                showAnimation.property = "x"
-                showAnimation.from = panel.x
-                showAnimation.to = targetX
-                break
-            case "right":
-                targetX = screenWidth - width - taskbarHeight
-                targetY = screenHeight - height - margin
-                showAnimation.property = "x"
-                showAnimation.from = panel.x
-                showAnimation.to = targetX
-                break
-            default:
-                targetX = screenWidth - width - margin
-                targetY = screenHeight - height - margin - taskbarHeight
-                showAnimation.property = "y"
-                showAnimation.from = panel.y
-                showAnimation.to = targetY
-                break
+        case "top":
+            targetX = screenWidth - width - margin
+            targetY = margin + taskbarHeight
+            showAnimation.property = "y"
+            showAnimation.from = panel.y
+            showAnimation.to = targetY
+            break
+        case "bottom":
+            targetX = screenWidth - width - margin
+            targetY = screenHeight - height - margin - taskbarHeight
+            showAnimation.property = "y"
+            showAnimation.from = panel.y
+            showAnimation.to = targetY
+            break
+        case "left":
+            targetX = taskbarHeight
+            targetY = screenHeight - height - margin
+            showAnimation.property = "x"
+            showAnimation.from = panel.x
+            showAnimation.to = targetX
+            break
+        case "right":
+            targetX = screenWidth - width - taskbarHeight
+            targetY = screenHeight - height - margin
+            showAnimation.property = "x"
+            showAnimation.from = panel.x
+            showAnimation.to = targetX
+            break
+        default:
+            targetX = screenWidth - width - margin
+            targetY = screenHeight - height - margin - taskbarHeight
+            showAnimation.property = "y"
+            showAnimation.from = panel.y
+            showAnimation.to = targetY
+            break
         }
 
         // For left/right positioning, also set the Y coordinate immediately
@@ -164,36 +164,36 @@ ApplicationWindow {
         let targetPos
 
         switch (panel.taskbarPos) {
-            case "top":
-                targetPos = -height
-                hideAnimation.property = "y"
-                hideAnimation.from = panel.y
-                hideAnimation.to = targetPos
-                break
-            case "bottom":
-                targetPos = Qt.application.screens[0].height
-                hideAnimation.property = "y"
-                hideAnimation.from = panel.y
-                hideAnimation.to = targetPos
-                break
-            case "left":
-                targetPos = -width
-                hideAnimation.property = "x"
-                hideAnimation.from = panel.x
-                hideAnimation.to = targetPos
-                break
-            case "right":
-                targetPos = Qt.application.screens[0].width
-                hideAnimation.property = "x"
-                hideAnimation.from = panel.x
-                hideAnimation.to = targetPos
-                break
-            default:
-                targetPos = Qt.application.screens[0].height
-                hideAnimation.property = "y"
-                hideAnimation.from = panel.y
-                hideAnimation.to = targetPos
-                break
+        case "top":
+            targetPos = -height
+            hideAnimation.property = "y"
+            hideAnimation.from = panel.y
+            hideAnimation.to = targetPos
+            break
+        case "bottom":
+            targetPos = Qt.application.screens[0].height
+            hideAnimation.property = "y"
+            hideAnimation.from = panel.y
+            hideAnimation.to = targetPos
+            break
+        case "left":
+            targetPos = -width
+            hideAnimation.property = "x"
+            hideAnimation.from = panel.x
+            hideAnimation.to = targetPos
+            break
+        case "right":
+            targetPos = Qt.application.screens[0].width
+            hideAnimation.property = "x"
+            hideAnimation.from = panel.x
+            hideAnimation.to = targetPos
+            break
+        default:
+            targetPos = Qt.application.screens[0].height
+            hideAnimation.property = "y"
+            hideAnimation.from = panel.y
+            hideAnimation.to = targetPos
+            break
         }
 
         hideAnimation.start()
@@ -274,7 +274,7 @@ ApplicationWindow {
 
     function updatePanelHeight() {
         Qt.callLater(function() {
-            panel.height = mainLayout.implicitHeight + 30
+            panel.height = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
         })
     }
 
@@ -285,7 +285,23 @@ ApplicationWindow {
     }
 
     Rectangle {
-        anchors.fill: parent
+        anchors.fill: mainLayout
+        anchors.margins: -15
+        color: panel.darkMode ? "#242424" : "#f2f2f2"
+        radius: 12
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            radius: 12
+            border.width: 1
+            border.color: "#E3E3E3"
+            opacity: 0.2
+        }
+    }
+
+    Rectangle {
+        anchors.fill: mediaLayout
+        anchors.margins: -15
         color: panel.darkMode ? "#242424" : "#f2f2f2"
         radius: 12
         Rectangle {
@@ -299,8 +315,84 @@ ApplicationWindow {
     }
 
     ColumnLayout {
+        id: mediaLayout
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 15
+        spacing: 10
+
+        ColumnLayout {
+            RowLayout {
+                id: infosLyt
+                ColumnLayout {
+                    Label {
+                        text: SoundPanelBridge.mediaTitle || ""
+                        font.pixelSize: 14
+                        font.bold: true
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+
+                    Label {
+                        text: SoundPanelBridge.mediaArtist || ""
+                        font.pixelSize: 12
+                        opacity: 0.7
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+                }
+                Image {
+                    Layout.preferredWidth: 48
+                    Layout.preferredHeight: 48
+                    Layout.alignment: Qt.AlignVCenter
+                    source: SoundPanelBridge.mediaArt || ""
+                    fillMode: Image.PreserveAspectCrop
+                    visible: SoundPanelBridge.mediaArt !== ""
+                }
+            }
+
+            RowLayout {
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                ToolButton {
+                    text: "b"
+                    onClicked: SoundPanelBridge.previousTrack()
+                }
+
+                ToolButton {
+                    text: "b"
+                    onClicked: SoundPanelBridge.playPause()
+                }
+
+                ToolButton {
+                    text: "b"
+                    onClicked: SoundPanelBridge.nextTrack()
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+        }
+    }
+
+    Item {
+        id: spacer
+        anchors.top: mediaLayout.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 30
+    }
+
+    ColumnLayout {
         id: mainLayout
-        anchors.fill: parent
+        anchors.top: spacer.bottom
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
         anchors.margins: 15
         spacing: 10
         opacity: 0
