@@ -122,5 +122,9 @@
         <source>QT version</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Display currently playing media</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>

@@ -202,7 +202,14 @@ void SoundPanelBridge::initializeData() {
         m_applicationsReady = true;
     }
 
-    MediaSessionManager::queryMediaInfoAsync();
+    m_mediaTitle = "";
+    m_mediaArtist = "";
+    m_mediaArt = "";
+    m_isMediaPlaying = false;
+    emit mediaInfoChanged();
+    if (settings.value("displayMediaInfos", true).toBool()) {
+            MediaSessionManager::queryMediaInfoAsync();
+    }
 
     checkDataInitializationComplete();
 }

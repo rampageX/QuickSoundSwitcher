@@ -617,6 +617,7 @@ ApplicationWindow {
 
                 ColumnLayout {
                     spacing: 2
+                    Layout.fillWidth: true
                     Item {
                         Layout.fillHeight: true
                     }
@@ -635,7 +636,6 @@ ApplicationWindow {
                         opacity: 0.7
                         elide: Text.ElideRight
                         Layout.fillWidth: true
-                        visible: text !== ""
                     }
 
                     Item {

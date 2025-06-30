@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick.Controls.FluentWinUI3
-import QtQuick.Controls.impl
 import QtQuick.Layouts
 import QtQuick
 import Odizinne.QuickSoundSwitcher
@@ -313,6 +312,19 @@ ApplicationWindow {
                             model: [qsTr("Slider tooltip"), qsTr("Label"), qsTr("Hidden")]
                             currentIndex: UserSettings.volumeValueMode
                             onActivated: UserSettings.volumeValueMode = currentIndex
+                        }
+                    }
+
+                    RowLayout {
+                        spacing: 15
+                        Layout.preferredHeight: root.rowHeight
+                        Label {
+                            text: qsTr("Display currently playing media")
+                            Layout.fillWidth: true
+                        }
+                        Switch {
+                            checked: UserSettings.displayMediaInfos
+                            onClicked: UserSettings.displayMediaInfos = checked
                         }
                     }
 
