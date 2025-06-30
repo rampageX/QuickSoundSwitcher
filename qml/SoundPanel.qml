@@ -29,6 +29,15 @@ ApplicationWindow {
         if (!visible) {
             outputDevicesList.expanded = false
             inputDevicesList.expanded = false
+            // Reset all opacity values
+            mainLayout.opacity = 0
+            mediaLayout.opacity = 0
+            outputDevicesList.opacity = 0
+            inputDevicesList.opacity = 0
+            // Stop any running timers
+            contentOpacityTimer.stop()
+            outputListOpacityTimer.stop()
+            inputListOpacityTimer.stop()
         }
     }
 
@@ -149,6 +158,36 @@ ApplicationWindow {
         }
     }
 
+    // Panel content opacity timer (triggers at 75% of slide animation)
+    Timer {
+        id: contentOpacityTimer
+        interval: 200  // 75% of 210ms
+        repeat: false
+        onTriggered: mainLayout.opacity = 1
+    }
+
+    Timer {
+        id: flyoutOpacityTimer
+        interval: 200  // 75% of 210ms
+        repeat: false
+        onTriggered: mediaLayout.opacity = 1
+    }
+
+    // ListView opacity timers (trigger at 75% of 150ms = 112ms)
+    Timer {
+        id: outputListOpacityTimer
+        interval: 112
+        repeat: false
+        onTriggered: outputDevicesList.opacity = 1
+    }
+
+    Timer {
+        id: inputListOpacityTimer
+        interval: 112
+        repeat: false
+        onTriggered: inputDevicesList.opacity = 1
+    }
+
     onHeightChanged: {
         // Reposition if we're in the middle of showing
         if (isAnimatingIn && !isAnimatingOut) {
@@ -170,9 +209,12 @@ ApplicationWindow {
         target: contentTransform
         duration: 210
         easing.type: Easing.OutCubic
+        onStarted: {
+            contentOpacityTimer.start()
+            flyoutOpacityTimer.start()
+        }
         onFinished: {
             panel.isAnimatingIn = false
-            mainLayout.opacity = 1
             panel.showAnimationFinished()
         }
     }
@@ -183,6 +225,10 @@ ApplicationWindow {
         duration: 210
         easing.type: Easing.InCubic
         onFinished: {
+            mainLayout.opacity = 0
+            mediaLayout.opacity = 0
+            outputDevicesList.opacity = 0
+            inputDevicesList.opacity = 0
             panel.visible = false
             panel.isAnimatingOut = false
             panel.dataLoaded = false
@@ -386,6 +432,12 @@ ApplicationWindow {
     function updatePanelHeight() {
         Qt.callLater(function() {
             Qt.callLater(function() {
+                // Don't update height if list animations are running
+                if (outputExpandAnimation.running || outputCollapseAnimation.running ||
+                    inputExpandAnimation.running || inputCollapseAnimation.running) {
+                    return
+                }
+
                 const oldHeight = panel.height
                 const newHeight = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
 
@@ -451,6 +503,7 @@ ApplicationWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: 15
+            opacity: 0
             spacing: 10
             visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
 
@@ -459,6 +512,14 @@ ApplicationWindow {
                     panel.updatePanelHeight()
                 }
             }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.OutQuad
+                }
+            }
+
             ColumnLayout {
                 RowLayout {
                     id: infosLyt
@@ -551,6 +612,7 @@ ApplicationWindow {
                     panel.updatePanelHeight()
                 }
             }
+
             Behavior on opacity {
                 NumberAnimation {
                     duration: 300
@@ -678,16 +740,26 @@ ApplicationWindow {
                         anchors.margins: 10
                         clip: true
                         interactive: false
+                        opacity: 0  // Start hidden
                         property bool expanded: false
                         model: playbackDeviceModel
+
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 200
+                                easing.type: Easing.OutQuad
+                            }
+                        }
 
                         onExpandedChanged: {
                             if (expanded) {
                                 outputExpandAnimation.targetHeight = contentHeight
                                 outputExpandAnimation.start()
+                                outputListOpacityTimer.start()  // Start opacity timer
                             } else {
                                 outputCollapseAnimation.previousHeight = parent.Layout.preferredHeight
                                 outputCollapseAnimation.start()
+                                opacity = 0  // Hide immediately when collapsing
                             }
                         }
 
@@ -842,16 +914,26 @@ ApplicationWindow {
                         anchors.margins: 10
                         clip: true
                         interactive: false
+                        opacity: 0  // Start hidden
                         property bool expanded: false
                         model: recordingDeviceModel
+
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 200
+                                easing.type: Easing.OutQuad
+                            }
+                        }
 
                         onExpandedChanged: {
                             if (expanded) {
                                 inputExpandAnimation.targetHeight = contentHeight
                                 inputExpandAnimation.start()
+                                inputListOpacityTimer.start()  // Start opacity timer
                             } else {
                                 inputCollapseAnimation.previousHeight = parent.Layout.preferredHeight
                                 inputCollapseAnimation.start()
+                                opacity = 0  // Hide immediately when collapsing
                             }
                         }
 
