@@ -666,6 +666,7 @@ ApplicationWindow {
                     text: outputDevicesList.expanded ? "−" : "+"
                     font.pixelSize: 16
                     font.bold: true
+                    visible: playbackDeviceModel.count > 1
                     onClicked: {
                         outputDevicesList.expanded = !outputDevicesList.expanded
                     }
@@ -829,6 +830,7 @@ ApplicationWindow {
                     text: inputDevicesList.expanded ? "−" : "+"
                     font.pixelSize: 16
                     font.bold: true
+                    visible: recordingDeviceModel.count > 1
                     onClicked: {
                         inputDevicesList.expanded = !inputDevicesList.expanded
                     }
