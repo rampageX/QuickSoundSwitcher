@@ -375,7 +375,7 @@ ApplicationWindow {
                 }
 
                 ToolButton {
-                    icon.source: "qrc:/icons/play.png"
+                    icon.source: SoundPanelBridge.isMediaPlaying ? "qrc:/icons/pause.png" : "qrc:/icons/play.png"
                     onClicked: SoundPanelBridge.playPause()
                     Layout.preferredWidth: 40
                     Layout.preferredHeight: 40

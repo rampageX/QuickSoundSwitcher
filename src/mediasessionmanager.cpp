@@ -151,6 +151,8 @@ void MediaWorker::playPause() {
 
         if (currentSession) {
             currentSession.TryTogglePlayPauseAsync().get();
+            // Immediately fetch updated state
+            QMetaObject::invokeMethod(this, "queryMediaInfo", Qt::QueuedConnection);
         }
     } catch (...) {
         qDebug() << "Failed to toggle play/pause";
@@ -165,6 +167,8 @@ void MediaWorker::nextTrack() {
 
         if (currentSession) {
             currentSession.TrySkipNextAsync().get();
+            // Immediately fetch updated state
+            QMetaObject::invokeMethod(this, "queryMediaInfo", Qt::QueuedConnection);
         }
     } catch (...) {
         qDebug() << "Failed to skip to next track";
@@ -179,6 +183,8 @@ void MediaWorker::previousTrack() {
 
         if (currentSession) {
             currentSession.TrySkipPreviousAsync().get();
+            // Immediately fetch updated state
+            QMetaObject::invokeMethod(this, "queryMediaInfo", Qt::QueuedConnection);
         }
     } catch (...) {
         qDebug() << "Failed to skip to previous track";
