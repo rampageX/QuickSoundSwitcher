@@ -11,6 +11,7 @@ Settings {
     property bool deviceShortName: true
     property int volumeValueMode: 0
     property int panelMargin: 12
-    property bool displayMediaInfos: true
     property int mediaMode: 0
+    property bool displayDevAppLabel: true
+    property bool closeDeviceListOnClick: true
 }

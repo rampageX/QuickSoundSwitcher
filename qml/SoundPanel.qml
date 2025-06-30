@@ -25,6 +25,13 @@ ApplicationWindow {
     signal showAnimationFinished()
     signal hideAnimationStarted()
 
+    onVisibleChanged: {
+        if (!visible) {
+            outputDevicesList.expanded = false
+            inputDevicesList.expanded = false
+        }
+    }
+
     // Simplified ListView animations
     ParallelAnimation {
         id: outputExpandAnimation
@@ -379,9 +386,20 @@ ApplicationWindow {
         }
 
         function onDataInitializationComplete() {
-            // All data loaded - now start the animation
+            // All data loaded - now calculate height and start animation
             panel.dataLoaded = true
-            Qt.callLater(panel.startAnimation)
+
+            // Ensure panel height is calculated before animation
+            Qt.callLater(function() {
+                Qt.callLater(function() {
+                    // Force height calculation to complete first
+                    const newHeight = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
+                    panel.height = newHeight
+
+                    // Now start the animation with correct dimensions
+                    Qt.callLater(panel.startAnimation)
+                })
+            })
         }
     }
 
@@ -591,9 +609,10 @@ ApplicationWindow {
                 ColumnLayout {
                     spacing: -4
                     Label {
+                        visible: UserSettings.displayDevAppLabel
                         opacity: 0.5
                         elide: Text.ElideRight
-                        Layout.preferredWidth: 200
+                        Layout.preferredWidth: outputSlider.implicitWidth - 30
                         Layout.leftMargin: 18
                         Layout.rightMargin: 25
                         text: {
@@ -636,6 +655,13 @@ ApplicationWindow {
                     }
                 }
 
+                Label {
+                    text: Math.round(outputSlider.value).toString()
+                    Layout.rightMargin: 5
+                    font.pixelSize: 14
+                    visible: UserSettings.volumeValueMode === 1
+                }
+
                 ToolButton {
                     text: outputDevicesList.expanded ? "−" : "+"
                     font.pixelSize: 16
@@ -643,13 +669,6 @@ ApplicationWindow {
                     onClicked: {
                         outputDevicesList.expanded = !outputDevicesList.expanded
                     }
-                }
-
-                Label {
-                    text: Math.round(outputSlider.value).toString()
-                    Layout.rightMargin: 5
-                    font.pixelSize: 14
-                    visible: UserSettings.volumeValueMode === 1
                 }
             }
 
@@ -726,6 +745,10 @@ ApplicationWindow {
                                     }
                                 }
                                 SoundPanelBridge.onRecordingDeviceChanged(name)
+
+                                if (UserSettings.closeDeviceListOnClick) {
+                                    outputDevicesList.expanded = false
+                                }
                             }
                         }
                     }
@@ -750,9 +773,10 @@ ApplicationWindow {
                 ColumnLayout {
                     spacing: -4
                     Label {
+                        visible: UserSettings.displayDevAppLabel
                         opacity: 0.5
                         elide: Text.ElideRight
-                        Layout.preferredWidth: 200
+                        Layout.preferredWidth: inputSlider.implicitWidth - 30
                         Layout.leftMargin: 18
                         Layout.rightMargin: 25
                         text: {
@@ -794,6 +818,13 @@ ApplicationWindow {
                     }
                 }
 
+                Label {
+                    text: Math.round(inputSlider.value).toString()
+                    Layout.rightMargin: 5
+                    font.pixelSize: 14
+                    visible: UserSettings.volumeValueMode === 1
+                }
+
                 ToolButton {
                     text: inputDevicesList.expanded ? "−" : "+"
                     font.pixelSize: 16
@@ -801,13 +832,6 @@ ApplicationWindow {
                     onClicked: {
                         inputDevicesList.expanded = !inputDevicesList.expanded
                     }
-                }
-
-                Label {
-                    text: Math.round(inputSlider.value).toString()
-                    Layout.rightMargin: 5
-                    font.pixelSize: 14
-                    visible: UserSettings.volumeValueMode === 1
                 }
             }
 
@@ -891,6 +915,10 @@ ApplicationWindow {
                                 }
 
                                 SoundPanelBridge.onPlaybackDeviceChanged(name)
+
+                                if (UserSettings.closeDeviceListOnClick) {
+                                    inputDevicesList.expanded = false
+                                }
                             }
                         }
                     }
@@ -950,6 +978,7 @@ ApplicationWindow {
                     ColumnLayout {
                         spacing: -4
                         Label {
+                            visible: UserSettings.displayDevAppLabel
                             opacity: 0.5
                             elide: Text.ElideRight
                             Layout.preferredWidth: 200

@@ -123,10 +123,6 @@
         <translation>Versione QT</translation>
     </message>
     <message>
-        <source>Display currently playing media</source>
-        <translation>Visualizza media attualmente in riproduzione</translation>
-    </message>
-    <message>
         <source>Currently playing media display mode</source>
         <translation>Modo visualizzazione media attuualmente in riproduzione</translation>
     </message>
@@ -137,6 +133,14 @@
     <message>
         <source>Panel (informative)</source>
         <translation>Pannello (informativo)</translation>
+    </message>
+    <message>
+        <source>Applications and devices label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close device list after changed</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

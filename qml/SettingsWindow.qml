@@ -214,6 +214,19 @@ ApplicationWindow {
                         }
                     }
 
+                    RowLayout {
+                        spacing: 15
+                        Layout.preferredHeight: root.rowHeight
+                        Label {
+                            text: qsTr("Close device list after changed")
+                            Layout.fillWidth: true
+                        }
+                        Switch {
+                            checked: UserSettings.closeDeviceListOnClick
+                            onClicked: UserSettings.closeDeviceListOnClick = checked
+                        }
+                    }
+
                     Item {
                         Layout.fillHeight: true
                     }
@@ -335,12 +348,12 @@ ApplicationWindow {
                         spacing: 15
                         Layout.preferredHeight: root.rowHeight
                         Label {
-                            text: qsTr("Display currently playing media")
+                            text: qsTr("Applications and devices label")
                             Layout.fillWidth: true
                         }
                         Switch {
-                            checked: UserSettings.displayMediaInfos
-                            onClicked: UserSettings.displayMediaInfos = checked
+                            checked: UserSettings.displayDevAppLabel
+                            onClicked: UserSettings.displayDevAppLabel = checked
                         }
                     }
 
