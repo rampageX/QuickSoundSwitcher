@@ -126,5 +126,17 @@
         <source>Display currently playing media</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Currently playing media display mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flyout (interactive)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Panel (informative)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>

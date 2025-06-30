@@ -12,4 +12,5 @@ Settings {
     property int volumeValueMode: 0
     property int panelMargin: 12
     property bool displayMediaInfos: true
+    property int mediaMode: 0
 }

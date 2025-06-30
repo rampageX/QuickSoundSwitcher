@@ -42,10 +42,10 @@ void cleanup();
 void queryMediaInfoAsync();
 void startMonitoringAsync();
 void stopMonitoringAsync();
-MediaWorker* getWorker();
 void playPauseAsync();
 void nextTrackAsync();
 void previousTrackAsync();
+MediaWorker* getWorker();
 }
 
 #endif // MEDIASESSIONMANAGER_H

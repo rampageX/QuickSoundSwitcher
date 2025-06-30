@@ -319,6 +319,22 @@ ApplicationWindow {
                         spacing: 15
                         Layout.preferredHeight: root.rowHeight
                         Label {
+                            text: qsTr("Currently playing media display mode")
+                            Layout.fillWidth: true
+                        }
+                        ComboBox {
+                            Layout.preferredHeight: 35
+                            Layout.preferredWidth: 200
+                            model: [qsTr("Flyout (interactive)"), qsTr("Panel (informative)"), qsTr("Hidden")]
+                            currentIndex: UserSettings.mediaMode
+                            onActivated: UserSettings.mediaMode = currentIndex
+                        }
+                    }
+
+                    RowLayout {
+                        spacing: 15
+                        Layout.preferredHeight: root.rowHeight
+                        Label {
                             text: qsTr("Display currently playing media")
                             Layout.fillWidth: true
                         }

@@ -188,7 +188,6 @@ void SoundPanelBridge::initializeData() {
     if (mode == 0 || mode == 2) {  // devices + mixer OR devices only
         populatePlaybackDevices();
         populateRecordingDevices();
-
         AudioManager::queryCurrentPropertiesAsync();
     } else {
         AudioManager::queryCurrentPropertiesAsync();
@@ -207,7 +206,7 @@ void SoundPanelBridge::initializeData() {
     m_mediaArt = "";
     m_isMediaPlaying = false;
     emit mediaInfoChanged();
-    if (settings.value("displayMediaInfos", true).toBool()) {
+    if (settings.value("mediaMode", true).toInt() != 2) {
         MediaSessionManager::queryMediaInfoAsync();
     }
 
@@ -531,17 +530,22 @@ QString SoundPanelBridge::mediaArt() const {
 
 void SoundPanelBridge::playPause() {
     MediaSessionManager::playPauseAsync();
-    MediaSessionManager::queryMediaInfoAsync();
 }
 
 void SoundPanelBridge::nextTrack() {
     MediaSessionManager::nextTrackAsync();
-    MediaSessionManager::queryMediaInfoAsync();
 }
 
 void SoundPanelBridge::previousTrack() {
     MediaSessionManager::previousTrackAsync();
-    MediaSessionManager::queryMediaInfoAsync();
 }
 
+void SoundPanelBridge::startMediaMonitoring() {
+    if (settings.value("displayMediaInfos", true).toBool()) {
+        MediaSessionManager::startMonitoringAsync();
+    }
+}
 
+void SoundPanelBridge::stopMediaMonitoring() {
+    MediaSessionManager::stopMonitoringAsync();
+}

@@ -134,7 +134,7 @@ void MediaWorker::startMonitoring() {
     if (!m_updateTimer) {
         initializeTimer();
     }
-    m_updateTimer->start(2000); // Update every 2 seconds
+    m_updateTimer->start(1000); // Update every 1 second
 }
 
 void MediaWorker::stopMonitoring() {
@@ -184,6 +184,7 @@ void MediaWorker::previousTrack() {
         qDebug() << "Failed to skip to previous track";
     }
 }
+
 void MediaSessionManager::initialize() {
     QMutexLocker locker(&g_mediaInitMutex);
 
@@ -226,10 +227,6 @@ void MediaSessionManager::stopMonitoringAsync() {
     }
 }
 
-MediaWorker* MediaSessionManager::getWorker() {
-    return g_mediaWorker;
-}
-
 void MediaSessionManager::playPauseAsync() {
     if (g_mediaWorker) {
         QMetaObject::invokeMethod(g_mediaWorker, "playPause", Qt::QueuedConnection);
@@ -246,4 +243,8 @@ void MediaSessionManager::previousTrackAsync() {
     if (g_mediaWorker) {
         QMetaObject::invokeMethod(g_mediaWorker, "previousTrack", Qt::QueuedConnection);
     }
+}
+
+MediaWorker* MediaSessionManager::getWorker() {
+    return g_mediaWorker;
 }

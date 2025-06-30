@@ -70,6 +70,8 @@ public:
     Q_INVOKABLE void playPause();
     Q_INVOKABLE void nextTrack();
     Q_INVOKABLE void previousTrack();
+    Q_INVOKABLE void startMediaMonitoring();
+    Q_INVOKABLE void stopMediaMonitoring();
 
 public slots:
     void onPlaybackVolumeChanged(int volume);

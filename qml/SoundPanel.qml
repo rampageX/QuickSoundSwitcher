@@ -25,6 +25,14 @@ ApplicationWindow {
     signal showAnimationFinished()
     signal hideAnimationStarted()
 
+    onShowAnimationFinished: {
+        SoundPanelBridge.startMediaMonitoring()
+    }
+
+    onHideAnimationStarted: {
+        SoundPanelBridge.stopMediaMonitoring()
+    }
+
     PropertyAnimation {
         id: showAnimation
         target: panel
@@ -303,6 +311,7 @@ ApplicationWindow {
         anchors.fill: mediaLayout
         anchors.margins: -15
         color: panel.darkMode ? "#242424" : "#f2f2f2"
+        visible: UserSettings.mediaMode === 0
         radius: 12
         Rectangle {
             anchors.fill: parent
@@ -321,6 +330,7 @@ ApplicationWindow {
         anchors.right: parent.right
         anchors.margins: 15
         spacing: 10
+        visible: UserSettings.mediaMode === 0
 
         ColumnLayout {
             RowLayout {
@@ -360,16 +370,22 @@ ApplicationWindow {
                 ToolButton {
                     text: "b"
                     onClicked: SoundPanelBridge.previousTrack()
+                    Layout.preferredWidth: 40
+                    Layout.preferredHeight: 40
                 }
 
                 ToolButton {
                     text: "b"
                     onClicked: SoundPanelBridge.playPause()
+                    Layout.preferredWidth: 40
+                    Layout.preferredHeight: 40
                 }
 
                 ToolButton {
                     text: "b"
                     onClicked: SoundPanelBridge.nextTrack()
+                    Layout.preferredWidth: 40
+                    Layout.preferredHeight: 40
                 }
 
                 Item {
@@ -396,6 +412,7 @@ ApplicationWindow {
         anchors.margins: 15
         spacing: 10
         opacity: 0
+
         Behavior on opacity {
             NumberAnimation {
                 duration: 300
@@ -704,7 +721,7 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignVCenter
                     source: SoundPanelBridge.mediaArt || ""
                     fillMode: Image.PreserveAspectCrop
-                    visible: SoundPanelBridge.mediaArt !== ""
+                    visible: SoundPanelBridge.mediaArt !== "" && UserSettings.mediaMode === 1
                 }
 
                 ColumnLayout {
@@ -712,6 +729,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Item {
                         Layout.fillHeight: true
+                        Layout.fillWidth: true
                     }
 
                     Label {
@@ -720,6 +738,7 @@ ApplicationWindow {
                         font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
+                        visible: UserSettings.mediaMode === 1
                     }
 
                     Label {
@@ -728,6 +747,7 @@ ApplicationWindow {
                         opacity: 0.7
                         elide: Text.ElideRight
                         Layout.fillWidth: true
+                        visible: UserSettings.mediaMode === 1
                     }
 
                     Item {
