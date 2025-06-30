@@ -25,6 +25,13 @@ ApplicationWindow {
     signal showAnimationFinished()
     signal hideAnimationStarted()
 
+    onHeightChanged: {
+        // Reposition if we're in the middle of showing
+        if (isAnimatingIn && !isAnimatingOut) {
+            positionPanelOffScreen()
+        }
+    }
+
     onShowAnimationFinished: {
         SoundPanelBridge.startMediaMonitoring()
     }
@@ -332,6 +339,11 @@ ApplicationWindow {
         spacing: 10
         visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
 
+        onImplicitHeightChanged: {
+            if (panel.visible) {
+                panel.updatePanelHeight()
+            }
+        }
         ColumnLayout {
             RowLayout {
                 id: infosLyt
@@ -401,6 +413,12 @@ ApplicationWindow {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 30
+
+        onImplicitHeightChanged: {
+            if (panel.visible) {
+                panel.updatePanelHeight()
+            }
+        }
     }
 
     ColumnLayout {
@@ -413,6 +431,11 @@ ApplicationWindow {
         spacing: 10
         opacity: 0
 
+        onImplicitHeightChanged: {
+            if (panel.visible) {
+                panel.updatePanelHeight()
+            }
+        }
         Behavior on opacity {
             NumberAnimation {
                 duration: 300
