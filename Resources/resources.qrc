@@ -21,6 +21,10 @@
         <file>icons/chip.svg</file>
         <file>icons/general.svg</file>
         <file>icons/link.png</file>
+        <file>icons/play.png</file>
+        <file>icons/pause.png</file>
+        <file>icons/next.png</file>
+        <file>icons/prev.png</file>
         <file>sounds/empty.wav</file>
     </qresource>
 </RCC>

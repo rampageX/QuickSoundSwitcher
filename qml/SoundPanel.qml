@@ -311,7 +311,7 @@ ApplicationWindow {
         anchors.fill: mediaLayout
         anchors.margins: -15
         color: panel.darkMode ? "#242424" : "#f2f2f2"
-        visible: UserSettings.mediaMode === 0
+        visible: mediaLayout.visible
         radius: 12
         Rectangle {
             anchors.fill: parent
@@ -330,7 +330,7 @@ ApplicationWindow {
         anchors.right: parent.right
         anchors.margins: 15
         spacing: 10
-        visible: UserSettings.mediaMode === 0
+        visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
 
         ColumnLayout {
             RowLayout {
@@ -353,8 +353,8 @@ ApplicationWindow {
                     }
                 }
                 Image {
-                    Layout.preferredWidth: 48
-                    Layout.preferredHeight: 48
+                    Layout.preferredWidth: 64
+                    Layout.preferredHeight: 64
                     Layout.alignment: Qt.AlignVCenter
                     source: SoundPanelBridge.mediaArt || ""
                     fillMode: Image.PreserveAspectCrop
@@ -368,21 +368,21 @@ ApplicationWindow {
                 }
 
                 ToolButton {
-                    text: "b"
+                    icon.source: "qrc:/icons/prev.png"
                     onClicked: SoundPanelBridge.previousTrack()
                     Layout.preferredWidth: 40
                     Layout.preferredHeight: 40
                 }
 
                 ToolButton {
-                    text: "b"
+                    icon.source: "qrc:/icons/play.png"
                     onClicked: SoundPanelBridge.playPause()
                     Layout.preferredWidth: 40
                     Layout.preferredHeight: 40
                 }
 
                 ToolButton {
-                    text: "b"
+                    icon.source: "qrc:/icons/next.png"
                     onClicked: SoundPanelBridge.nextTrack()
                     Layout.preferredWidth: 40
                     Layout.preferredHeight: 40
