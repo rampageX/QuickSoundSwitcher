@@ -9,7 +9,7 @@ import Odizinne.QuickSoundSwitcher
 ApplicationWindow {
     id: panel
     width: 360
-    height: 200  // Initial height
+    height: 200
     visible: false
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
@@ -29,151 +29,47 @@ ApplicationWindow {
         if (!visible) {
             outputDevicesList.expanded = false
             inputDevicesList.expanded = false
-            // Reset all opacity values
             mainLayout.opacity = 0
             mediaLayout.opacity = 0
             outputDevicesList.opacity = 0
             inputDevicesList.opacity = 0
-            // Stop any running timers
             contentOpacityTimer.stop()
             outputListOpacityTimer.stop()
             inputListOpacityTimer.stop()
         }
     }
 
-    // Simplified ListView animations
-    ParallelAnimation {
+    // Simple ListView height animations
+    PropertyAnimation {
         id: outputExpandAnimation
-        property int targetHeight: 0
-
-        PropertyAnimation {
-            target: outputDevicesRect
-            property: "Layout.preferredHeight"
-            from: 0
-            to: outputExpandAnimation.targetHeight + 20
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-        PropertyAnimation {
-            target: panel
-            property: "height"
-            from: panel.height
-            to: panel.height + outputExpandAnimation.targetHeight + 20
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-        PropertyAnimation {
-            target: panel
-            property: "y"
-            from: panel.y
-            to: panel.taskbarPos === "bottom" ? panel.y - (outputExpandAnimation.targetHeight + 20) : panel.y
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
+        target: outputDevicesRect
+        property: "Layout.preferredHeight"
+        duration: 150
+        easing.type: Easing.OutQuad
     }
 
-    ParallelAnimation {
-        id: outputCollapseAnimation
-        property int previousHeight: 0
-
-        PropertyAnimation {
-            target: outputDevicesRect
-            property: "Layout.preferredHeight"
-            to: 0
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-        PropertyAnimation {
-            target: panel
-            property: "height"
-            to: panel.height - outputCollapseAnimation.previousHeight
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-        PropertyAnimation {
-            target: panel
-            property: "y"
-            from: panel.y
-            to: panel.taskbarPos === "bottom" ? panel.y + outputCollapseAnimation.previousHeight : panel.y
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-    }
-
-    ParallelAnimation {
+    PropertyAnimation {
         id: inputExpandAnimation
-        property int targetHeight: 0
-
-        PropertyAnimation {
-            target: inputDevicesRect
-            property: "Layout.preferredHeight"
-            from: 0
-            to: inputExpandAnimation.targetHeight + 20
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-        PropertyAnimation {
-            target: panel
-            property: "height"
-            from: panel.height
-            to: panel.height + inputExpandAnimation.targetHeight + 20
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-        PropertyAnimation {
-            target: panel
-            property: "y"
-            from: panel.y
-            to: panel.taskbarPos === "bottom" ? panel.y - (inputExpandAnimation.targetHeight + 20) : panel.y
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
+        target: inputDevicesRect
+        property: "Layout.preferredHeight"
+        duration: 150
+        easing.type: Easing.OutQuad
     }
 
-    ParallelAnimation {
-        id: inputCollapseAnimation
-        property int previousHeight: 0
-
-        PropertyAnimation {
-            target: inputDevicesRect
-            property: "Layout.preferredHeight"
-            to: 0
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-        PropertyAnimation {
-            target: panel
-            property: "height"
-            to: panel.height - inputCollapseAnimation.previousHeight
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-        PropertyAnimation {
-            target: panel
-            property: "y"
-            from: panel.y
-            to: panel.taskbarPos === "bottom" ? panel.y + inputCollapseAnimation.previousHeight : panel.y
-            duration: 150
-            easing.type: Easing.OutQuad
-        }
-    }
-
-    // Panel content opacity timer (triggers at 75% of slide animation)
     Timer {
         id: contentOpacityTimer
-        interval: 200  // 75% of 210ms
+        interval: 200
         repeat: false
         onTriggered: mainLayout.opacity = 1
     }
 
     Timer {
         id: flyoutOpacityTimer
-        interval: 200  // 75% of 210ms
+        interval: 200
         repeat: false
         onTriggered: mediaLayout.opacity = 1
     }
 
-    // ListView opacity timers (trigger at 75% of 150ms = 112ms)
     Timer {
         id: outputListOpacityTimer
         interval: 112
@@ -189,7 +85,6 @@ ApplicationWindow {
     }
 
     onHeightChanged: {
-        // Reposition if we're in the middle of showing
         if (isAnimatingIn && !isAnimatingOut) {
             positionPanelAtTarget()
         }
@@ -203,7 +98,6 @@ ApplicationWindow {
         SoundPanelBridge.stopMediaMonitoring()
     }
 
-    // Transform-based animations
     PropertyAnimation {
         id: showAnimation
         target: contentTransform
@@ -225,13 +119,11 @@ ApplicationWindow {
         duration: 210
         easing.type: Easing.InCubic
         onFinished: {
-
             panel.visible = false
             panel.isAnimatingOut = false
             panel.dataLoaded = false
             panel.hideAnimationFinished()
         }
-
         onStarted: {
             mainLayout.opacity = 0
             mediaLayout.opacity = 0
@@ -256,10 +148,7 @@ ApplicationWindow {
         panel.taskbarPos = SoundPanelBridge.taskbarPosition
         panel.visible = true
 
-        // Position window at final target location
         positionPanelAtTarget()
-
-        // Set initial transform (content off-screen)
         setInitialTransform()
     }
 
@@ -319,7 +208,6 @@ ApplicationWindow {
     function startAnimation() {
         if (!isAnimatingIn) return
 
-        // Animate transform back to 0,0 (content slides into view)
         showAnimation.properties = panel.taskbarPos === "left" || panel.taskbarPos === "right" ? "x" : "y"
         showAnimation.from = panel.taskbarPos === "left" || panel.taskbarPos === "right" ? contentTransform.x : contentTransform.y
         showAnimation.to = 0
@@ -334,7 +222,6 @@ ApplicationWindow {
         isAnimatingOut = true
         panel.hideAnimationStarted()
 
-        // Animate content off-screen
         switch (panel.taskbarPos) {
         case "top":
             hideAnimation.properties = "y"
@@ -416,17 +303,11 @@ ApplicationWindow {
         }
 
         function onDataInitializationComplete() {
-            // All data loaded - now calculate height and start animation
             panel.dataLoaded = true
-
-            // Ensure panel height is calculated before animation
             Qt.callLater(function() {
                 Qt.callLater(function() {
-                    // Force height calculation to complete first
                     const newHeight = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
                     panel.height = newHeight
-
-                    // Now start the animation with correct dimensions
                     Qt.callLater(panel.startAnimation)
                 })
             })
@@ -436,19 +317,11 @@ ApplicationWindow {
     function updatePanelHeight() {
         Qt.callLater(function() {
             Qt.callLater(function() {
-                // Don't update height if list animations are running
-                if (outputExpandAnimation.running || outputCollapseAnimation.running ||
-                    inputExpandAnimation.running || inputCollapseAnimation.running) {
-                    return
-                }
-
-                const oldHeight = panel.height
                 const newHeight = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
 
-                // Only update height and reposition if needed
                 if (panel.visible && !panel.isAnimatingIn && !panel.isAnimatingOut) {
                     panel.height = newHeight
-                    positionPanelAtTarget() // Reposition to account for new height
+                    positionPanelAtTarget()
                 } else {
                     panel.height = newHeight
                 }
@@ -462,7 +335,6 @@ ApplicationWindow {
         id: settingsWindow
     }
 
-    // Main content with transform applied
     Item {
         anchors.fill: parent
         transform: Translate {
@@ -730,6 +602,14 @@ ApplicationWindow {
                     Layout.leftMargin: -14
                     Layout.rightMargin: -14
                     color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
+
+                    Behavior on Layout.preferredHeight {
+                        NumberAnimation {
+                            duration: 150
+                            easing.type: Easing.OutQuad
+                        }
+                    }
+
                     Rectangle {
                         visible: outputDevicesList.expanded
                         anchors.top: parent.top
@@ -756,7 +636,7 @@ ApplicationWindow {
                         anchors.margins: 10
                         clip: true
                         interactive: false
-                        opacity: 0  // Start hidden
+                        opacity: 0
                         property bool expanded: false
                         model: playbackDeviceModel
 
@@ -769,13 +649,11 @@ ApplicationWindow {
 
                         onExpandedChanged: {
                             if (expanded) {
-                                outputExpandAnimation.targetHeight = contentHeight
-                                outputExpandAnimation.start()
-                                outputListOpacityTimer.start()  // Start opacity timer
+                                parent.Layout.preferredHeight = contentHeight + 20
+                                outputListOpacityTimer.start()
                             } else {
-                                outputCollapseAnimation.previousHeight = parent.Layout.preferredHeight
-                                outputCollapseAnimation.start()
-                                opacity = 0  // Hide immediately when collapsing
+                                parent.Layout.preferredHeight = 0
+                                opacity = 0
                             }
                         }
 
@@ -790,35 +668,27 @@ ApplicationWindow {
                             required property int index
                             highlighted: model.isDefault
                             text: UserSettings.deviceShortName ? model.shortName : model.name
-
                             onClicked: {
-                                // Update output model to reflect new default device
                                 for (let i = 0; i < playbackDeviceModel.count; i++) {
                                     playbackDeviceModel.setProperty(i, "isDefault", i === index)
                                 }
                                 SoundPanelBridge.onPlaybackDeviceChanged(name)
                                 if (UserSettings.linkIO) {
-                                    // Use the same name format that's being displayed
-                                    const selectedDeviceName = UserSettings.deviceShortName ? shortName : name
-                                    // Find matching input device by name
+                                    const selectedDeviceName = shortName // Always use shortName for comparison
                                     let linkedInputIndex = -1
                                     for (let i = 0; i < recordingDeviceModel.count; i++) {
-                                        const inputName = UserSettings.deviceShortName ?
-                                            recordingDeviceModel.get(i).shortName :
-                                            recordingDeviceModel.get(i).name
+                                        const inputName = recordingDeviceModel.get(i).shortName // Always use shortName
                                         if (inputName === selectedDeviceName) {
                                             linkedInputIndex = i
                                             break
                                         }
                                     }
-                                    // If matching input device found, update input model
                                     if (linkedInputIndex !== -1) {
                                         for (let i = 0; i < recordingDeviceModel.count; i++) {
                                             recordingDeviceModel.setProperty(i, "isDefault", i === linkedInputIndex)
                                         }
+                                        SoundPanelBridge.onRecordingDeviceChanged(recordingDeviceModel.get(linkedInputIndex).name)
                                     }
-                                    SoundPanelBridge.onRecordingDeviceChanged(name)
-
                                     if (UserSettings.closeDeviceListOnClick) {
                                         outputDevicesList.expanded = false
                                     }
@@ -916,6 +786,14 @@ ApplicationWindow {
                     Layout.leftMargin: -14
                     Layout.rightMargin: -14
                     color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
+
+                    Behavior on Layout.preferredHeight {
+                        NumberAnimation {
+                            duration: 150
+                            easing.type: Easing.OutQuad
+                        }
+                    }
+
                     Rectangle {
                         visible: inputDevicesList.expanded
                         anchors.top: parent.top
@@ -942,7 +820,7 @@ ApplicationWindow {
                         anchors.margins: 10
                         clip: true
                         interactive: false
-                        opacity: 0  // Start hidden
+                        opacity: 0
                         property bool expanded: false
                         model: recordingDeviceModel
 
@@ -955,13 +833,11 @@ ApplicationWindow {
 
                         onExpandedChanged: {
                             if (expanded) {
-                                inputExpandAnimation.targetHeight = contentHeight
-                                inputExpandAnimation.start()
-                                inputListOpacityTimer.start()  // Start opacity timer
+                                parent.Layout.preferredHeight = contentHeight + 20
+                                inputListOpacityTimer.start()
                             } else {
-                                inputCollapseAnimation.previousHeight = parent.Layout.preferredHeight
-                                inputCollapseAnimation.start()
-                                opacity = 0  // Hide immediately when collapsing
+                                parent.Layout.preferredHeight = 0
+                                opacity = 0
                             }
                         }
 
@@ -979,39 +855,26 @@ ApplicationWindow {
                             highlighted: model.isDefault
                             text: UserSettings.deviceShortName ? model.shortName : model.name
                             onClicked: {
-                                // Update input model to reflect new default device
                                 for (let i = 0; i < recordingDeviceModel.count; i++) {
                                     recordingDeviceModel.setProperty(i, "isDefault", i === index)
                                 }
-
                                 SoundPanelBridge.onRecordingDeviceChanged(name)
-
                                 if (UserSettings.linkIO) {
-                                    // Use the same name format that's being displayed
-                                    const selectedDeviceName = UserSettings.deviceShortName ? shortName : name
-
-                                    // Find matching output device by name
+                                    const selectedDeviceName = shortName // Always use shortName for comparison
                                     let linkedOutputIndex = -1
                                     for (let i = 0; i < playbackDeviceModel.count; i++) {
-                                        const outputName = UserSettings.deviceShortName ?
-                                            playbackDeviceModel.get(i).shortName :
-                                            playbackDeviceModel.get(i).name
-
+                                        const outputName = playbackDeviceModel.get(i).shortName // Always use shortName
                                         if (outputName === selectedDeviceName) {
                                             linkedOutputIndex = i
                                             break
                                         }
                                     }
-
-                                    // If matching output device found, update output model
                                     if (linkedOutputIndex !== -1) {
                                         for (let i = 0; i < playbackDeviceModel.count; i++) {
                                             playbackDeviceModel.setProperty(i, "isDefault", i === linkedOutputIndex)
                                         }
+                                        SoundPanelBridge.onPlaybackDeviceChanged(playbackDeviceModel.get(linkedOutputIndex).name)
                                     }
-
-                                    SoundPanelBridge.onPlaybackDeviceChanged(name)
-
                                     if (UserSettings.closeDeviceListOnClick) {
                                         inputDevicesList.expanded = false
                                     }
