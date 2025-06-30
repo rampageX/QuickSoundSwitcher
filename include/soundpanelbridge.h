@@ -8,6 +8,7 @@
 #include <QSettings>
 #include <QScreen>
 #include <QGuiApplication>
+#include "mediasessionmanager.h"
 
 class SoundPanelBridge : public QObject
 {
@@ -22,6 +23,11 @@ class SoundPanelBridge : public QObject
     Q_PROPERTY(int panelMode READ panelMode NOTIFY panelModeChanged)
     Q_PROPERTY(bool deviceChangeInProgress READ deviceChangeInProgress NOTIFY deviceChangeInProgressChanged)
     Q_PROPERTY(QString taskbarPosition READ taskbarPosition NOTIFY taskbarPositionChanged)
+
+    Q_PROPERTY(QString mediaTitle READ mediaTitle NOTIFY mediaInfoChanged)
+    Q_PROPERTY(QString mediaArtist READ mediaArtist NOTIFY mediaInfoChanged)
+    Q_PROPERTY(bool isMediaPlaying READ isMediaPlaying NOTIFY mediaInfoChanged)
+    Q_PROPERTY(QString mediaArt READ mediaArt NOTIFY mediaInfoChanged)
 
 public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
@@ -54,6 +60,11 @@ public:
     Q_INVOKABLE QString getAppVersion() const;
     Q_INVOKABLE QString getQtVersion() const;
 
+    QString mediaTitle() const;
+    QString mediaArtist() const;
+    bool isMediaPlaying() const;
+    QString mediaArt() const;
+
     bool deviceChangeInProgress() const;
 
 public slots:
@@ -85,6 +96,7 @@ signals:
     void dataInitializationComplete();
     void deviceChangeInProgressChanged();
     void taskbarPositionChanged();
+    void mediaInfoChanged();
 
 private:
     static SoundPanelBridge* m_instance;
@@ -114,6 +126,10 @@ private:
     bool m_deviceChangeInProgress = false;
 
     QString detectTaskbarPosition() const;
+    QString m_mediaTitle;
+    QString m_mediaArtist;
+    bool m_isMediaPlaying = false;
+    QString m_mediaArt;
 };
 
 #endif // SOUNDPANELBRIDGE_H

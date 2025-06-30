@@ -25,6 +25,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , settings("Odizinne", "QuickSoundSwitcher")
 {
     AudioManager::initialize();
+    MediaSessionManager::initialize();
     instance = this;
 
     // Initialize QML engine once
@@ -55,6 +56,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
 QuickSoundSwitcher::~QuickSoundSwitcher()
 {
     AudioManager::cleanup();
+    MediaSessionManager::cleanup();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
     destroyQMLEngine();

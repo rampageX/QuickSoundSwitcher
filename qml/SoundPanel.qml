@@ -604,9 +604,43 @@ ApplicationWindow {
                 anchors.fill: parent
                 anchors.leftMargin: 10
                 anchors.rightMargin: 10
+                spacing: 10
 
-                Item {
-                    Layout.fillWidth: true
+                Image {
+                    Layout.preferredWidth: 32
+                    Layout.preferredHeight: 32
+                    Layout.alignment: Qt.AlignVCenter
+                    source: SoundPanelBridge.mediaArt || ""
+                    fillMode: Image.PreserveAspectCrop
+                    visible: SoundPanelBridge.mediaArt !== ""
+                }
+
+                ColumnLayout {
+                    spacing: 2
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    Label {
+                        text: SoundPanelBridge.mediaTitle || ""
+                        font.pixelSize: 14
+                        font.bold: true
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+
+                    Label {
+                        text: SoundPanelBridge.mediaArtist || ""
+                        font.pixelSize: 12
+                        opacity: 0.7
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                        visible: text !== ""
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
                 }
 
                 ToolButton {

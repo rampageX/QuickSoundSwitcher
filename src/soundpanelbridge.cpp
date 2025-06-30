@@ -72,6 +72,17 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     m_currentPropertiesReady = true;
                     checkDataInitializationComplete();
                 });
+
+        if (MediaSessionManager::getWorker()) {
+            connect(MediaSessionManager::getWorker(), &MediaWorker::mediaInfoChanged,
+                    this, [this](const MediaInfo& info) {
+                        m_mediaTitle = info.title;
+                        m_mediaArtist = info.artist;
+                        m_mediaArt = info.albumArt;
+                        m_isMediaPlaying = info.isPlaying;
+                        emit mediaInfoChanged();
+                    });
+        }
     }
 }
 
@@ -190,6 +201,8 @@ void SoundPanelBridge::initializeData() {
     } else {
         m_applicationsReady = true;
     }
+
+    MediaSessionManager::queryMediaInfoAsync();
 
     checkDataInitializationComplete();
 }
@@ -491,4 +504,20 @@ QString SoundPanelBridge::getAppVersion() const
 QString SoundPanelBridge::getQtVersion() const
 {
     return QT_VERSION_STRING;
+}
+
+QString SoundPanelBridge::mediaTitle() const {
+    return m_mediaTitle;
+}
+
+QString SoundPanelBridge::mediaArtist() const {
+    return m_mediaArtist;
+}
+
+bool SoundPanelBridge::isMediaPlaying() const {
+    return m_isMediaPlaying;
+}
+
+QString SoundPanelBridge::mediaArt() const {
+    return m_mediaArt;
 }

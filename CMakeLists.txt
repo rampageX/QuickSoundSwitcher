@@ -28,6 +28,7 @@ set(SOURCES
     src/soundpanelbridge.cpp
     src/utils.cpp
     src/main.cpp
+    src/mediasessionmanager.cpp
 )
 
 set(HEADERS
@@ -37,6 +38,7 @@ set(HEADERS
     include/shortcutmanager.h
     include/soundpanelbridge.h
     include/utils.h
+    include/mediasessionmanager.h
 )
 
 qt_add_executable(QuickSoundSwitcher WIN32 MACOSX_BUNDLE
@@ -90,6 +92,12 @@ target_link_libraries(QuickSoundSwitcher PRIVATE
     Qt::Multimedia
     gdi32
     winmm
+    windowsapp
+)
+
+target_compile_definitions(QuickSoundSwitcher PRIVATE
+    UNICODE
+    WINRT_LEAN_AND_MEAN
 )
 
 qt_add_translations(${CMAKE_PROJECT_NAME}
