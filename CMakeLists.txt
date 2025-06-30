@@ -98,7 +98,13 @@ target_link_libraries(QuickSoundSwitcher PRIVATE
 target_compile_definitions(QuickSoundSwitcher PRIVATE
     UNICODE
     WINRT_LEAN_AND_MEAN
+    NOMINMAX
+    _CRT_SECURE_NO_WARNINGS
 )
+
+if(WIN32 AND MSVC)
+    target_compile_options(QuickSoundSwitcher PRIVATE "/await")
+endif()
 
 qt_add_translations(${CMAKE_PROJECT_NAME}
     TS_FILES
