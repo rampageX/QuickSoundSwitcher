@@ -225,14 +225,18 @@ ApplicationWindow {
         duration: 210
         easing.type: Easing.InCubic
         onFinished: {
-            mainLayout.opacity = 0
-            mediaLayout.opacity = 0
-            outputDevicesList.opacity = 0
-            inputDevicesList.opacity = 0
+
             panel.visible = false
             panel.isAnimatingOut = false
             panel.dataLoaded = false
             panel.hideAnimationFinished()
+        }
+
+        onStarted: {
+            mainLayout.opacity = 0
+            mediaLayout.opacity = 0
+            outputDevicesList.opacity = 0
+            inputDevicesList.opacity = 0
         }
     }
 
@@ -723,14 +727,26 @@ ApplicationWindow {
                     id: outputDevicesRect
                     Layout.fillWidth: true
                     Layout.preferredHeight: 0
+                    Layout.leftMargin: -14
+                    Layout.rightMargin: -14
                     color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
-                    radius: 8
                     Rectangle {
-                        anchors.fill: parent
-                        color: "transparent"
-                        radius: 12
-                        border.width: 1
-                        border.color: "#E3E3E3"
+                        visible: outputDevicesList.expanded
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
+                        height: 1
+                        opacity: 0.1
+                    }
+
+                    Rectangle {
+                        visible: outputDevicesList.expanded
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
+                        height: 1
                         opacity: 0.1
                     }
 
@@ -897,14 +913,26 @@ ApplicationWindow {
                     id: inputDevicesRect
                     Layout.fillWidth: true
                     Layout.preferredHeight: 0
+                    Layout.leftMargin: -14
+                    Layout.rightMargin: -14
                     color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
-                    radius: 12
                     Rectangle {
-                        anchors.fill: parent
-                        color: "transparent"
-                        radius: 12
-                        border.width: 1
-                        border.color: "#E3E3E3"
+                        visible: inputDevicesList.expanded
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
+                        height: 1
+                        opacity: 0.1
+                    }
+
+                    Rectangle {
+                        visible: inputDevicesList.expanded
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
+                        height: 1
                         opacity: 0.1
                     }
 
