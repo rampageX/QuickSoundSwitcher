@@ -166,5 +166,9 @@
         <source>Unknow date</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Group applications by executable</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>

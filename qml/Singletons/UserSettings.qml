@@ -14,4 +14,5 @@ Settings {
     property int mediaMode: 0
     property bool displayDevAppLabel: true
     property bool closeDeviceListOnClick: true
+    property bool groupApplications: true
 }

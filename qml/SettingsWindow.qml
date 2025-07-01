@@ -227,6 +227,20 @@ ApplicationWindow {
                         }
                     }
 
+                    RowLayout {
+                        spacing: 15
+                        Layout.preferredHeight: root.rowHeight
+                        Label {
+                            text: qsTr("Group applications by executable")
+                            Layout.fillWidth: true
+                        }
+
+                        Switch {
+                            checked: UserSettings.groupApplications
+                            onClicked: UserSettings.groupApplications = checked
+                        }
+                    }
+
                     Item {
                         Layout.fillHeight: true
                     }

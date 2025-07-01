@@ -260,6 +260,77 @@ QVariantList SoundPanelBridge::convertDevicesToVariant(const QList<AudioDevice>&
 
 QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Application>& apps)
 {
+    QVariantList applicationList;
+    bool shouldGroup = settings.value("groupApplications", true).toBool();
+
+    if (!shouldGroup) {
+        // Show individual sinks without grouping, but sorted alphabetically
+        QList<Application> filteredApps;
+        QList<Application> systemSoundApps;
+
+        // First filter and separate system sounds from regular apps
+        for (const Application &app : apps) {
+            if (app.executableName.isEmpty() ||
+                app.executableName.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
+                continue;
+            }
+
+            if (app.name == "Windows system sounds") {
+                systemSoundApps.append(app);
+            } else {
+                filteredApps.append(app);
+            }
+        }
+
+        // Sort regular apps alphabetically by display name
+        std::sort(filteredApps.begin(), filteredApps.end(), [](const Application &a, const Application &b) {
+            QString nameA = a.name.isEmpty() ? a.executableName : a.name;
+            QString nameB = b.name.isEmpty() ? b.executableName : b.name;
+            return nameA.compare(nameB, Qt::CaseInsensitive) < 0;
+        });
+
+        // Convert regular apps to variant list
+        for (const Application &app : filteredApps) {
+            QPixmap iconPixmap = app.icon.pixmap(16, 16);
+            QByteArray byteArray;
+            QBuffer buffer(&byteArray);
+            buffer.open(QIODevice::WriteOnly);
+            iconPixmap.toImage().save(&buffer, "PNG");
+            QString base64Icon = QString::fromUtf8(byteArray.toBase64());
+
+            QVariantMap appMap;
+            appMap["appID"] = app.id;
+            appMap["name"] = app.name.isEmpty() ? app.executableName : app.name;
+            appMap["isMuted"] = app.isMuted;
+            appMap["volume"] = app.volume;
+            appMap["icon"] = "data:image/png;base64," + base64Icon;
+
+            applicationList.append(appMap);
+        }
+
+        // Add system sounds at the end (each individual sink)
+        for (const Application &app : systemSoundApps) {
+            QPixmap iconPixmap = app.icon.pixmap(16, 16);
+            QByteArray byteArray;
+            QBuffer buffer(&byteArray);
+            buffer.open(QIODevice::WriteOnly);
+            iconPixmap.toImage().save(&buffer, "PNG");
+            QString base64Icon = QString::fromUtf8(byteArray.toBase64());
+
+            QVariantMap appMap;
+            appMap["appID"] = app.id;
+            appMap["name"] = app.name;
+            appMap["isMuted"] = app.isMuted;
+            appMap["volume"] = app.volume;
+            appMap["icon"] = "data:image/png;base64," + base64Icon;
+
+            applicationList.append(appMap);
+        }
+
+        return applicationList;
+    }
+
+    // Original grouping logic (naturally sorted by QMap keys)
     QMap<QString, QVector<Application>> groupedApps;
     QVector<Application> systemSoundApps;
 
@@ -276,8 +347,6 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
         }
         groupedApps[app.executableName].append(app);
     }
-
-    QVariantList applicationList;
 
     // Process grouped applications
     for (auto it = groupedApps.begin(); it != groupedApps.end(); ++it) {
@@ -323,7 +392,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
         applicationList.append(appMap);
     }
 
-    // Process system sounds
+    // Process system sounds (grouped version - at the end)
     if (!systemSoundApps.isEmpty()) {
         QString displayName = systemSoundApps[0].name.isEmpty() ? "Windows system sounds" : systemSoundApps[0].name;
 
@@ -409,9 +478,16 @@ void SoundPanelBridge::onOutputSliderReleased()
 
 void SoundPanelBridge::onApplicationVolumeSliderValueChanged(QString appID, int volume)
 {
-    QStringList appIDs = appID.split(";");
-    for (const QString& id : appIDs) {
-        AudioManager::setApplicationVolumeAsync(id, volume);
+    bool shouldGroup = settings.value("groupApplications", true).toBool();
+
+    if (shouldGroup) {
+        QStringList appIDs = appID.split(";");
+        for (const QString& id : appIDs) {
+            AudioManager::setApplicationVolumeAsync(id, volume);
+        }
+    } else {
+        // Single app ID when not grouping
+        AudioManager::setApplicationVolumeAsync(appID, volume);
     }
 }
 
@@ -421,9 +497,15 @@ void SoundPanelBridge::onApplicationMuteButtonClicked(QString appID, bool state)
         systemSoundsMuted = state;
     }
 
-    QStringList appIDs = appID.split(";");
-    for (const QString& id : appIDs) {
-        AudioManager::setApplicationMuteAsync(id, state);
+    bool shouldGroup = settings.value("groupApplications", true).toBool();
+
+    if (shouldGroup) {
+        QStringList appIDs = appID.split(";");
+        for (const QString& id : appIDs) {
+            AudioManager::setApplicationMuteAsync(id, state);
+        }
+    } else {
+        AudioManager::setApplicationMuteAsync(appID, state);
     }
 }
 
