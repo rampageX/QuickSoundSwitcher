@@ -12,6 +12,8 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QMetaObject>
+#include <winver.h>
+#pragma comment(lib, "version.lib")
 
 static QThread* g_workerThread = nullptr;
 static AudioWorker* g_worker = nullptr;
@@ -290,6 +292,107 @@ bool setDefaultEndpointImpl(const QString &deviceId) {
     return true;
 }
 
+QString getApplicationDisplayName(const QString& executablePath) {
+    std::wstring wPath = executablePath.toStdWString();
+
+    // Get version info size
+    DWORD dwSize = GetFileVersionInfoSize(wPath.c_str(), NULL);
+    if (dwSize == 0) {
+        qDebug() << "No version info available for:" << executablePath;
+        return QString();
+    }
+
+    // Allocate buffer and get version info
+    std::vector<BYTE> buffer(dwSize);
+    if (!GetFileVersionInfo(wPath.c_str(), 0, dwSize, buffer.data())) {
+        qDebug() << "Failed to get version info for:" << executablePath;
+        return QString();
+    }
+
+
+    // Get available translations
+    LPVOID lpBuffer = NULL;
+    UINT uLen = 0;
+
+    // First, try to get the translation table
+    if (VerQueryValue(buffer.data(), L"\\VarFileInfo\\Translation", &lpBuffer, &uLen)) {
+        DWORD* pTranslations = static_cast<DWORD*>(lpBuffer);
+        UINT numTranslations = uLen / sizeof(DWORD);
+
+
+        // Try each available translation
+        for (UINT i = 0; i < numTranslations; i++) {
+            DWORD translation = pTranslations[i];
+            WORD language = LOWORD(translation);
+            WORD codepage = HIWORD(translation);
+
+            QString langCode = QString("%1%2")
+                                   .arg(language, 4, 16, QChar('0'))
+                                   .arg(codepage, 4, 16, QChar('0'));
+
+
+            // Try ProductName first
+            QString queryPath = QString("\\StringFileInfo\\%1\\ProductName").arg(langCode);
+            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
+                QString productName = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
+                if (!productName.isEmpty()) {
+                    return productName;
+                }
+            }
+
+            // Try FileDescription
+            queryPath = QString("\\StringFileInfo\\%1\\FileDescription").arg(langCode);
+            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
+                QString fileDescription = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
+                if (!fileDescription.isEmpty()) {
+                    return fileDescription;
+                }
+            }
+
+            // Try CompanyName + executable name as last resort
+            queryPath = QString("\\StringFileInfo\\%1\\CompanyName").arg(langCode);
+            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
+                QString companyName = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
+                if (!companyName.isEmpty()) {
+                    QFileInfo fileInfo(executablePath);
+                    QString combined = QString("%1 %2").arg(companyName, fileInfo.baseName());
+                    return combined;
+                }
+            }
+        }
+    } else {
+        // Fallback: try common language/codepage combinations
+        QStringList commonCodes = {
+            "040904b0",  // English US + Unicode
+            "040904e4",  // English US + Windows-1252
+            "000004b0",  // Language neutral + Unicode
+            "000004e4",  // Language neutral + Windows-1252
+        };
+
+        for (const QString& langCode : commonCodes) {
+            // Try ProductName
+            QString queryPath = QString("\\StringFileInfo\\%1\\ProductName").arg(langCode);
+            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
+                QString productName = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
+                if (!productName.isEmpty()) {
+                    return productName;
+                }
+            }
+
+            // Try FileDescription
+            queryPath = QString("\\StringFileInfo\\%1\\FileDescription").arg(langCode);
+            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
+                QString fileDescription = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
+                if (!fileDescription.isEmpty()) {
+                    return fileDescription;
+                }
+            }
+        }
+    }
+
+    return QString();
+}
+
 QList<Application> enumerateAudioApplicationsImpl() {
     QList<Application> applications;
 
@@ -346,7 +449,7 @@ QList<Application> enumerateAudioApplicationsImpl() {
 
         LPWSTR pwszDisplayName = nullptr;
         hr = pSessionControl->GetDisplayName(&pwszDisplayName);
-        QString appName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "Unknown Application";
+        QString sessionDisplayName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "Unknown Application";
         CoTaskMemFree(pwszDisplayName);
 
         CComPtr<ISimpleAudioVolume> pSimpleAudioVolume;
@@ -365,7 +468,9 @@ QList<Application> enumerateAudioApplicationsImpl() {
         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
         QString executablePath;
         QString executableName;
+        QString finalAppName = sessionDisplayName; // Default to session display name
         QIcon appIcon;
+
         if (hProcess) {
             WCHAR exePath[MAX_PATH];
             if (GetModuleFileNameEx(hProcess, NULL, exePath, MAX_PATH)) {
@@ -378,20 +483,30 @@ QList<Application> enumerateAudioApplicationsImpl() {
                     executableName[0] = executableName[0].toUpper();
                 }
 
+                // Try to get better display name from version info
+                QString betterDisplayName = getApplicationDisplayName(executablePath);
+                if (!betterDisplayName.isEmpty()) {
+                    finalAppName = betterDisplayName;
+                } else if (!executableName.isEmpty()) {
+                    // Fallback to capitalized executable name if no version info
+                    finalAppName = executableName;
+                }
+
                 appIcon = getAppIcon(executablePath);
             }
             CloseHandle(hProcess);
         }
 
-        if (appName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
-            appName = "Windows system sounds";
+        // Handle special case for Windows system sounds
+        if (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+            finalAppName = "Windows system sounds";
             executableName = "Windows system sounds";
             appIcon = QIcon(":/icons/system.png");
         }
 
         Application app;
         app.id = appId;
-        app.name = appName;
+        app.name = finalAppName;
         app.executableName = executableName;
         app.isMuted = isMuted;
         app.volume = static_cast<int>(volumeLevel * 100);
