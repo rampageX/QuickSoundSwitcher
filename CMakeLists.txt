@@ -67,10 +67,12 @@ set(QML_FILES
     qml/KeepAlive.qml
     qml/DevicesListView.qml
     qml/MediaFlyoutContent.qml
+    qml/Card.qml
 )
 
 set(QML_SINGLETONS
     qml/Singletons/UserSettings.qml
+    qml/Singletons/Constants.qml
 )
 
 set_source_files_properties(${QML_SINGLETONS}
@@ -125,7 +127,7 @@ qt_add_translations(${CMAKE_PROJECT_NAME}
         i18n/QuickSoundSwitcher_it.ts
         i18n/QuickSoundSwitcher_zh_CN.ts
     RESOURCE_PREFIX "/i18n"
-    LUPDATE_OPTIONS "-no-obsolete -no-ui-lines -locations none"
+    LUPDATE_OPTIONS "-no-ui-lines -locations none"
 )
 
 add_dependencies(${CMAKE_PROJECT_NAME} update_translations)

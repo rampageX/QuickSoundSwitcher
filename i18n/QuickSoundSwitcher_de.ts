@@ -67,6 +67,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Close device list after changed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Group applications by executable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Appearance &amp; Position</source>
         <translation type="unfinished"></translation>
     </message>
@@ -119,18 +127,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Debug and information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Application version</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>QT version</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Currently playing media display mode</source>
         <translation type="unfinished"></translation>
     </message>
@@ -147,7 +143,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close device list after changed</source>
+        <source>Debug and information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Application version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QT version</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -155,19 +159,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Translation last updated</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Unknow author</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Unknow date</source>
+        <source>Translation last updated</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Group applications by executable</source>
+        <source>Unknow date</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

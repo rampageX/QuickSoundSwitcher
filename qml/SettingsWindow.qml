@@ -7,10 +7,10 @@ import Odizinne.QuickSoundSwitcher
 
 ApplicationWindow {
     id: root
-    height: 400
-    minimumHeight: 400
-    width: 700
-    minimumWidth: 700
+    height: 450
+    minimumHeight: 450
+    width: 800
+    minimumWidth: 800
     visible: false
     transientParent: null
     title: qsTr("QuickSoundSwitcher - Settings")
@@ -97,9 +97,9 @@ ApplicationWindow {
                             if (sidebarList.currentIndex !== index) {
                                 sidebarList.currentIndex = index
                                 switch(index) {
-                                case 0: stackView.push(generalPaneComponent); break
-                                case 1: stackView.push(appearancePaneComponent); break
-                                case 2: stackView.push(debugPaneComponent); break
+                                    case 0: stackView.push(generalPaneComponent); break
+                                    case 1: stackView.push(appearancePaneComponent); break
+                                    case 2: stackView.push(debugPaneComponent); break
                                 }
                             }
                         }
@@ -147,339 +147,287 @@ ApplicationWindow {
                 id: generalPaneComponent
 
                 ColumnLayout {
-                    spacing: 15
+                    spacing: 3
 
                     Label {
                         text: qsTr("General Settings")
                         font.pixelSize: 22
                         font.bold: true
+                        Layout.bottomMargin: 15
                     }
 
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Panel mode")
-                            Layout.fillWidth: true
-                        }
-
-                        ComboBox {
-                            Layout.preferredHeight: 35
-                            Layout.preferredWidth: 200
-                            model: [qsTr("Devices + Mixer"), qsTr("Mixer only"), qsTr("Devices only")]
-                            currentIndex: UserSettings.panelMode
-                            onActivated: UserSettings.panelMode = currentIndex
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Link same input and output devices")
-                            Layout.fillWidth: true
-                        }
-
-                        Switch {
-                            checked: UserSettings.linkIO
-                            onClicked: UserSettings.linkIO = checked
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Sound keepalive")
-                            Layout.fillWidth: true
-                        }
-
-                        Switch {
-                            checked: UserSettings.keepAlive
-                            onClicked: UserSettings.keepAlive = checked
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Run at system startup")
-                            Layout.fillWidth: true
-                        }
-
-                        Switch {
-                            checked: SoundPanelBridge.getShortcutState()
-                            onClicked: SoundPanelBridge.setStartupShortcut(checked)
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Close device list after changed")
-                            Layout.fillWidth: true
-                        }
-                        Switch {
-                            checked: UserSettings.closeDeviceListOnClick
-                            onClicked: UserSettings.closeDeviceListOnClick = checked
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Group applications by executable")
-                            Layout.fillWidth: true
-                        }
-
-                        Switch {
-                            checked: UserSettings.groupApplications
-                            onClicked: UserSettings.groupApplications = checked
-                        }
-                    }
-
-                    Item {
+                    ScrollView {
+                        Layout.fillWidth: true
                         Layout.fillHeight: true
+                        ColumnLayout {
+                            width: parent.width
+                            spacing: 3
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Panel mode")
+                                description: "test"
+
+                                additionalControl: ComboBox {
+                                    Layout.preferredHeight: 35
+                                    Layout.preferredWidth: 160
+                                    model: [qsTr("Devices + Mixer"), qsTr("Mixer only"), qsTr("Devices only")]
+                                    currentIndex: UserSettings.panelMode
+                                    onActivated: UserSettings.panelMode = currentIndex
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Link same input and output devices")
+                                description: "test"
+
+                                additionalControl: Switch {
+                                    checked: UserSettings.linkIO
+                                    onClicked: UserSettings.linkIO = checked
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Sound keepalive")
+                                description: "test"
+
+                                additionalControl: Switch {
+                                    checked: UserSettings.keepAlive
+                                    onClicked: UserSettings.keepAlive = checked
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Run at system startup")
+                                description: "test"
+
+                                additionalControl: Switch {
+                                    checked: SoundPanelBridge.getShortcutState()
+                                    onClicked: SoundPanelBridge.setStartupShortcut(checked)
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Close device list after changed")
+                                description: "test"
+
+                                additionalControl: Switch {
+                                    checked: UserSettings.closeDeviceListOnClick
+                                    onClicked: UserSettings.closeDeviceListOnClick = checked
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Group applications by executable")
+                                description: ""
+
+                                additionalControl: Switch {
+                                    checked: UserSettings.groupApplications
+                                    onClicked: UserSettings.groupApplications = checked
+                                }
+                            }
+                        }
                     }
                 }
             }
-
 
             Component {
                 id: appearancePaneComponent
 
                 ColumnLayout {
-                    spacing: 15
+                    spacing: 3
 
                     Label {
                         text: qsTr("Appearance & Position")
                         font.pixelSize: 22
                         font.bold: true
+                        Layout.bottomMargin: 15
                     }
 
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Panel position")
-                            Layout.fillWidth: true
-                        }
-                        ComboBox {
-                            Layout.preferredHeight: 35
-                            Layout.preferredWidth: 200
-                            model: [qsTr("Top"), qsTr("Bottom"), qsTr("Left"), qsTr("Right")]
-                            currentIndex: UserSettings.panelPosition
-                            onActivated: UserSettings.panelPosition = currentIndex
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Taskbar offset")
-                            Layout.fillWidth: true
-                        }
-                        SpinBox {
-                            Layout.preferredHeight: 35
-                            Layout.preferredWidth: 150
-                            from: 0
-                            to: 200
-                            editable: true
-                            value: UserSettings.taskbarOffset
-                            onValueModified: UserSettings.taskbarOffset = value
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Panel margin")
-                            Layout.fillWidth: true
-                        }
-                        SpinBox {
-                            Layout.preferredHeight: 35
-                            Layout.preferredWidth: 150
-                            from: 0
-                            to: 200
-                            editable: true
-                            value: UserSettings.panelMargin
-                            onValueModified: UserSettings.panelMargin = value
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Use short device names")
-                            Layout.fillWidth: true
-                        }
-
-                        Switch {
-                            checked: UserSettings.deviceShortName
-                            onClicked: UserSettings.deviceShortName = checked
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Volume value display mode")
-                            Layout.fillWidth: true
-                        }
-                        ComboBox {
-                            Layout.preferredHeight: 35
-                            Layout.preferredWidth: 200
-                            model: [qsTr("Slider tooltip"), qsTr("Label"), qsTr("Hidden")]
-                            currentIndex: UserSettings.volumeValueMode
-                            onActivated: UserSettings.volumeValueMode = currentIndex
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Currently playing media display mode")
-                            Layout.fillWidth: true
-                        }
-                        ComboBox {
-                            Layout.preferredHeight: 35
-                            Layout.preferredWidth: 200
-                            model: [qsTr("Flyout (interactive)"), qsTr("Panel (informative)"), qsTr("Hidden")]
-                            currentIndex: UserSettings.mediaMode
-                            onActivated: UserSettings.mediaMode = currentIndex
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Applications and devices label")
-                            Layout.fillWidth: true
-                        }
-                        Switch {
-                            checked: UserSettings.displayDevAppLabel
-                            onClicked: UserSettings.displayDevAppLabel = checked
-                        }
-                    }
-
-                    Item {
+                    ScrollView {
+                        Layout.fillWidth: true
                         Layout.fillHeight: true
+                        ColumnLayout {
+                            width: parent.width
+                            spacing: 3
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Panel position")
+                                description: ""
+
+                                additionalControl: ComboBox {
+                                    Layout.preferredHeight: 35
+                                    Layout.preferredWidth: 160
+                                    model: [qsTr("Top"), qsTr("Bottom"), qsTr("Left"), qsTr("Right")]
+                                    currentIndex: UserSettings.panelPosition
+                                    onActivated: UserSettings.panelPosition = currentIndex
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Taskbar offset")
+                                description: ""
+
+                                additionalControl: SpinBox {
+                                    Layout.preferredHeight: 35
+                                    Layout.preferredWidth: 160
+                                    from: 0
+                                    to: 200
+                                    editable: true
+                                    value: UserSettings.taskbarOffset
+                                    onValueModified: UserSettings.taskbarOffset = value
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Panel margin")
+                                description: ""
+
+                                additionalControl: SpinBox {
+                                    Layout.preferredHeight: 35
+                                    Layout.preferredWidth: 150
+                                    from: 0
+                                    to: 200
+                                    editable: true
+                                    value: UserSettings.panelMargin
+                                    onValueModified: UserSettings.panelMargin = value
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Use short device names")
+                                description: ""
+
+                                additionalControl: Switch {
+                                    checked: UserSettings.deviceShortName
+                                    onClicked: UserSettings.deviceShortName = checked
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Volume value display mode")
+                                description: ""
+
+                                additionalControl: ComboBox {
+                                    Layout.preferredHeight: 35
+                                    Layout.preferredWidth: 200
+                                    model: [qsTr("Slider tooltip"), qsTr("Label"), qsTr("Hidden")]
+                                    currentIndex: UserSettings.volumeValueMode
+                                    onActivated: UserSettings.volumeValueMode = currentIndex
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Currently playing media display mode")
+                                description: ""
+
+                                additionalControl: ComboBox {
+                                    Layout.preferredHeight: 35
+                                    Layout.preferredWidth: 200
+                                    model: [qsTr("Flyout (interactive)"), qsTr("Panel (informative)"), qsTr("Hidden")]
+                                    currentIndex: UserSettings.mediaMode
+                                    onActivated: UserSettings.mediaMode = currentIndex
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Applications and devices label")
+                                description: ""
+
+                                additionalControl: Switch {
+                                    checked: UserSettings.displayDevAppLabel
+                                    onClicked: UserSettings.displayDevAppLabel = checked
+                                }
+                            }
+                        }
                     }
                 }
             }
-
             Component {
                 id: debugPaneComponent
 
                 ColumnLayout {
-                    spacing: 15
+                    spacing: 3
 
                     Label {
                         text: qsTr("Debug and information")
                         font.pixelSize: 22
                         font.bold: true
+                        Layout.bottomMargin: 15
                     }
 
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
+                    ScrollView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        ColumnLayout {
+                            width: parent.width
+                            spacing: 3
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Application version")
+                                description: ""
 
-                        property int clickCount: 0
+                                property int clickCount: 0
 
-                        MouseArea {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: root.rowHeight
-                            onClicked: {
-                                parent.clickCount++
-                                if (parent.clickCount >= 5) {
-                                    easterEggDialog.open()
-                                    parent.clickCount = 0
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        parent.clickCount++
+                                        if (parent.clickCount >= 5) {
+                                            easterEggDialog.open()
+                                            parent.clickCount = 0
+                                        }
+                                    }
                                 }
-                            }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                spacing: 15
-
-                                Label {
-                                    text: qsTr("Application version")
-                                    Layout.fillWidth: true
-                                }
-                                Label {
+                                additionalControl: Label {
                                     text: SoundPanelBridge.getAppVersion()
                                     opacity: 0.5
                                 }
                             }
-                        }
-                    }
 
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("QT version")
-                            Layout.fillWidth: true
-                        }
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("QT version")
+                                description: ""
 
-                        Label {
-                            text: SoundPanelBridge.getQtVersion()
-                            opacity: 0.5
-                        }
-                    }
+                                additionalControl: Label {
+                                    text: SoundPanelBridge.getQtVersion()
+                                    opacity: 0.5
+                                }
+                            }
 
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("QT version")
-                            Layout.fillWidth: true
-                        }
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Translation author")
+                                description: ""
 
-                        Label {
-                            text: SoundPanelBridge.getQtVersion()
-                            opacity: 0.5
-                        }
-                    }
+                                additionalControl: Label {
+                                    text: qsTr("Unknow author")
+                                    opacity: 0.5
+                                }
+                            }
 
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Translation author")
-                            Layout.fillWidth: true
-                        }
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Translation last updated")
+                                description: ""
 
-                        Label {
-                            text: qsTr("Unknow author")
-                            opacity: 0.5
+                                additionalControl: Label {
+                                    text: qsTr("Unknow date")
+                                    opacity: 0.5
+                                }
+                            }
                         }
-                    }
-
-                    RowLayout {
-                        spacing: 15
-                        Layout.preferredHeight: root.rowHeight
-                        Label {
-                            text: qsTr("Translation last updated")
-                            Layout.fillWidth: true
-                        }
-
-                        Label {
-                            text: qsTr("Unknow date")
-                            opacity: 0.5
-                        }
-                    }
-
-                    Item {
-                        Layout.fillHeight: true
                     }
                 }
             }

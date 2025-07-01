@@ -145,6 +145,7 @@ ApplicationWindow {
 
         isAnimatingIn = true
         panel.darkMode = SoundPanelBridge.getDarkMode()
+        Constants.darkMode = SoundPanelBridge.getDarkMode()
         panel.taskbarPos = SoundPanelBridge.taskbarPosition
         panel.visible = true
 

@@ -20,154 +20,154 @@
     <name>SettingsWindow</name>
     <message>
         <source>QuickSoundSwitcher - Settings</source>
-        <translation>QuickSoundSwitcher - Paramètres</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>General</source>
-        <translation>Général</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation>Apparence</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Debug</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>General Settings</source>
-        <translation>Paramètres genéraux</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Panel mode</source>
-        <translation>Mode du panneau</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Devices + Mixer</source>
-        <translation>Périphériques + Mixer</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Mixer only</source>
-        <translation>Mixer uniquement</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Devices only</source>
-        <translation>Périphériques uniquement</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Link same input and output devices</source>
-        <translation>Lier les périphériques I/O sinilaires</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Sound keepalive</source>
-        <translation>Empecher la mise en veille audio</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Run at system startup</source>
-        <translation>Lancer au démarrage</translation>
-    </message>
-    <message>
-        <source>Appearance &amp; Position</source>
-        <translation>Apparence et position</translation>
-    </message>
-    <message>
-        <source>Panel position</source>
-        <translation>Position du panneau</translation>
-    </message>
-    <message>
-        <source>Top</source>
-        <translation>Haut</translation>
-    </message>
-    <message>
-        <source>Bottom</source>
-        <translation>Bas</translation>
-    </message>
-    <message>
-        <source>Left</source>
-        <translation>Gauche</translation>
-    </message>
-    <message>
-        <source>Right</source>
-        <translation>Droite</translation>
-    </message>
-    <message>
-        <source>Taskbar offset</source>
-        <translation>Compensation de la barre des taches</translation>
-    </message>
-    <message>
-        <source>Panel margin</source>
-        <translation>Marge du panneau</translation>
-    </message>
-    <message>
-        <source>Use short device names</source>
-        <translation>Utiliser un nom court pour les périphériques</translation>
-    </message>
-    <message>
-        <source>Volume value display mode</source>
-        <translation>Mode d&apos;affichage du volume</translation>
-    </message>
-    <message>
-        <source>Slider tooltip</source>
-        <translation>Infobulle</translation>
-    </message>
-    <message>
-        <source>Label</source>
-        <translation>Texte</translation>
-    </message>
-    <message>
-        <source>Hidden</source>
-        <translation>Caché</translation>
-    </message>
-    <message>
-        <source>Debug and information</source>
-        <translation>Informations et debug</translation>
-    </message>
-    <message>
-        <source>Application version</source>
-        <translation>Version de l&apos;application</translation>
-    </message>
-    <message>
-        <source>QT version</source>
-        <translation>Version de QT</translation>
-    </message>
-    <message>
-        <source>Currently playing media display mode</source>
-        <translation>Mode d&apos;affichage du média joué</translation>
-    </message>
-    <message>
-        <source>Flyout (interactive)</source>
-        <translation>Flyout (interactif)</translation>
-    </message>
-    <message>
-        <source>Panel (informative)</source>
-        <translation>Panneau (informatif)</translation>
-    </message>
-    <message>
-        <source>Applications and devices label</source>
-        <translation>Nom des applications et périphériques</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Close device list after changed</source>
-        <translation>Fermer la liste des périphériques après changement</translation>
-    </message>
-    <message>
-        <source>Translation author</source>
-        <translation>Traduit par</translation>
-    </message>
-    <message>
-        <source>Translation last updated</source>
-        <translation>Derniere mise à jour</translation>
-    </message>
-    <message>
-        <source>Unknow author</source>
-        <translation>Odizinne</translation>
-    </message>
-    <message>
-        <source>Unknow date</source>
-        <translation>01.07.2025</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Group applications by executable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appearance &amp; Position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Panel position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bottom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taskbar offset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Panel margin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use short device names</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Volume value display mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Slider tooltip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hidden</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Currently playing media display mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Flyout (interactive)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Panel (informative)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Applications and devices label</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Debug and information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Application version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>QT version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Translation author</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknow author</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Translation last updated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknow date</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
