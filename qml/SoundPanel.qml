@@ -511,10 +511,18 @@ ApplicationWindow {
                     }
 
                     ToolButton {
-                        text: outputDevicesRect.expanded ? "−" : "+"
-                        font.pixelSize: 16
-                        font.bold: true
+                        icon.source: "qrc:/icons/arrow.svg"
+                        rotation: outputDevicesRect.expanded ? 90 : 0
                         visible: playbackDeviceModel.count > 1
+                        Layout.preferredHeight: 35
+                        Layout.preferredWidth: 35
+                        Behavior on rotation {
+                            NumberAnimation {
+                                duration: 150
+                                easing.type: Easing.OutQuad
+                            }
+                        }
+
                         onClicked: {
                             outputDevicesRect.expanded = !outputDevicesRect.expanded
                         }
@@ -622,10 +630,18 @@ ApplicationWindow {
                     }
 
                     ToolButton {
-                        text: inputDevicesRect.expanded ? "−" : "+"
-                        font.pixelSize: 16
-                        font.bold: true
+                        icon.source: "qrc:/icons/arrow.svg"
+                        rotation: outputDevicesRect.expanded ? 90 : 0
+                        Layout.preferredHeight: 35
+                        Layout.preferredWidth: 35
                         visible: recordingDeviceModel.count > 1
+                        Behavior on rotation {
+                            NumberAnimation {
+                                duration: 150
+                                easing.type: Easing.OutQuad
+                            }
+                        }
+
                         onClicked: {
                             inputDevicesRect.expanded = !inputDevicesRect.expanded
                         }
