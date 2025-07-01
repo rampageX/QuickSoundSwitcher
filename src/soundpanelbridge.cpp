@@ -16,6 +16,7 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     , m_recordingDevicesReady(false)
     , m_applicationsReady(false)
     , m_currentPanelMode(0)
+    , m_isInitializing(false)
 {
     m_instance = this;
 
@@ -26,7 +27,9 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     playbackDevices = devices;
                     emit playbackDevicesChanged(convertDevicesToVariant(devices));
                     m_playbackDevicesReady = true;
-                    checkDataInitializationComplete();
+                    if (m_isInitializing) {  // Only check completion during initialization
+                        checkDataInitializationComplete();
+                    }
                 });
 
         connect(AudioManager::getWorker(), &AudioWorker::recordingDevicesReady,
@@ -34,7 +37,9 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     recordingDevices = devices;
                     emit recordingDevicesChanged(convertDevicesToVariant(devices));
                     m_recordingDevicesReady = true;
-                    checkDataInitializationComplete();
+                    if (m_isInitializing) {  // Only check completion during initialization
+                        checkDataInitializationComplete();
+                    }
                 });
 
         connect(AudioManager::getWorker(), &AudioWorker::applicationsReady,
@@ -42,7 +47,9 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     applications = apps;
                     emit applicationsChanged(convertApplicationsToVariant(apps));
                     m_applicationsReady = true;
-                    checkDataInitializationComplete();
+                    if (m_isInitializing) {  // Only check completion during initialization
+                        checkDataInitializationComplete();
+                    }
                 });
 
         connect(AudioManager::getWorker(), &AudioWorker::playbackVolumeChanged,
@@ -70,7 +77,9 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     setPlaybackMuted(playbackMute);
                     setRecordingMuted(recordingMute);
                     m_currentPropertiesReady = true;
-                    checkDataInitializationComplete();
+                    if (m_isInitializing) {  // Only check completion during initialization
+                        checkDataInitializationComplete();
+                    }
                 });
 
         if (MediaSessionManager::getWorker()) {
@@ -177,6 +186,7 @@ int SoundPanelBridge::panelMode() const
 }
 
 void SoundPanelBridge::initializeData() {
+    m_isInitializing = true;  // Set flag to indicate we're initializing
     int mode = panelMode();
     m_currentPanelMode = mode;
 
@@ -438,9 +448,10 @@ void SoundPanelBridge::checkDataInitializationComplete() {
 
     bool devicesReady = !needsDevices || (m_playbackDevicesReady && m_recordingDevicesReady);
     bool applicationsReady = !needsApplications || m_applicationsReady;
-    bool propertiesReady = m_currentPropertiesReady;  // Add this check
+    bool propertiesReady = m_currentPropertiesReady;
 
     if (devicesReady && applicationsReady && propertiesReady) {
+        m_isInitializing = false;  // Reset flag when initialization is complete
         emit dataInitializationComplete();
     }
 }

@@ -126,6 +126,7 @@ private:
     bool m_recordingDevicesReady = false;
     bool m_currentPropertiesReady = false;
     bool m_applicationsReady = false;
+    bool m_isInitializing = false;  // Add this line
     int m_currentPanelMode = 0;
 
     void checkDataInitializationComplete();
