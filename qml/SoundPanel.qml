@@ -715,8 +715,8 @@ ApplicationWindow {
                             ToolTip.visible: hovered
                             ToolTip.delay: 1000
                             opacity: highlighted ? 0.3 : 1
-                            icon.source: applicationUnitLayout.model.name === "Windows system sounds" ? "qrc:/icons/system_light.png" : applicationUnitLayout.model.icon
-                            icon.color: applicationUnitLayout.model.name === "Windows system sounds" ? (panel.darkMode ? "white" : "black") : "transparent"
+                            icon.source: applicationUnitLayout.model.name === "System sounds" ? "qrc:/icons/system_light.png" : applicationUnitLayout.model.icon
+                            icon.color: applicationUnitLayout.model.name === "System sounds" ? (panel.darkMode ? "white" : "black") : "transparent"
                             onClicked: {
                                 applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted
                                 SoundPanelBridge.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted)

@@ -499,8 +499,8 @@ QList<Application> enumerateAudioApplicationsImpl() {
 
         // Handle special case for Windows system sounds
         if (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
-            finalAppName = "Windows system sounds";
-            executableName = "Windows system sounds";
+            finalAppName = "System sounds";
+            executableName = "System sounds";
             appIcon = QIcon(":/icons/system.png");
         }
 
