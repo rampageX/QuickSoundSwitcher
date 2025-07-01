@@ -45,12 +45,20 @@ qt_add_executable(QuickSoundSwitcher WIN32 MACOSX_BUNDLE
     ${SOURCES}
     ${HEADERS}
     resources/resources.qrc
-    resources/appicon.rc
+    #resources/appicon.rc
+    "${CMAKE_CURRENT_BINARY_DIR}/windows_metadata.rc"
 )
 
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
     "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+)
+
+set(APP_ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/icon.ico")
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/windows_metadata.rc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/windows_metadata.rc"
+    @ONLY
 )
 
 set(QML_FILES
