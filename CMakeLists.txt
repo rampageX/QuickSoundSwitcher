@@ -57,6 +57,8 @@ set(QML_FILES
     qml/SoundPanel.qml
     qml/SettingsWindow.qml
     qml/KeepAlive.qml
+    qml/DevicesListView.qml
+    qml/MediaFlyoutContent.qml
 )
 
 set(QML_SINGLETONS

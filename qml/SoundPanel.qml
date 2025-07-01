@@ -27,12 +27,12 @@ ApplicationWindow {
 
     onVisibleChanged: {
         if (!visible) {
-            outputDevicesList.expanded = false
-            inputDevicesList.expanded = false
+            outputDevicesRect.expanded = false
+            inputDevicesRect.expanded = false
             mainLayout.opacity = 0
             mediaLayout.opacity = 0
-            outputDevicesList.opacity = 0
-            inputDevicesList.opacity = 0
+            outputDevicesRect.contentOpacity = 0
+            inputDevicesRect.contentOpacity = 0
             contentOpacityTimer.stop()
             outputListOpacityTimer.stop()
             inputListOpacityTimer.stop()
@@ -74,14 +74,14 @@ ApplicationWindow {
         id: outputListOpacityTimer
         interval: 112
         repeat: false
-        onTriggered: outputDevicesList.opacity = 1
+        onTriggered: outputDevicesRect.contentOpacity = 1
     }
 
     Timer {
         id: inputListOpacityTimer
         interval: 112
         repeat: false
-        onTriggered: inputDevicesList.opacity = 1
+        onTriggered: inputDevicesRect.contentOpacity = 1
     }
 
     onHeightChanged: {
@@ -127,8 +127,8 @@ ApplicationWindow {
         onStarted: {
             mainLayout.opacity = 0
             mediaLayout.opacity = 0
-            outputDevicesList.opacity = 0
-            inputDevicesList.opacity = 0
+            outputDevicesRect.contentOpacity = 0
+            inputDevicesRect.contentOpacity = 0
         }
     }
 
@@ -373,88 +373,15 @@ ApplicationWindow {
             }
         }
 
-        ColumnLayout {
+        MediaFlyoutContent {
             id: mediaLayout
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: 15
-            opacity: 0
-            spacing: 10
-            visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
-
             onImplicitHeightChanged: {
                 if (panel.visible) {
                     panel.updatePanelHeight()
-                }
-            }
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 300
-                    easing.type: Easing.OutQuad
-                }
-            }
-
-            ColumnLayout {
-                RowLayout {
-                    id: infosLyt
-                    ColumnLayout {
-                        Label {
-                            text: SoundPanelBridge.mediaTitle || ""
-                            font.pixelSize: 14
-                            font.bold: true
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Label {
-                            text: SoundPanelBridge.mediaArtist || ""
-                            font.pixelSize: 12
-                            opacity: 0.7
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-                    }
-                    Image {
-                        Layout.preferredWidth: 64
-                        Layout.preferredHeight: 64
-                        Layout.alignment: Qt.AlignVCenter
-                        source: SoundPanelBridge.mediaArt || ""
-                        fillMode: Image.PreserveAspectCrop
-                        visible: SoundPanelBridge.mediaArt !== ""
-                    }
-                }
-
-                RowLayout {
-                    Item {
-                        Layout.fillWidth: true
-                    }
-
-                    ToolButton {
-                        icon.source: "qrc:/icons/prev.png"
-                        onClicked: SoundPanelBridge.previousTrack()
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 40
-                    }
-
-                    ToolButton {
-                        icon.source: SoundPanelBridge.isMediaPlaying ? "qrc:/icons/pause.png" : "qrc:/icons/play.png"
-                        onClicked: SoundPanelBridge.playPause()
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 40
-                    }
-
-                    ToolButton {
-                        icon.source: "qrc:/icons/next.png"
-                        onClicked: SoundPanelBridge.nextTrack()
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 40
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
                 }
             }
         }
@@ -506,7 +433,6 @@ ApplicationWindow {
                     Layout.preferredHeight: 40
                     spacing: 0
                     ToolButton {
-                        id: outputeMuteRoundButton
                         Layout.preferredHeight: 40
                         Layout.preferredWidth: 40
                         flat: true
@@ -585,115 +511,43 @@ ApplicationWindow {
                     }
 
                     ToolButton {
-                        text: outputDevicesList.expanded ? "−" : "+"
+                        text: outputDevicesRect.expanded ? "−" : "+"
                         font.pixelSize: 16
                         font.bold: true
                         visible: playbackDeviceModel.count > 1
                         onClicked: {
-                            outputDevicesList.expanded = !outputDevicesList.expanded
+                            outputDevicesRect.expanded = !outputDevicesRect.expanded
                         }
                     }
                 }
 
-                Rectangle {
+                DevicesListView {
                     id: outputDevicesRect
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 0
-                    Layout.leftMargin: -14
-                    Layout.rightMargin: -14
-                    color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
+                    model: playbackDeviceModel
+                    darkMode: panel.darkMode
+                    onDeviceClicked: function(name, shortName, index) {
+                        SoundPanelBridge.onPlaybackDeviceChanged(name)
 
-                    Behavior on Layout.preferredHeight {
-                        NumberAnimation {
-                            duration: 150
-                            easing.type: Easing.OutQuad
-                        }
-                    }
-
-                    Rectangle {
-                        visible: outputDevicesList.expanded
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
-                        height: 1
-                        opacity: 0.1
-                    }
-
-                    Rectangle {
-                        visible: outputDevicesList.expanded
-                        anchors.bottom: parent.bottom
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
-                        height: 1
-                        opacity: 0.1
-                    }
-
-                    ListView {
-                        id: outputDevicesList
-                        anchors.fill: parent
-                        anchors.margins: 10
-                        clip: true
-                        interactive: false
-                        opacity: 0
-                        property bool expanded: false
-                        model: playbackDeviceModel
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 200
-                                easing.type: Easing.OutQuad
-                            }
-                        }
-
-                        onExpandedChanged: {
-                            if (expanded) {
-                                parent.Layout.preferredHeight = contentHeight + 20
-                                outputListOpacityTimer.start()
-                            } else {
-                                parent.Layout.preferredHeight = 0
-                                opacity = 0
-                            }
-                        }
-
-                        delegate: ItemDelegate {
-                            width: outputDevicesList.width
-                            height: 40
-                            required property var model
-                            required property string name
-                            required property string shortName
-                            required property bool isDefault
-                            required property string id
-                            required property int index
-                            highlighted: model.isDefault
-                            text: UserSettings.deviceShortName ? model.shortName : model.name
-                            onClicked: {
-                                for (let i = 0; i < playbackDeviceModel.count; i++) {
-                                    playbackDeviceModel.setProperty(i, "isDefault", i === index)
-                                }
-                                SoundPanelBridge.onPlaybackDeviceChanged(name)
-                                if (UserSettings.linkIO) {
-                                    const selectedDeviceName = shortName // Always use shortName for comparison
-                                    let linkedInputIndex = -1
-                                    for (let i = 0; i < recordingDeviceModel.count; i++) {
-                                        const inputName = recordingDeviceModel.get(i).shortName // Always use shortName
-                                        if (inputName === selectedDeviceName) {
-                                            linkedInputIndex = i
-                                            break
-                                        }
-                                    }
-                                    if (linkedInputIndex !== -1) {
-                                        for (let i = 0; i < recordingDeviceModel.count; i++) {
-                                            recordingDeviceModel.setProperty(i, "isDefault", i === linkedInputIndex)
-                                        }
-                                        SoundPanelBridge.onRecordingDeviceChanged(recordingDeviceModel.get(linkedInputIndex).name)
-                                    }
-                                    if (UserSettings.closeDeviceListOnClick) {
-                                        outputDevicesList.expanded = false
-                                    }
+                        if (UserSettings.linkIO) {
+                            const selectedDeviceName = shortName
+                            let linkedInputIndex = -1
+                            for (let i = 0; i < recordingDeviceModel.count; i++) {
+                                const inputName = recordingDeviceModel.get(i).shortName
+                                if (inputName === selectedDeviceName) {
+                                    linkedInputIndex = i
+                                    break
                                 }
                             }
+                            if (linkedInputIndex !== -1) {
+                                for (let i = 0; i < recordingDeviceModel.count; i++) {
+                                    recordingDeviceModel.setProperty(i, "isDefault", i === linkedInputIndex)
+                                }
+                                SoundPanelBridge.onRecordingDeviceChanged(recordingDeviceModel.get(linkedInputIndex).name)
+                            }
+                        }
+
+                        if (UserSettings.closeDeviceListOnClick) {
+                            expanded = false
                         }
                     }
                 }
@@ -703,7 +557,6 @@ ApplicationWindow {
                     Layout.preferredHeight: 40
                     spacing: 0
                     ToolButton {
-                        id: inputMuteRoundButton
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         flat: true
@@ -769,117 +622,41 @@ ApplicationWindow {
                     }
 
                     ToolButton {
-                        text: inputDevicesList.expanded ? "−" : "+"
+                        text: inputDevicesRect.expanded ? "−" : "+"
                         font.pixelSize: 16
                         font.bold: true
                         visible: recordingDeviceModel.count > 1
                         onClicked: {
-                            inputDevicesList.expanded = !inputDevicesList.expanded
+                            inputDevicesRect.expanded = !inputDevicesRect.expanded
                         }
                     }
                 }
 
-                Rectangle {
+                DevicesListView {
                     id: inputDevicesRect
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 0
-                    Layout.leftMargin: -14
-                    Layout.rightMargin: -14
-                    color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
-
-                    Behavior on Layout.preferredHeight {
-                        NumberAnimation {
-                            duration: 150
-                            easing.type: Easing.OutQuad
-                        }
-                    }
-
-                    Rectangle {
-                        visible: inputDevicesList.expanded
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
-                        height: 1
-                        opacity: 0.1
-                    }
-
-                    Rectangle {
-                        visible: inputDevicesList.expanded
-                        anchors.bottom: parent.bottom
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
-                        height: 1
-                        opacity: 0.1
-                    }
-
-                    ListView {
-                        id: inputDevicesList
-                        anchors.fill: parent
-                        anchors.margins: 10
-                        clip: true
-                        interactive: false
-                        opacity: 0
-                        property bool expanded: false
-                        model: recordingDeviceModel
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 200
-                                easing.type: Easing.OutQuad
-                            }
-                        }
-
-                        onExpandedChanged: {
-                            if (expanded) {
-                                parent.Layout.preferredHeight = contentHeight + 20
-                                inputListOpacityTimer.start()
-                            } else {
-                                parent.Layout.preferredHeight = 0
-                                opacity = 0
-                            }
-                        }
-
-                        delegate: ItemDelegate {
-                            width: inputDevicesList.width
-                            height: 40
-
-                            required property string name
-                            required property string shortName
-                            required property bool isDefault
-                            required property string id
-                            required property int index
-                            required property var model
-
-                            highlighted: model.isDefault
-                            text: UserSettings.deviceShortName ? model.shortName : model.name
-                            onClicked: {
-                                for (let i = 0; i < recordingDeviceModel.count; i++) {
-                                    recordingDeviceModel.setProperty(i, "isDefault", i === index)
-                                }
-                                SoundPanelBridge.onRecordingDeviceChanged(name)
-                                if (UserSettings.linkIO) {
-                                    const selectedDeviceName = shortName // Always use shortName for comparison
-                                    let linkedOutputIndex = -1
-                                    for (let i = 0; i < playbackDeviceModel.count; i++) {
-                                        const outputName = playbackDeviceModel.get(i).shortName // Always use shortName
-                                        if (outputName === selectedDeviceName) {
-                                            linkedOutputIndex = i
-                                            break
-                                        }
-                                    }
-                                    if (linkedOutputIndex !== -1) {
-                                        for (let i = 0; i < playbackDeviceModel.count; i++) {
-                                            playbackDeviceModel.setProperty(i, "isDefault", i === linkedOutputIndex)
-                                        }
-                                        SoundPanelBridge.onPlaybackDeviceChanged(playbackDeviceModel.get(linkedOutputIndex).name)
-                                    }
-                                    if (UserSettings.closeDeviceListOnClick) {
-                                        inputDevicesList.expanded = false
-                                    }
+                    model: recordingDeviceModel
+                    darkMode: panel.darkMode
+                    onDeviceClicked: function(name, shortName, index) {
+                        SoundPanelBridge.onRecordingDeviceChanged(name)
+                        if (UserSettings.linkIO) {
+                            const selectedDeviceName = shortName
+                            let linkedOutputIndex = -1
+                            for (let i = 0; i < playbackDeviceModel.count; i++) {
+                                const outputName = playbackDeviceModel.get(i).shortName
+                                if (outputName === selectedDeviceName) {
+                                    linkedOutputIndex = i
+                                    break
                                 }
                             }
+                            if (linkedOutputIndex !== -1) {
+                                for (let i = 0; i < playbackDeviceModel.count; i++) {
+                                    playbackDeviceModel.setProperty(i, "isDefault", i === linkedOutputIndex)
+                                }
+                                SoundPanelBridge.onPlaybackDeviceChanged(playbackDeviceModel.get(linkedOutputIndex).name)
+                            }
+                        }
+                        if (UserSettings.closeDeviceListOnClick) {
+                            expanded = false
                         }
                     }
                 }
