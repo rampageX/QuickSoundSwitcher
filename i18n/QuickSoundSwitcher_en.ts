@@ -67,10 +67,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close device list after changed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Group applications by executable</source>
         <translation type="unfinished"></translation>
     </message>
@@ -127,10 +123,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Currently playing media display mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Flyout (interactive)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -168,6 +160,14 @@
     </message>
     <message>
         <source>Unknow date</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close device list automatically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media info display</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

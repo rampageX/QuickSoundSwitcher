@@ -165,7 +165,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Panel mode")
-                                description: "test"
+                                description: "Choose what should be displayed in the panel"
 
                                 additionalControl: ComboBox {
                                     Layout.preferredHeight: 35
@@ -179,7 +179,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Link same input and output devices")
-                                description: "test"
+                                description: "Try to match input / output from the same device"
 
                                 additionalControl: Switch {
                                     checked: UserSettings.linkIO
@@ -190,7 +190,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Sound keepalive")
-                                description: "test"
+                                description: "Emit an inaudible sound to keep bluetooth devices awake"
 
                                 additionalControl: Switch {
                                     checked: UserSettings.keepAlive
@@ -201,7 +201,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Run at system startup")
-                                description: "test"
+                                description: "QSS will boot up when your computer starts"
 
                                 additionalControl: Switch {
                                     checked: SoundPanelBridge.getShortcutState()
@@ -211,8 +211,8 @@ ApplicationWindow {
 
                             Card {
                                 Layout.fillWidth: true
-                                title: qsTr("Close device list after changed")
-                                description: "test"
+                                title: qsTr("Close device list automatically")
+                                description: "Device list will automatically close after selecting a device"
 
                                 additionalControl: Switch {
                                     checked: UserSettings.closeDeviceListOnClick
@@ -223,7 +223,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Group applications by executable")
-                                description: ""
+                                description: "Control multiple stream comming from a single app with one slider"
 
                                 additionalControl: Switch {
                                     checked: UserSettings.groupApplications
@@ -287,11 +287,11 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Panel margin")
-                                description: ""
+                                description: "How far the panel should be pushed from screen edge"
 
                                 additionalControl: SpinBox {
                                     Layout.preferredHeight: 35
-                                    Layout.preferredWidth: 150
+                                    Layout.preferredWidth: 160
                                     from: 0
                                     to: 200
                                     editable: true
@@ -303,7 +303,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Use short device names")
-                                description: ""
+                                description: "Shorten device names by shrinking description"
 
                                 additionalControl: Switch {
                                     checked: UserSettings.deviceShortName
@@ -314,11 +314,11 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Volume value display mode")
-                                description: ""
+                                description: "Control how you want sound value to be displayed"
 
                                 additionalControl: ComboBox {
                                     Layout.preferredHeight: 35
-                                    Layout.preferredWidth: 200
+                                    Layout.preferredWidth: 160
                                     model: [qsTr("Slider tooltip"), qsTr("Label"), qsTr("Hidden")]
                                     currentIndex: UserSettings.volumeValueMode
                                     onActivated: UserSettings.volumeValueMode = currentIndex
@@ -327,12 +327,12 @@ ApplicationWindow {
 
                             Card {
                                 Layout.fillWidth: true
-                                title: qsTr("Currently playing media display mode")
-                                description: ""
+                                title: qsTr("Media info display")
+                                description: "Display currently playing media from Windows known sources"
 
                                 additionalControl: ComboBox {
                                     Layout.preferredHeight: 35
-                                    Layout.preferredWidth: 200
+                                    Layout.preferredWidth: 160
                                     model: [qsTr("Flyout (interactive)"), qsTr("Panel (informative)"), qsTr("Hidden")]
                                     currentIndex: UserSettings.mediaMode
                                     onActivated: UserSettings.mediaMode = currentIndex
