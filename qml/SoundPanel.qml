@@ -18,7 +18,6 @@ ApplicationWindow {
     property int margin: UserSettings.panelMargin
     property int taskbarHeight: UserSettings.taskbarOffset
     property bool dataLoaded: false
-    property bool darkMode: SoundPanelBridge.getDarkMode()
     property string taskbarPos: SoundPanelBridge.taskbarPosition
 
     signal hideAnimationFinished()
@@ -144,7 +143,6 @@ ApplicationWindow {
         }
 
         isAnimatingIn = true
-        panel.darkMode = SoundPanelBridge.getDarkMode()
         Constants.darkMode = SoundPanelBridge.getDarkMode()
         panel.taskbarPos = SoundPanelBridge.taskbarPosition
         panel.visible = true
@@ -346,7 +344,7 @@ ApplicationWindow {
         Rectangle {
             anchors.fill: mainLayout
             anchors.margins: -15
-            color: panel.darkMode ? "#242424" : "#f2f2f2"
+            color: Constants.panelColor
             radius: 12
             Rectangle {
                 anchors.fill: parent
@@ -361,7 +359,7 @@ ApplicationWindow {
         Rectangle {
             anchors.fill: mediaLayout
             anchors.margins: -15
-            color: panel.darkMode ? "#242424" : "#f2f2f2"
+            color: Constants.panelColor
             visible: mediaLayout.visible
             radius: 12
             Rectangle {
@@ -533,7 +531,6 @@ ApplicationWindow {
                 DevicesListView {
                     id: outputDevicesRect
                     model: playbackDeviceModel
-                    darkMode: panel.darkMode
                     onDeviceClicked: function(name, shortName, index) {
                         SoundPanelBridge.onPlaybackDeviceChanged(name)
 
@@ -652,7 +649,6 @@ ApplicationWindow {
                 DevicesListView {
                     id: inputDevicesRect
                     model: recordingDeviceModel
-                    darkMode: panel.darkMode
                     onDeviceClicked: function(name, shortName, index) {
                         SoundPanelBridge.onRecordingDeviceChanged(name)
                         if (UserSettings.linkIO) {
@@ -682,7 +678,7 @@ ApplicationWindow {
             Rectangle {
                 Layout.preferredHeight: 1
                 Layout.fillWidth: true
-                color: panel.darkMode ? "#E3E3E3" : "#A0A0A0"
+                color: Constants.separatorColor
                 opacity: 0.15
                 visible: UserSettings.panelMode === 0
                 Layout.rightMargin: -14
@@ -717,7 +713,7 @@ ApplicationWindow {
                             ToolTip.delay: 1000
                             opacity: highlighted ? 0.3 : 1
                             icon.source: applicationUnitLayout.model.name === "System sounds" ? "qrc:/icons/system_light.png" : applicationUnitLayout.model.icon
-                            icon.color: applicationUnitLayout.model.name === "System sounds" ? (panel.darkMode ? "white" : "black") : "transparent"
+                            icon.color: applicationUnitLayout.model.name === "System sounds" ? (Constants.darkMode ? "white" : "black") : "transparent"
                             onClicked: {
                                 applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted
                                 SoundPanelBridge.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted)
@@ -771,7 +767,7 @@ ApplicationWindow {
             }
 
             Rectangle {
-                color: panel.darkMode ? "#1c1c1c" : "#eeeeee"
+                color: Constants.footerColor
                 Layout.fillWidth: true
                 Layout.fillHeight: false
                 bottomLeftRadius: 12
@@ -783,7 +779,7 @@ ApplicationWindow {
 
                 Rectangle {
                     height: 1
-                    color: panel.darkMode ? "#0F0F0F" : "#A0A0A0"
+                    color: Constants.footerBorderColor
                     opacity: 0.15
                     visible: UserSettings.panelMode === 0
                     anchors.top: parent.top

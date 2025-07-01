@@ -11,7 +11,7 @@ Rectangle {
     property string description: ""
     property Item additionalControl
 
-    color: Constants.darkMode ? "#2b2b2b" : "#fbfbfb"
+    color: Constants.cardColor
     radius: 5
 
     onAdditionalControlChanged: {
@@ -24,7 +24,7 @@ Rectangle {
         anchors.fill: parent
         border.width: 1
         color: "transparent"
-        border.color: Constants.darkMode ? "#0F0F0F" : "#A0A0A0"
+        border.color: Constants.cardBorderColor
         opacity: 0.5
         radius: 5
     }

@@ -8,10 +8,8 @@ import Odizinne.QuickSoundSwitcher
 Rectangle {
     id: root
 
-    // Properties to configure the component
     property alias model: devicesList.model
     property bool expanded: false
-    property bool darkMode: false
     property real contentOpacity: 0
 
     // Signals
@@ -21,7 +19,7 @@ Rectangle {
     Layout.preferredHeight: 0
     Layout.leftMargin: -14
     Layout.rightMargin: -14
-    color: darkMode ? "#1c1c1c" : "#eeeeee"
+    color: Constants.footerColor
 
     Behavior on Layout.preferredHeight {
         NumberAnimation {
@@ -36,7 +34,7 @@ Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        color: root.darkMode ? "#0F0F0F" : "#A0A0A0"
+        color: Constants.footerBorderColor
         height: 1
         opacity: 0.1
     }
@@ -47,7 +45,7 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        color: root.darkMode ? "#0F0F0F" : "#A0A0A0"
+        color: Constants.footerBorderColor
         height: 1
         opacity: 0.1
     }
