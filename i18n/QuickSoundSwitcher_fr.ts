@@ -132,23 +132,39 @@
     </message>
     <message>
         <source>Currently playing media display mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Mode d&apos;affichage du média joué</translation>
     </message>
     <message>
         <source>Flyout (interactive)</source>
-        <translation type="unfinished"></translation>
+        <translation>Flyout (interactif)</translation>
     </message>
     <message>
         <source>Panel (informative)</source>
-        <translation type="unfinished"></translation>
+        <translation>Panneau (informatif)</translation>
     </message>
     <message>
         <source>Applications and devices label</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom des applications et périphériques</translation>
     </message>
     <message>
         <source>Close device list after changed</source>
-        <translation type="unfinished"></translation>
+        <translation>Fermer la liste des périphériques après changement</translation>
+    </message>
+    <message>
+        <source>Translation author</source>
+        <translation>Traduit par</translation>
+    </message>
+    <message>
+        <source>Translation last updated</source>
+        <translation>Derniere mise à jour</translation>
+    </message>
+    <message>
+        <source>Unknow author</source>
+        <translation>Odizinne</translation>
+    </message>
+    <message>
+        <source>Unknow date</source>
+        <translation>01.07.2025</translation>
     </message>
 </context>
 </TS>

@@ -422,6 +422,48 @@ ApplicationWindow {
                         }
                     }
 
+                    RowLayout {
+                        spacing: 15
+                        Layout.preferredHeight: root.rowHeight
+                        Label {
+                            text: qsTr("QT version")
+                            Layout.fillWidth: true
+                        }
+
+                        Label {
+                            text: SoundPanelBridge.getQtVersion()
+                            opacity: 0.5
+                        }
+                    }
+
+                    RowLayout {
+                        spacing: 15
+                        Layout.preferredHeight: root.rowHeight
+                        Label {
+                            text: qsTr("Translation author")
+                            Layout.fillWidth: true
+                        }
+
+                        Label {
+                            text: qsTr("Unknow author")
+                            opacity: 0.5
+                        }
+                    }
+
+                    RowLayout {
+                        spacing: 15
+                        Layout.preferredHeight: root.rowHeight
+                        Label {
+                            text: qsTr("Translation last updated")
+                            Layout.fillWidth: true
+                        }
+
+                        Label {
+                            text: qsTr("Unknow date")
+                            opacity: 0.5
+                        }
+                    }
+
                     Item {
                         Layout.fillHeight: true
                     }

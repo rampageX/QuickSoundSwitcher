@@ -150,5 +150,21 @@
         <source>Close device list after changed</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Translation author</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Translation last updated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknow author</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknow date</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>
