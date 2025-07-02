@@ -275,7 +275,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsWindow.qml" line="389"/>
+        <location filename="../qml/SettingsWindow.qml" line="388"/>
         <source>System</source>
         <translation type="unfinished"></translation>
     </message>
@@ -290,7 +290,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsWindow.qml" line="403"/>
+        <location filename="../qml/SettingsWindow.qml" line="404"/>
         <source>Translation Progress</source>
         <translation type="unfinished"></translation>
     </message>

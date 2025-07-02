@@ -382,7 +382,6 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Application language")
-                                description: SoundPanelBridge.getLanguageCodeFromIndex(UserSettings.languageIndex)
 
                                 additionalControl: ComboBox {
                                     Layout.preferredHeight: 35
@@ -392,7 +391,9 @@ ApplicationWindow {
                                         UserSettings.languageIndex = currentIndex
                                         SoundPanelBridge.changeApplicationLanguage(currentIndex)
                                         currentIndex = UserSettings.languageIndex
-
+                                        Qt.callLater(function() {
+                                            sidebarList.currentIndex = 2
+                                        })
                                     }
                                 }
                             }
@@ -401,7 +402,6 @@ ApplicationWindow {
                                 id: trProgressCard
                                 Layout.fillWidth: true
                                 title: qsTr("Translation Progress")
-                                description: SoundPanelBridge.getLanguageCodeFromIndex(UserSettings.languageIndex)
 
                                 additionalControl: ProgressBar {
                                     id: trProgressBar
