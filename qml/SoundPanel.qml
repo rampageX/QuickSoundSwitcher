@@ -887,6 +887,11 @@ ApplicationWindow {
 
                             onValueChanged: {
                                 UserSettings.chatMixValue = value
+                            }
+
+                            onPressedChanged: {
+                                if (pressed) return
+
                                 SoundPanelBridge.chatMixValue = UserSettings.chatMixValue
                                 if (UserSettings.chatMixEnabled) {
                                     SoundPanelBridge.applyChatMixToApplications()
