@@ -5,6 +5,8 @@
 #include <QPixmap>
 #include <algorithm>
 #include "version.h"
+#include "translation_progress.h"
+#include "mediasessionmanager.h"
 
 SoundPanelBridge* SoundPanelBridge::m_instance = nullptr;
 
@@ -641,4 +643,44 @@ void SoundPanelBridge::startMediaMonitoring() {
 
 void SoundPanelBridge::stopMediaMonitoring() {
     MediaSessionManager::stopMonitoringAsync();
+}
+
+QString SoundPanelBridge::getCurrentLanguageCode() const {
+    QLocale locale;
+    QString languageCode = locale.name().section('_', 0, 0);
+
+    // Handle Chinese variants specifically
+    if (languageCode == "zh") {
+        QString fullLocale = locale.name();
+        if (fullLocale.startsWith("zh_CN")) {
+            return "zh_CN";
+        }
+        return "zh_CN"; // Default to simplified Chinese
+    }
+
+    return languageCode;
+}
+
+int SoundPanelBridge::getTotalTranslatableStrings() const {
+    auto allProgress = getTranslationProgressMap();
+
+    // Just get the total from any language (they should all be the same)
+    for (auto it = allProgress.begin(); it != allProgress.end(); ++it) {
+        QVariantMap langData = it.value().toMap();
+        return langData["total"].toInt();
+    }
+
+    return 0; // Fallback
+}
+
+int SoundPanelBridge::getCurrentLanguageFinishedStrings() const {
+    QString currentLang = getCurrentLanguageCode();
+    auto allProgress = getTranslationProgressMap();
+
+    if (allProgress.contains(currentLang)) {
+        QVariantMap langData = allProgress[currentLang].toMap();
+        return langData["finished"].toInt();
+    }
+
+    return 0; // Fallback
 }

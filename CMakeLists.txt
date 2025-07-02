@@ -21,6 +21,9 @@ find_package(Qt6 REQUIRED COMPONENTS
 
 qt_standard_project_setup(REQUIRES 6.9)
 
+# Include the translation progress script
+include(cmake/translation_progress.cmake)
+
 set(SOURCES
     src/audiomanager.cpp
     src/quicksoundswitcher.cpp
@@ -41,24 +44,29 @@ set(HEADERS
     include/mediasessionmanager.h
 )
 
+# Generate version header
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+)
+
+# Generate translation progress header
+generate_translation_progress()
+
+# Configure Windows metadata
+set(APP_ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/icon.ico")
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/windows_metadata.rc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/windows_metadata.rc"
+    @ONLY
+)
+
 qt_add_executable(QuickSoundSwitcher WIN32 MACOSX_BUNDLE
     ${SOURCES}
     ${HEADERS}
     resources/resources.qrc
     #resources/appicon.rc
     "${CMAKE_CURRENT_BINARY_DIR}/windows_metadata.rc"
-)
-
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/version.h"
-)
-
-set(APP_ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/icon.ico")
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/windows_metadata.rc.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/windows_metadata.rc"
-    @ONLY
 )
 
 set(QML_FILES
@@ -127,7 +135,7 @@ qt_add_translations(${CMAKE_PROJECT_NAME}
         i18n/QuickSoundSwitcher_it.ts
         i18n/QuickSoundSwitcher_zh_CN.ts
     RESOURCE_PREFIX "/i18n"
-    LUPDATE_OPTIONS "-no-ui-lines -locations none"
+    LUPDATE_OPTIONS "-no-ui-lines"
 )
 
 add_dependencies(${CMAKE_PROJECT_NAME} update_translations)

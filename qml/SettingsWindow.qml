@@ -427,6 +427,20 @@ ApplicationWindow {
                                     opacity: 0.5
                                 }
                             }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Translation Progress")
+                                description: SoundPanelBridge.getCurrentLanguageCode()
+
+                                additionalControl: ProgressBar {
+                                    Layout.preferredWidth: 160
+                                    Layout.preferredHeight: 6
+                                    from: 0
+                                    to: SoundPanelBridge.getTotalTranslatableStrings()
+                                    value: SoundPanelBridge.getCurrentLanguageFinishedStrings()
+                                }
+                            }
                         }
                     }
                 }

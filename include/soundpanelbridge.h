@@ -8,7 +8,6 @@
 #include <QSettings>
 #include <QScreen>
 #include <QGuiApplication>
-#include "mediasessionmanager.h"
 
 class SoundPanelBridge : public QObject
 {
@@ -72,6 +71,10 @@ public:
     Q_INVOKABLE void previousTrack();
     Q_INVOKABLE void startMediaMonitoring();
     Q_INVOKABLE void stopMediaMonitoring();
+
+    Q_INVOKABLE int getTotalTranslatableStrings() const;
+    Q_INVOKABLE QString getCurrentLanguageCode() const;
+    Q_INVOKABLE int getCurrentLanguageFinishedStrings() const;
 
 public slots:
     void onPlaybackVolumeChanged(int volume);
