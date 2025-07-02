@@ -17,7 +17,6 @@ bool isAnotherInstanceRunning(const QString& processName)
 
 int main(int argc, char *argv[])
 {
-    qputenv("QT_QUICK_CONTROLS_MATERIAL_VARIANT", "Dense");
     QApplication a(argc, argv);
     a.setQuitOnLastWindowClosed(false);
     a.setOrganizationName("Odizinne");
