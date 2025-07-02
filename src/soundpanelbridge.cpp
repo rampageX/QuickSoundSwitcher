@@ -20,10 +20,44 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     , m_currentPanelMode(0)
     , m_isInitializing(false)
     , translator(new QTranslator(this))
+    , m_chatMixValue(50)
+    , m_chatMixCheckTimer(new QTimer(this))
 {
     m_instance = this;
 
+    loadCommAppsFromFile();
+
+    m_chatMixValue = settings.value("chatMixValue", 50).toInt();
+
     changeApplicationLanguage(settings.value("languageIndex", 0).toInt());
+
+    // Setup ChatMix monitoring timer
+    m_chatMixCheckTimer->setInterval(500); // Check every 2 seconds
+    connect(m_chatMixCheckTimer, &QTimer::timeout, this, &SoundPanelBridge::checkAndApplyChatMixToNewApps);
+
+    bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
+    if (chatMixEnabled) {
+        qDebug() << "ChatMix enabled on startup - will apply when applications are ready";
+
+        // Connect to apply ChatMix when applications are first loaded
+        connect(AudioManager::getWorker(), &AudioWorker::applicationsReady,
+                this, [this](const QList<Application>& apps) {
+                    static bool firstTime = true;
+                    if (firstTime) {
+                        firstTime = false;
+                        qDebug() << "First application load - applying ChatMix";
+                        applications = apps;
+                        applyChatMixToApplications();
+                        startChatMixMonitoring();
+                    }
+                }, Qt::QueuedConnection);
+
+        // Trigger initial application enumeration
+        QTimer::singleShot(1000, [this]() {
+            qDebug() << "Starting initial application enumeration for ChatMix";
+            AudioManager::enumerateApplicationsAsync();
+        });
+    }
 
     // Connect to audio worker signals for async operations
     if (AudioManager::getWorker()) {
@@ -32,7 +66,7 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     playbackDevices = devices;
                     emit playbackDevicesChanged(convertDevicesToVariant(devices));
                     m_playbackDevicesReady = true;
-                    if (m_isInitializing) {  // Only check completion during initialization
+                    if (m_isInitializing) {
                         checkDataInitializationComplete();
                     }
                 });
@@ -42,7 +76,7 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     recordingDevices = devices;
                     emit recordingDevicesChanged(convertDevicesToVariant(devices));
                     m_recordingDevicesReady = true;
-                    if (m_isInitializing) {  // Only check completion during initialization
+                    if (m_isInitializing) {
                         checkDataInitializationComplete();
                     }
                 });
@@ -52,7 +86,11 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     applications = apps;
                     emit applicationsChanged(convertApplicationsToVariant(apps));
                     m_applicationsReady = true;
-                    if (m_isInitializing) {  // Only check completion during initialization
+
+                    // Check and apply chatmix to new apps
+                    checkAndApplyChatMixToNewApps();
+
+                    if (m_isInitializing) {
                         checkDataInitializationComplete();
                     }
                 });
@@ -82,7 +120,7 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     setPlaybackMuted(playbackMute);
                     setRecordingMuted(recordingMute);
                     m_currentPropertiesReady = true;
-                    if (m_isInitializing) {  // Only check completion during initialization
+                    if (m_isInitializing) {
                         checkDataInitializationComplete();
                     }
                 });
@@ -102,6 +140,7 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
 
 SoundPanelBridge::~SoundPanelBridge()
 {
+    restoreOriginalVolumes();
     if (m_instance == this) {
         m_instance = nullptr;
     }
@@ -190,8 +229,90 @@ int SoundPanelBridge::panelMode() const
     return settings.value("panelMode", 0).toInt();
 }
 
+// ChatMix methods
+int SoundPanelBridge::chatMixValue() const
+{
+    return m_chatMixValue;
+}
+
+QStringList SoundPanelBridge::getCommAppsFromSettings() const
+{
+    // Convert from new format for backward compatibility if needed
+    QStringList result;
+    for (const CommApp& app : m_commApps) {
+        result.append(app.executableName);
+    }
+    return result;
+}
+
+bool SoundPanelBridge::isCommApp(const QString& executableName) const
+{
+    QStringList commApps = getCommAppsFromSettings();
+    return commApps.contains(executableName, Qt::CaseInsensitive);
+}
+
+void SoundPanelBridge::applyChatMixToApplications()
+{
+    // Calculate actual volume levels (not multipliers)
+    int commAppVolume;
+    int otherAppVolume;
+
+    if (m_chatMixValue <= 50) {
+        // Left side: comm apps stay at 100%, other apps fade in from 0% to 100%
+        commAppVolume = 100;
+        otherAppVolume = m_chatMixValue * 2;
+    } else {
+        // Right side: other apps stay at 100%, comm apps fade out from 100% to 0%
+        commAppVolume = 100 - (m_chatMixValue - 50) * 2;
+        otherAppVolume = 100;
+    }
+
+    for (const Application& app : applications) {
+        bool isComm = isCommApp(app.executableName);
+        int newVolume = isComm ? commAppVolume : otherAppVolume;
+
+        // Apply the actual volume level directly
+        bool shouldGroup = settings.value("groupApplications", true).toBool();
+        if (shouldGroup) {
+            QStringList appIDs = app.id.split(";");
+            for (const QString& id : appIDs) {
+                AudioManager::setApplicationVolumeAsync(id, newVolume);
+            }
+        } else {
+            AudioManager::setApplicationVolumeAsync(app.id, newVolume);
+        }
+    }
+
+    startChatMixMonitoring();
+}
+
+void SoundPanelBridge::checkAndApplyChatMixToNewApps()
+{
+    bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
+    if (!chatMixEnabled) {
+        return;
+    }
+
+    applyChatMixToApplications();
+}
+
+void SoundPanelBridge::startChatMixMonitoring()
+{
+    bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
+    if (chatMixEnabled && !m_chatMixCheckTimer->isActive()) {
+        m_chatMixCheckTimer->start();
+    }
+}
+
+void SoundPanelBridge::stopChatMixMonitoring()
+{
+    if (m_chatMixCheckTimer->isActive()) {
+        m_chatMixCheckTimer->stop();
+    }
+}
+
 void SoundPanelBridge::initializeData() {
-    m_isInitializing = true;  // Set flag to indicate we're initializing
+    m_isInitializing = true;
     int mode = panelMode();
     m_currentPanelMode = mode;
 
@@ -223,6 +344,13 @@ void SoundPanelBridge::initializeData() {
     emit mediaInfoChanged();
     if (settings.value("mediaMode", true).toInt() != 2) {
         MediaSessionManager::queryMediaInfoAsync();
+    }
+
+    bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
+    if (chatMixEnabled) {
+        startChatMixMonitoring();
+    } else {
+        stopChatMixMonitoring();
     }
 
     checkDataInitializationComplete();
@@ -442,36 +570,28 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
 void SoundPanelBridge::onPlaybackVolumeChanged(int volume)
 {
     AudioManager::setPlaybackVolumeAsync(volume);
-    // Use cached getter (non-blocking)
     if (AudioManager::getPlaybackMute()) {
         AudioManager::setPlaybackMuteAsync(false);
-        // Don't call setPlaybackMuted(false) here - let the signal handle it
     }
-    // Remove this line: setPlaybackVolume(volume);
     emit shouldUpdateTray();
 }
 
 void SoundPanelBridge::onRecordingVolumeChanged(int volume)
 {
     AudioManager::setRecordingVolumeAsync(volume);
-    // Remove this line: setRecordingVolume(volume);
 }
 
 void SoundPanelBridge::onOutputMuteButtonClicked()
 {
-    // Use cached getter (non-blocking)
     bool isMuted = AudioManager::getPlaybackMute();
     AudioManager::setPlaybackMuteAsync(!isMuted);
-    // Remove this line: setPlaybackMuted(!isMuted);
     emit shouldUpdateTray();
 }
 
 void SoundPanelBridge::onInputMuteButtonClicked()
 {
-    // Use cached getter (non-blocking)
     bool isMuted = AudioManager::getRecordingMute();
     AudioManager::setRecordingMuteAsync(!isMuted);
-    // Remove this line: setRecordingMuted(!isMuted);
 }
 
 void SoundPanelBridge::onOutputSliderReleased()
@@ -484,6 +604,12 @@ void SoundPanelBridge::onOutputSliderReleased()
 void SoundPanelBridge::onApplicationVolumeSliderValueChanged(QString appID, int volume)
 {
     bool shouldGroup = settings.value("groupApplications", true).toBool();
+    bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
+
+    // Don't allow direct volume changes when chatmix is enabled
+    if (chatMixEnabled) {
+        return;
+    }
 
     if (shouldGroup) {
         QStringList appIDs = appID.split(";");
@@ -491,7 +617,6 @@ void SoundPanelBridge::onApplicationVolumeSliderValueChanged(QString appID, int 
             AudioManager::setApplicationVolumeAsync(id, volume);
         }
     } else {
-        // Single app ID when not grouping
         AudioManager::setApplicationVolumeAsync(appID, volume);
     }
 }
@@ -538,7 +663,7 @@ void SoundPanelBridge::checkDataInitializationComplete() {
     bool propertiesReady = m_currentPropertiesReady;
 
     if (devicesReady && applicationsReady && propertiesReady) {
-        m_isInitializing = false;  // Reset flag when initialization is complete
+        m_isInitializing = false;
         emit dataInitializationComplete();
     }
 }
@@ -738,4 +863,243 @@ QString SoundPanelBridge::getCommitHash() const
 QString SoundPanelBridge::getBuildTimestamp() const
 {
     return QString(BUILD_TIMESTAMP);
+}
+
+void SoundPanelBridge::setChatMixValue(int value)
+{
+    if (m_chatMixValue != value) {
+        bool wasEnabled = settings.value("chatMixEnabled", false).toBool();
+        m_chatMixValue = value;
+        emit chatMixValueChanged();
+
+        if (wasEnabled) {
+            applyChatMixToApplications();
+        }
+    }
+}
+
+QString SoundPanelBridge::getCommAppsFilePath() const
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/commapps.json";
+}
+
+void SoundPanelBridge::loadCommAppsFromFile()
+{
+    QString filePath = getCommAppsFilePath();
+    QFile file(filePath);
+
+    if (!file.exists()) {
+        qDebug() << "CommApps file doesn't exist, starting with empty list";
+        return;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Failed to open commapps.json for reading";
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        qWarning() << "Failed to parse commapps.json:" << error.errorString();
+        return;
+    }
+
+    QJsonObject root = doc.object();
+    QJsonArray commAppsArray = root["commApps"].toArray();
+
+    m_commApps.clear();
+    for (const QJsonValue& value : commAppsArray) {
+        QJsonObject appObj = value.toObject();
+        CommApp app;
+        app.executableName = appObj["executableName"].toString();
+        app.displayName = appObj["displayName"].toString();
+        app.originalVolume = appObj["originalVolume"].toInt(100);
+        m_commApps.append(app);
+    }
+
+    qDebug() << "Loaded" << m_commApps.count() << "comm apps from JSON";
+    for (const CommApp& app : m_commApps) {
+        qDebug() << "  -" << app.executableName << "(" << app.displayName << ") vol:" << app.originalVolume;
+    }
+}
+
+void SoundPanelBridge::saveCommAppsToFile()
+{
+    QString filePath = getCommAppsFilePath();
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "Failed to open commapps.json for writing";
+        return;
+    }
+
+    QJsonArray commAppsArray;
+    for (const CommApp& app : m_commApps) {
+        QJsonObject appObj;
+        appObj["executableName"] = app.executableName;
+        appObj["displayName"] = app.displayName;
+        appObj["originalVolume"] = app.originalVolume;
+        commAppsArray.append(appObj);
+    }
+
+    QJsonObject root;
+    root["commApps"] = commAppsArray;
+
+    QJsonDocument doc(root);
+    file.write(doc.toJson());
+
+    qDebug() << "Saved" << m_commApps.count() << "comm apps to JSON";
+}
+
+void SoundPanelBridge::addCommApp(const QString& executableName)
+{
+    // Check if already exists
+    for (const CommApp& existing : m_commApps) {
+        if (existing.executableName.compare(executableName, Qt::CaseInsensitive) == 0) {
+            qDebug() << "CommApp already exists:" << executableName;
+            return;
+        }
+    }
+
+    CommApp newApp;
+    newApp.executableName = executableName;
+    newApp.displayName = executableName;
+    newApp.originalVolume = 100; // Default, will be updated when chatmix is enabled
+
+    m_commApps.append(newApp);
+    saveCommAppsToFile();
+    emit commAppsListChanged();
+
+    qDebug() << "Added comm app:" << executableName << "(" << newApp.displayName << ")";
+}
+
+void SoundPanelBridge::removeCommApp(const QString& executableName)
+{
+    for (int i = 0; i < m_commApps.count(); ++i) {
+        if (m_commApps[i].executableName.compare(executableName, Qt::CaseInsensitive) == 0) {
+            qDebug() << "Removing comm app:" << executableName;
+            m_commApps.removeAt(i);
+            saveCommAppsToFile();
+            emit commAppsListChanged();
+            return;
+        }
+    }
+    qDebug() << "CommApp not found for removal:" << executableName;
+}
+
+void SoundPanelBridge::saveOriginalVolumes()
+{
+    qDebug() << "Saving original volumes for comm apps...";
+
+    // ONLY save if ChatMix is currently disabled - otherwise we're saving modified volumes!
+    bool chatMixCurrentlyEnabled = settings.value("chatMixEnabled", false).toBool();
+    if (chatMixCurrentlyEnabled) {
+        qDebug() << "ChatMix is currently enabled - cannot save original volumes! Use existing saved volumes.";
+        return;
+    }
+
+    qDebug() << "ChatMix is disabled, safe to save current volumes as originals";
+    qDebug() << "Current applications state:";
+
+    for (const Application& app : applications) {
+        qDebug() << "  App:" << app.name << "| Volume:" << app.volume;
+    }
+
+    for (const Application& app : applications) {
+        // Find matching comm app and update its original volume
+        for (CommApp& commApp : m_commApps) {
+            if (app.executableName.compare(commApp.executableName, Qt::CaseInsensitive) == 0) {
+                commApp.originalVolume = app.volume;
+                qDebug() << "Saved original volume for" << commApp.executableName << ":" << app.volume;
+            }
+        }
+    }
+
+    saveCommAppsToFile();
+    emit commAppsListChanged();
+}
+
+void SoundPanelBridge::restoreOriginalVolumes()
+{
+    qDebug() << "Restoring original volumes for comm apps...";
+
+    stopChatMixMonitoring();
+
+    for (const Application& app : applications) {
+        // Find matching comm app and restore its volume
+        for (const CommApp& commApp : m_commApps) {
+            if (app.executableName.compare(commApp.executableName, Qt::CaseInsensitive) == 0) {
+                bool shouldGroup = settings.value("groupApplications", true).toBool();
+                if (shouldGroup) {
+                    QStringList appIDs = app.id.split(";");
+                    for (const QString& id : appIDs) {
+                        AudioManager::setApplicationVolumeAsync(id, commApp.originalVolume);
+                    }
+                } else {
+                    AudioManager::setApplicationVolumeAsync(app.id, commApp.originalVolume);
+                }
+                qDebug() << "Restored original volume for" << commApp.executableName << ":" << commApp.originalVolume;
+            }
+        }
+    }
+
+    // Force refresh the applications list to update the UI
+    //populateApplications();
+}
+
+QVariantList SoundPanelBridge::commAppsList() const
+{
+    QVariantList result;
+    for (const CommApp& app : m_commApps) {
+        QVariantMap appMap;
+        appMap["executableName"] = app.executableName;
+        appMap["displayName"] = app.displayName;
+        appMap["originalVolume"] = app.originalVolume;
+        result.append(appMap);
+    }
+    return result;
+}
+
+void SoundPanelBridge::saveOriginalVolumesAfterRefresh()
+{
+    qDebug() << "Refreshing applications list before saving original volumes...";
+
+    // Connect to get fresh application data, then save originals
+    connect(AudioManager::getWorker(), &AudioWorker::applicationsReady,
+            this, [this](const QList<Application>& apps) {
+                qDebug() << "Applications refreshed, now saving original volumes";
+                applications = apps;
+
+                // Now save the fresh volumes as originals
+                qDebug() << "Fresh applications state:";
+                for (const Application& app : applications) {
+                    qDebug() << "  App:" << app.name << "| Volume:" << app.volume;
+                }
+
+                for (const Application& app : applications) {
+                    // Find matching comm app and update its original volume
+                    for (CommApp& commApp : m_commApps) {
+                        if (app.executableName.compare(commApp.executableName, Qt::CaseInsensitive) == 0) {
+                            commApp.originalVolume = app.volume;
+                            qDebug() << "Saved fresh original volume for" << commApp.executableName << ":" << app.volume;
+                        }
+                    }
+                }
+
+                saveCommAppsToFile();
+                emit commAppsListChanged();
+
+                // Now apply ChatMix
+                applyChatMixToApplications();
+                startChatMixMonitoring();
+
+            }, Qt::SingleShotConnection); // Single shot so it only triggers once
+
+    // Trigger the refresh
+    populateApplications();
 }

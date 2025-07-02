@@ -79,6 +79,10 @@ ApplicationWindow {
                             icon: "qrc:/icons/wand.svg"
                         },
                         {
+                            text: qsTr("ChatMix"),
+                            icon: "qrc:/icons/mic.png"
+                        },
+                        {
                             text: qsTr("Language"),
                             icon: "qrc:/icons/language.svg"
                         },
@@ -121,8 +125,9 @@ ApplicationWindow {
                                 switch(index) {
                                     case 0: stackView.push(generalPaneComponent); break
                                     case 1: stackView.push(appearancePaneComponent); break
-                                    case 2: stackView.push(languagePaneComponent); break
-                                    case 3: stackView.push(debugPaneComponent); break
+                                    case 2: stackView.push(commAppsPaneComponent); break
+                                    case 3: stackView.push(languagePaneComponent); break
+                                    case 4: stackView.push(debugPaneComponent); break
                                 }
                             }
                         }
@@ -174,6 +179,11 @@ ApplicationWindow {
             Component {
                 id: languagePaneComponent
                 LanguagePane {}
+            }
+
+            Component {
+                id: commAppsPaneComponent
+                CommAppsPane {}
             }
 
             Component {

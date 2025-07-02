@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.FluentWinUI3
+import QtQuick.Controls.impl
 import QtQuick.Window
 import Odizinne.QuickSoundSwitcher
 
@@ -699,6 +700,7 @@ ApplicationWindow {
                         Layout.fillWidth: true
                         spacing: 0
                         required property var model
+                        required property int index
 
                         ToolButton {
                             id: muteRoundButton
@@ -708,15 +710,25 @@ ApplicationWindow {
                             checkable: true
                             highlighted: checked
                             checked: applicationUnitLayout.model.isMuted
+                            enabled: !UserSettings.chatMixEnabled
                             ToolTip.text: applicationUnitLayout.model.name
                             ToolTip.visible: hovered
                             ToolTip.delay: 1000
-                            opacity: highlighted ? 0.3 : 1
-                            icon.source: applicationUnitLayout.model.name === "System sounds" ? "qrc:/icons/system_light.png" : applicationUnitLayout.model.icon
+                            opacity: highlighted ? 0.3 : (enabled ? 1 : 0.5)
+
+                            icon.source: {
+                                if (applicationUnitLayout.model.name === "System sounds") {
+                                    return "qrc:/icons/system_light.png"
+                                }
+                                return applicationUnitLayout.model.icon || ""
+                            }
+
                             icon.color: applicationUnitLayout.model.name === "System sounds" ? (Constants.darkMode ? "white" : "black") : "transparent"
+
                             onClicked: {
-                                applicationUnitLayout.model.isMuted = !applicationUnitLayout.model.isMuted
-                                SoundPanelBridge.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, applicationUnitLayout.model.isMuted)
+                                let newMutedState = !applicationUnitLayout.model.isMuted
+                                appModel.setProperty(applicationUnitLayout.index, "isMuted", newMutedState)
+                                SoundPanelBridge.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, newMutedState)
                             }
 
                             Component.onCompleted: {
@@ -726,23 +738,51 @@ ApplicationWindow {
 
                         ColumnLayout {
                             spacing: -4
+
                             Label {
                                 visible: UserSettings.displayDevAppLabel
-                                opacity: 0.5
+                                opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
                                 elide: Text.ElideRight
                                 Layout.preferredWidth: 200
                                 Layout.leftMargin: 18
                                 Layout.rightMargin: 25
-                                text: applicationUnitLayout.model.name
+                                text: {
+                                    let name = applicationUnitLayout.model.name
+                                    if (UserSettings.chatMixEnabled && SoundPanelBridge.isCommApp(name)) {
+                                        name += " (Comm)"
+                                    }
+                                    return name
+                                }
                             }
 
                             Slider {
                                 id: volumeSlider
                                 from: 0
                                 to: 100
-                                enabled: !muteRoundButton.highlighted
-                                value: applicationUnitLayout.model.volume
+                                enabled: !UserSettings.chatMixEnabled && !muteRoundButton.highlighted
+                                opacity: enabled ? 1 : 0.5
                                 Layout.fillWidth: true
+
+                                // Bind directly to chatmix value and calculate the display volume
+                                value: {
+                                    if (!UserSettings.chatMixEnabled) {
+                                        return applicationUnitLayout.model.volume
+                                    }
+
+                                    // Check if this app is a comm app
+                                    let appName = applicationUnitLayout.model.name
+                                    let isCommApp = SoundPanelBridge.isCommApp(appName)
+                                    let chatMixVal = UserSettings.chatMixValue
+
+                                    // Calculate the volume based on chatmix position
+                                    if (chatMixVal <= 50) {
+                                        // Left side: comm apps at 100%, other apps fade in
+                                        return isCommApp ? 100 : (chatMixVal * 2)
+                                    } else {
+                                        // Right side: other apps at 100%, comm apps fade out
+                                        return isCommApp ? (100 - (chatMixVal - 50) * 2) : 100
+                                    }
+                                }
 
                                 ToolTip {
                                     parent: volumeSlider.handle
@@ -751,7 +791,13 @@ ApplicationWindow {
                                 }
 
                                 onValueChanged: {
-                                    SoundPanelBridge.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
+                                    if (!UserSettings.chatMixEnabled && pressed) {
+                                        // Update the model using the correct index
+                                        appModel.setProperty(applicationUnitLayout.index, "volume", value)
+
+                                        // Then send to audio manager
+                                        SoundPanelBridge.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
+                                    }
                                 }
                             }
                         }
@@ -760,8 +806,103 @@ ApplicationWindow {
                             text: Math.round(volumeSlider.value).toString()
                             Layout.rightMargin: 5
                             font.pixelSize: 14
+                            opacity: UserSettings.chatMixEnabled ? 0.5 : 1
                             visible: UserSettings.volumeValueMode === 1
                         }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.preferredHeight: 1
+                Layout.fillWidth: true
+                color: Constants.separatorColor
+                opacity: 0.15
+                Layout.rightMargin: -14
+                Layout.leftMargin: -14
+            }
+
+            ColumnLayout {
+                id: chatMixLayout
+                spacing: 5
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 40
+                    spacing: 0
+
+                    ToolButton {
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+                        icon.width: 14
+                        icon.height: 14
+                        icon.source: "qrc:/icons/headset.svg"
+                        icon.color: palette.text
+                        checkable: true
+                        checked: !UserSettings.chatMixEnabled
+
+                        Component.onCompleted: {
+                            palette.accent = palette.button
+                        }
+
+                        onClicked: {
+                            if (!checked) {
+                                UserSettings.chatMixEnabled = !checked
+                                SoundPanelBridge.saveOriginalVolumesAfterRefresh()
+                            } else {
+                                UserSettings.chatMixEnabled = !checked
+                                SoundPanelBridge.restoreOriginalVolumes()
+                            }
+                        }
+                    }
+
+                    ColumnLayout {
+                        spacing: -4
+
+                        Label {
+                            visible: UserSettings.displayDevAppLabel
+                            opacity: 0.5
+                            text: qsTr("ChatMix")
+                            Layout.leftMargin: 18
+                            Layout.rightMargin: 25
+                        }
+
+                        Slider {
+                            id: chatMixSlider
+                            value: UserSettings.chatMixValue
+                            from: 0
+                            to: 100
+                            Layout.fillWidth: true
+                            enabled: UserSettings.chatMixEnabled
+
+                            ToolTip {
+                                parent: chatMixSlider.handle
+                                visible: chatMixSlider.pressed
+                                text: {
+                                    if (chatMixSlider.value === 0) return qsTr("Comm Apps Only")
+                                    if (chatMixSlider.value === 100) return qsTr("Other Apps Only")
+                                    return qsTr("Balanced: %1").arg(Math.round(chatMixSlider.value))
+                                }
+                            }
+
+                            onValueChanged: {
+                                UserSettings.chatMixValue = value
+                                SoundPanelBridge.chatMixValue = UserSettings.chatMixValue
+                                if (UserSettings.chatMixEnabled) {
+                                    SoundPanelBridge.applyChatMixToApplications()
+                                }
+                            }
+                        }
+                    }
+
+                    IconImage {
+                        Layout.preferredWidth: 35
+                        Layout.preferredHeight: 35
+                        sourceSize.width: 14
+                        sourceSize.height: 14
+                        color: palette.text
+                        source: "qrc:/icons/music.svg"
+                        enabled: UserSettings.chatMixEnabled
                     }
                 }
             }

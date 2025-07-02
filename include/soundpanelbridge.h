@@ -9,6 +9,13 @@
 #include <QScreen>
 #include <QGuiApplication>
 #include <QTranslator>
+#include <QTimer>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QStandardPaths>
+#include <QDir>
+#include <QFile>
 
 class SoundPanelBridge : public QObject
 {
@@ -28,6 +35,10 @@ class SoundPanelBridge : public QObject
     Q_PROPERTY(QString mediaArtist READ mediaArtist NOTIFY mediaInfoChanged)
     Q_PROPERTY(bool isMediaPlaying READ isMediaPlaying NOTIFY mediaInfoChanged)
     Q_PROPERTY(QString mediaArt READ mediaArt NOTIFY mediaInfoChanged)
+
+    // ChatMix properties
+    Q_PROPERTY(int chatMixValue READ chatMixValue WRITE setChatMixValue NOTIFY chatMixValueChanged)
+    Q_PROPERTY(QVariantList commAppsList READ commAppsList NOTIFY commAppsListChanged)
 
 public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
@@ -80,6 +91,17 @@ public:
     Q_INVOKABLE void changeApplicationLanguage(int languageIndex);
     Q_INVOKABLE QString getLanguageCodeFromIndex(int index) const;
 
+    // ChatMix methods
+    int chatMixValue() const;
+    void setChatMixValue(int value);
+    QVariantList commAppsList() const;
+    Q_INVOKABLE void applyChatMixToApplications();
+    Q_INVOKABLE bool isCommApp(const QString& executableName) const;
+    Q_INVOKABLE void addCommApp(const QString& executableName);
+    Q_INVOKABLE void removeCommApp(const QString& executableName);
+    Q_INVOKABLE void saveOriginalVolumes();
+    Q_INVOKABLE void restoreOriginalVolumes();
+    Q_INVOKABLE void saveOriginalVolumesAfterRefresh();
 
 public slots:
     void onPlaybackVolumeChanged(int volume);
@@ -111,6 +133,8 @@ signals:
     void taskbarPositionChanged();
     void mediaInfoChanged();
     void languageChanged();
+    void chatMixValueChanged();
+    void commAppsListChanged();
 
 private:
     static SoundPanelBridge* m_instance;
@@ -134,7 +158,7 @@ private:
     bool m_recordingDevicesReady = false;
     bool m_currentPropertiesReady = false;
     bool m_applicationsReady = false;
-    bool m_isInitializing = false;  // Add this line
+    bool m_isInitializing = false;
     int m_currentPanelMode = 0;
 
     void checkDataInitializationComplete();
@@ -147,6 +171,26 @@ private:
     QString m_mediaArt;
 
     QTranslator *translator;
+
+    // ChatMix members
+    struct CommApp {
+        QString executableName;
+        QString displayName;
+        int originalVolume = 100;
+    };
+
+    int m_chatMixValue = 50;
+    QList<CommApp> m_commApps;
+    QTimer* m_chatMixCheckTimer;
+
+    // ChatMix methods
+    void checkAndApplyChatMixToNewApps();
+    QStringList getCommAppsFromSettings() const; // For backward compatibility
+    void startChatMixMonitoring();
+    void stopChatMixMonitoring();
+    QString getCommAppsFilePath() const;
+    void loadCommAppsFromFile();
+    void saveCommAppsToFile();
 };
 
 #endif // SOUNDPANELBRIDGE_H

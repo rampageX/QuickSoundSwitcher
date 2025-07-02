@@ -16,4 +16,8 @@ Settings {
     property bool closeDeviceListOnClick: true
     property bool groupApplications: true
     property int languageIndex: 0
+
+    property var commApps: []
+    property int chatMixValue: 50
+    property bool chatMixEnabled: false
 }

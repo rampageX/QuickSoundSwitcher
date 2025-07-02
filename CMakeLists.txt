@@ -96,6 +96,7 @@ set(QML_FILES
     qml/SettingsPane/GeneralPane.qml
     qml/SettingsPane/LanguagePane.qml
     qml/SettingsPane/DebugPane.qml
+    qml/SettingsPane/CommAppsPane.qml
 )
 
 set(QML_SINGLETONS
