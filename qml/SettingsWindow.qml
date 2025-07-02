@@ -9,8 +9,8 @@ ApplicationWindow {
     id: root
     height: 450
     minimumHeight: 450
-    width: 800
-    minimumWidth: 800
+    width: 900
+    minimumWidth: 900
     visible: false
     transientParent: null
     title: qsTr("QuickSoundSwitcher - Settings")
