@@ -441,6 +441,23 @@ ApplicationWindow {
                                     value: SoundPanelBridge.getCurrentLanguageFinishedStrings()
                                 }
                             }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Application language")
+                                description: SoundPanelBridge.getCurrentLanguageCode()
+
+                                additionalControl: ComboBox {
+                                    Layout.preferredHeight: 35
+                                    model: [qsTr("System"), "english", "français", "deutsch", "español", "italiano", "magyar", "türkçe"]
+                                    currentIndex: UserSettings.languageIndex
+                                    onActivated: {
+                                        UserSettings.languageIndex = currentIndex
+                                        SoundPanelBridge.changeApplicationLanguage(currentIndex)
+                                        currentIndex = UserSettings.languageIndex
+                                    }
+                                }
+                            }
                         }
                     }
                 }

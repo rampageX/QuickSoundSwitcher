@@ -8,6 +8,7 @@
 #include <QSettings>
 #include <QScreen>
 #include <QGuiApplication>
+#include <QTranslator>
 
 class SoundPanelBridge : public QObject
 {
@@ -75,6 +76,7 @@ public:
     Q_INVOKABLE int getTotalTranslatableStrings() const;
     Q_INVOKABLE QString getCurrentLanguageCode() const;
     Q_INVOKABLE int getCurrentLanguageFinishedStrings() const;
+    Q_INVOKABLE void changeApplicationLanguage(int languageIndex);
 
 public slots:
     void onPlaybackVolumeChanged(int volume);
@@ -140,6 +142,8 @@ private:
     QString m_mediaArtist;
     bool m_isMediaPlaying = false;
     QString m_mediaArt;
+
+    QTranslator *translator;
 };
 
 #endif // SOUNDPANELBRIDGE_H

@@ -19,8 +19,11 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     , m_applicationsReady(false)
     , m_currentPanelMode(0)
     , m_isInitializing(false)
+    , translator(new QTranslator(this))
 {
     m_instance = this;
+
+    changeApplicationLanguage(settings.value("languageIndex", 0).toInt());
 
     // Connect to audio worker signals for async operations
     if (AudioManager::getWorker()) {
@@ -683,4 +686,54 @@ int SoundPanelBridge::getCurrentLanguageFinishedStrings() const {
     }
 
     return 0; // Fallback
+}
+
+void SoundPanelBridge::changeApplicationLanguage(int languageIndex)
+{
+    qApp->removeTranslator(translator);
+    delete translator;
+    translator = new QTranslator(this);
+
+    QString languageCode;
+    if (languageIndex == 0) {
+        QLocale systemLocale;
+        languageCode = systemLocale.name().left(2);
+    } else {
+        switch (languageIndex) {
+        case 1:
+            languageCode = "en";
+            break;
+        case 2:
+            languageCode = "fr";
+            break;
+        case 3:
+            languageCode = "de";
+            break;
+        case 4:
+            languageCode = "it";
+            break;
+        case 5:
+            languageCode = "ko";
+            break;
+        case 6:
+            languageCode = "zh_CN";
+            break;
+        case 7:
+            languageCode = "tr";
+            break;
+        default:
+            languageCode = "en";
+            break;
+        }
+    }
+
+    QString translationFile = QString(":/i18n/QuickSoundSwitcher_%1.qm").arg(languageCode);
+    if (translator->load(translationFile)) {
+        qGuiApp->installTranslator(translator);
+    } else {
+        qWarning() << "Failed to load translation file:" << translationFile;
+    }
+
+    // engine->retranslate();
+    // updateTrayMenu();
 }
