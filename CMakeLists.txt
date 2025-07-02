@@ -44,6 +44,22 @@ set(HEADERS
     include/mediasessionmanager.h
 )
 
+# Get git commit hash
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+else()
+    set(GIT_COMMIT_HASH "unknown")
+endif()
+
+string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S UTC" UTC)
+
 # Generate version header
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
@@ -76,11 +92,16 @@ set(QML_FILES
     qml/DevicesListView.qml
     qml/MediaFlyoutContent.qml
     qml/Card.qml
+    qml/SettingsPane/AppearancePane.qml
+    qml/SettingsPane/GeneralPane.qml
+    qml/SettingsPane/LanguagePane.qml
+    qml/SettingsPane/DebugPane.qml
 )
 
 set(QML_SINGLETONS
     qml/Singletons/UserSettings.qml
     qml/Singletons/Constants.qml
+    qml/Singletons/Context.qml
 )
 
 set_source_files_properties(${QML_SINGLETONS}

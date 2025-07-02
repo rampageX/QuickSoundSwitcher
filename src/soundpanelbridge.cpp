@@ -729,3 +729,13 @@ QString SoundPanelBridge::getLanguageCodeFromIndex(int index) const
     default: return "en";
     }
 }
+
+QString SoundPanelBridge::getCommitHash() const
+{
+    return QString(GIT_COMMIT_HASH);
+}
+
+QString SoundPanelBridge::getBuildTimestamp() const
+{
+    return QString(BUILD_TIMESTAMP);
+}
