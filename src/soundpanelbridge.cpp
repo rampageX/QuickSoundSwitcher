@@ -676,8 +676,8 @@ int SoundPanelBridge::getTotalTranslatableStrings() const {
     return 0; // Fallback
 }
 
-int SoundPanelBridge::getCurrentLanguageFinishedStrings() const {
-    QString currentLang = getCurrentLanguageCode();
+int SoundPanelBridge::getCurrentLanguageFinishedStrings(int languageIndex) const {
+    QString currentLang = getLanguageCodeFromIndex(languageIndex);
     auto allProgress = getTranslationProgressMap();
 
     if (allProgress.contains(currentLang)) {
@@ -697,34 +697,9 @@ void SoundPanelBridge::changeApplicationLanguage(int languageIndex)
     QString languageCode;
     if (languageIndex == 0) {
         QLocale systemLocale;
-        languageCode = systemLocale.name().left(2);
+        languageCode = getCurrentLanguageCode();
     } else {
-        switch (languageIndex) {
-        case 1:
-            languageCode = "en";
-            break;
-        case 2:
-            languageCode = "fr";
-            break;
-        case 3:
-            languageCode = "de";
-            break;
-        case 4:
-            languageCode = "it";
-            break;
-        case 5:
-            languageCode = "ko";
-            break;
-        case 6:
-            languageCode = "zh_CN";
-            break;
-        case 7:
-            languageCode = "tr";
-            break;
-        default:
-            languageCode = "en";
-            break;
-        }
+        languageCode = getLanguageCodeFromIndex(languageIndex);
     }
 
     QString translationFile = QString(":/i18n/QuickSoundSwitcher_%1.qm").arg(languageCode);
@@ -734,6 +709,23 @@ void SoundPanelBridge::changeApplicationLanguage(int languageIndex)
         qWarning() << "Failed to load translation file:" << translationFile;
     }
 
-    // engine->retranslate();
-    // updateTrayMenu();
+    emit languageChanged();
+}
+
+QString SoundPanelBridge::getLanguageCodeFromIndex(int index) const
+{
+    if (index == 0) {
+        QLocale systemLocale;
+        return systemLocale.name().left(2);
+    }
+
+    switch (index) {
+    case 1: return "en";
+    case 2: return "fr";
+    case 3: return "de";
+    case 4: return "it";
+    case 5: return "ko";
+    case 6: return "zh_CN";
+    default: return "en";
+    }
 }

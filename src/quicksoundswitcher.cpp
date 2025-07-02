@@ -57,6 +57,11 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
                 this, &QuickSoundSwitcher::initializeTrayMenuDeviceInfo);
     }
 
+    if (SoundPanelBridge::instance()) {
+        connect(SoundPanelBridge::instance(), &SoundPanelBridge::languageChanged,
+                this, &QuickSoundSwitcher::onLanguageChanged);
+    }
+
     createTrayIcon();
     installKeyboardHook();
 
@@ -445,4 +450,53 @@ void QuickSoundSwitcher::onPanelHideAnimationFinished()
     isPanelVisible = false;
     uninstallGlobalMouseHook();
     // No need to destroy engine anymore - just keep it hidden
+}
+
+void QuickSoundSwitcher::onLanguageChanged()
+{
+    if (engine) {
+        engine->retranslate();
+    }
+
+    updateTrayMenu();
+}
+
+void QuickSoundSwitcher::updateTrayMenu()
+{
+    if (!trayIcon || !trayIcon->contextMenu()) {
+        return;
+    }
+
+    // Get the current menu
+    QMenu *trayMenu = trayIcon->contextMenu();
+
+    // Update the Exit action text
+    QList<QAction*> actions = trayMenu->actions();
+    for (QAction* action : actions) {
+        if (action->text().contains("Exit") || action->text().contains("Quitter") ||
+            action->text().contains("Esci") || action->text().contains("Beenden")) {
+            action->setText(tr("Exit"));
+            break;
+        }
+    }
+
+    // Update device info actions text
+    if (outputDeviceAction) {
+        QString currentText = outputDeviceAction->text();
+        // Extract the device info part and rebuild with translated prefix
+        int colonIndex = currentText.indexOf(':');
+        if (colonIndex != -1) {
+            QString deviceInfo = currentText.mid(colonIndex);
+            outputDeviceAction->setText(tr("Output") + deviceInfo);
+        }
+    }
+
+    if (inputDeviceAction) {
+        QString currentText = inputDeviceAction->text();
+        int colonIndex = currentText.indexOf(':');
+        if (colonIndex != -1) {
+            QString deviceInfo = currentText.mid(colonIndex);
+            inputDeviceAction->setText(tr("Input") + deviceInfo);
+        }
+    }
 }

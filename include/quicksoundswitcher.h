@@ -23,6 +23,7 @@ private slots:
     void onOutputMuteChanged();
     void onPanelHideAnimationFinished();
     void onDataInitializationComplete();
+    void onLanguageChanged();
 
 private:
     QSystemTrayIcon *trayIcon;
@@ -55,6 +56,8 @@ private:
     void uninstallGlobalMouseHook();
     void installKeyboardHook();
     void uninstallKeyboardHook();
+
+    void updateTrayMenu();
 };
 
 #endif // QUICKSOUNDSWITCHER_H

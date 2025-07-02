@@ -71,6 +71,10 @@ ApplicationWindow {
                             icon: "qrc:/icons/wand.svg"
                         },
                         {
+                            text: qsTr("Language"),
+                            icon: "qrc:/icons/language.svg"
+                        },
+                        {
                             text: qsTr("Debug"),
                             icon: "qrc:/icons/chip.svg"
                         }
@@ -99,7 +103,8 @@ ApplicationWindow {
                                 switch(index) {
                                     case 0: stackView.push(generalPaneComponent); break
                                     case 1: stackView.push(appearancePaneComponent); break
-                                    case 2: stackView.push(debugPaneComponent); break
+                                    case 2: stackView.push(languagePaneComponent); break
+                                    case 3: stackView.push(debugPaneComponent); break
                                 }
                             }
                         }
@@ -165,7 +170,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Panel mode")
-                                description: "Choose what should be displayed in the panel"
+                                description: qsTr("Choose what should be displayed in the panel")
 
                                 additionalControl: ComboBox {
                                     Layout.preferredHeight: 35
@@ -179,7 +184,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Link same input and output devices")
-                                description: "Try to match input / output from the same device"
+                                description: qsTr("Try to match input / output from the same device")
 
                                 additionalControl: Switch {
                                     checked: UserSettings.linkIO
@@ -190,7 +195,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Sound keepalive")
-                                description: "Emit an inaudible sound to keep bluetooth devices awake"
+                                description: qsTr("Emit an inaudible sound to keep bluetooth devices awake")
 
                                 additionalControl: Switch {
                                     checked: UserSettings.keepAlive
@@ -201,7 +206,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Run at system startup")
-                                description: "QSS will boot up when your computer starts"
+                                description: qsTr("QSS will boot up when your computer starts")
 
                                 additionalControl: Switch {
                                     checked: SoundPanelBridge.getShortcutState()
@@ -212,7 +217,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Close device list automatically")
-                                description: "Device list will automatically close after selecting a device"
+                                description: qsTr("Device list will automatically close after selecting a device")
 
                                 additionalControl: Switch {
                                     checked: UserSettings.closeDeviceListOnClick
@@ -223,7 +228,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Group applications by executable")
-                                description: "Control multiple stream comming from a single app with one slider"
+                                description: qsTr("Control multiple stream comming from a single app with one slider")
 
                                 additionalControl: Switch {
                                     checked: UserSettings.groupApplications
@@ -287,7 +292,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Panel margin")
-                                description: "How far the panel should be pushed from screen edge"
+                                description: qsTr("How far the panel should be pushed from screen edge")
 
                                 additionalControl: SpinBox {
                                     Layout.preferredHeight: 35
@@ -303,7 +308,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Use short device names")
-                                description: "Shorten device names by shrinking description"
+                                description: qsTr("Shorten device names by shrinking description")
 
                                 additionalControl: Switch {
                                     checked: UserSettings.deviceShortName
@@ -314,7 +319,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Volume value display mode")
-                                description: "Control how you want sound value to be displayed"
+                                description: qsTr("Control how you want sound value to be displayed")
 
                                 additionalControl: ComboBox {
                                     Layout.preferredHeight: 35
@@ -328,7 +333,7 @@ ApplicationWindow {
                             Card {
                                 Layout.fillWidth: true
                                 title: qsTr("Media info display")
-                                description: "Display currently playing media from Windows known sources"
+                                description: qsTr("Display currently playing media from Windows known sources")
 
                                 additionalControl: ComboBox {
                                     Layout.preferredHeight: 35
@@ -353,6 +358,87 @@ ApplicationWindow {
                     }
                 }
             }
+
+            Component {
+                id: languagePaneComponent
+
+                ColumnLayout {
+                    spacing: 3
+
+                    Label {
+                        text: qsTr("Debug and information")
+                        font.pixelSize: 22
+                        font.bold: true
+                        Layout.bottomMargin: 15
+                    }
+
+                    ScrollView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        ColumnLayout {
+                            width: parent.width
+                            spacing: 3
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Application language")
+                                description: SoundPanelBridge.getLanguageCodeFromIndex(UserSettings.languageIndex)
+
+                                additionalControl: ComboBox {
+                                    Layout.preferredHeight: 35
+                                    model: [qsTr("System"), "english", "français", "deutsch", "italiano", "한글", "简体中文"]
+                                    currentIndex: UserSettings.languageIndex
+                                    onActivated: {
+                                        UserSettings.languageIndex = currentIndex
+                                        SoundPanelBridge.changeApplicationLanguage(currentIndex)
+                                        currentIndex = UserSettings.languageIndex
+
+                                    }
+                                }
+                            }
+
+                            Card {
+                                id: trProgressCard
+                                Layout.fillWidth: true
+                                title: qsTr("Translation Progress")
+                                description: SoundPanelBridge.getLanguageCodeFromIndex(UserSettings.languageIndex)
+
+                                additionalControl: ProgressBar {
+                                    id: trProgressBar
+                                    Layout.preferredWidth: 160
+                                    Layout.preferredHeight: 6
+                                    from: 0
+                                    to: SoundPanelBridge.getTotalTranslatableStrings()
+                                    value: SoundPanelBridge.getCurrentLanguageFinishedStrings(UserSettings.languageIndex)
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Translation author")
+                                description: ""
+
+                                additionalControl: Label {
+                                    text: qsTr("Unknow author")
+                                    opacity: 0.5
+                                }
+                            }
+
+                            Card {
+                                Layout.fillWidth: true
+                                title: qsTr("Translation last updated")
+                                description: ""
+
+                                additionalControl: Label {
+                                    text: qsTr("Unknow date")
+                                    opacity: 0.5
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Component {
                 id: debugPaneComponent
 
@@ -403,59 +489,6 @@ ApplicationWindow {
                                 additionalControl: Label {
                                     text: SoundPanelBridge.getQtVersion()
                                     opacity: 0.5
-                                }
-                            }
-
-                            Card {
-                                Layout.fillWidth: true
-                                title: qsTr("Translation author")
-                                description: ""
-
-                                additionalControl: Label {
-                                    text: qsTr("Unknow author")
-                                    opacity: 0.5
-                                }
-                            }
-
-                            Card {
-                                Layout.fillWidth: true
-                                title: qsTr("Translation last updated")
-                                description: ""
-
-                                additionalControl: Label {
-                                    text: qsTr("Unknow date")
-                                    opacity: 0.5
-                                }
-                            }
-
-                            Card {
-                                Layout.fillWidth: true
-                                title: qsTr("Translation Progress")
-                                description: SoundPanelBridge.getCurrentLanguageCode()
-
-                                additionalControl: ProgressBar {
-                                    Layout.preferredWidth: 160
-                                    Layout.preferredHeight: 6
-                                    from: 0
-                                    to: SoundPanelBridge.getTotalTranslatableStrings()
-                                    value: SoundPanelBridge.getCurrentLanguageFinishedStrings()
-                                }
-                            }
-
-                            Card {
-                                Layout.fillWidth: true
-                                title: qsTr("Application language")
-                                description: SoundPanelBridge.getCurrentLanguageCode()
-
-                                additionalControl: ComboBox {
-                                    Layout.preferredHeight: 35
-                                    model: [qsTr("System"), "english", "français", "deutsch", "español", "italiano", "magyar", "türkçe"]
-                                    currentIndex: UserSettings.languageIndex
-                                    onActivated: {
-                                        UserSettings.languageIndex = currentIndex
-                                        SoundPanelBridge.changeApplicationLanguage(currentIndex)
-                                        currentIndex = UserSettings.languageIndex
-                                    }
                                 }
                             }
                         }

@@ -33,7 +33,6 @@ public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
     ~SoundPanelBridge() override;
 
-    // Singleton factory function
     static SoundPanelBridge* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
     static SoundPanelBridge* instance();
 
@@ -75,8 +74,10 @@ public:
 
     Q_INVOKABLE int getTotalTranslatableStrings() const;
     Q_INVOKABLE QString getCurrentLanguageCode() const;
-    Q_INVOKABLE int getCurrentLanguageFinishedStrings() const;
+    Q_INVOKABLE int getCurrentLanguageFinishedStrings(int languageIndex) const;
     Q_INVOKABLE void changeApplicationLanguage(int languageIndex);
+    Q_INVOKABLE QString getLanguageCodeFromIndex(int index) const;
+
 
 public slots:
     void onPlaybackVolumeChanged(int volume);
@@ -89,7 +90,6 @@ public slots:
     void onApplicationVolumeSliderValueChanged(QString appID, int volume);
     void onApplicationMuteButtonClicked(QString appID, bool state);
 
-    // External updates (called from QuickSoundSwitcher)
     void updateVolumeFromTray(int volume);
     void updateMuteStateFromTray(bool muted);
     void refreshPanelModeState();
@@ -108,6 +108,7 @@ signals:
     void deviceChangeInProgressChanged();
     void taskbarPositionChanged();
     void mediaInfoChanged();
+    void languageChanged();
 
 private:
     static SoundPanelBridge* m_instance;
