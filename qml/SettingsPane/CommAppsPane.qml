@@ -57,13 +57,13 @@ ColumnLayout {
 
                 Card {
                     Layout.fillWidth: true
-                    title: modelData.displayName
-                    description: qsTr("Original Volume: %2%").arg(modelData.executableName).arg(modelData.originalVolume)
+                    title: modelData.name
+                    description: qsTr("Original Volume: %1%").arg(modelData.originalVolume)
 
                     additionalControl: Button {
                         text: qsTr("Remove")
                         onClicked: {
-                            SoundPanelBridge.removeCommApp(modelData.executableName)
+                            SoundPanelBridge.removeCommApp(modelData.name)
                         }
                     }
                 }

@@ -240,15 +240,15 @@ QStringList SoundPanelBridge::getCommAppsFromSettings() const
     // Convert from new format for backward compatibility if needed
     QStringList result;
     for (const CommApp& app : m_commApps) {
-        result.append(app.executableName);
+        result.append(app.name);
     }
     return result;
 }
 
-bool SoundPanelBridge::isCommApp(const QString& executableName) const
+bool SoundPanelBridge::isCommApp(const QString& name) const
 {
     QStringList commApps = getCommAppsFromSettings();
-    return commApps.contains(executableName, Qt::CaseInsensitive);
+    return commApps.contains(name, Qt::CaseInsensitive);
 }
 
 void SoundPanelBridge::applyChatMixToApplications()
@@ -268,7 +268,7 @@ void SoundPanelBridge::applyChatMixToApplications()
     }
 
     for (const Application& app : applications) {
-        bool isComm = isCommApp(app.executableName);
+        bool isComm = isCommApp(app.name);
         int newVolume = isComm ? commAppVolume : otherAppVolume;
 
         // Apply the actual volume level directly
@@ -403,8 +403,8 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
 
         // First filter and separate system sounds from regular apps
         for (const Application &app : apps) {
-            if (app.executableName.isEmpty() ||
-                app.executableName.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
+            if (app.name.isEmpty() ||
+                app.name.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
                 continue;
             }
 
@@ -417,8 +417,8 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
 
         // Sort regular apps alphabetically by display name
         std::sort(filteredApps.begin(), filteredApps.end(), [](const Application &a, const Application &b) {
-            QString nameA = a.name.isEmpty() ? a.executableName : a.name;
-            QString nameB = b.name.isEmpty() ? b.executableName : b.name;
+            QString nameA = a.name.isEmpty() ? a.name : a.name;
+            QString nameB = b.name.isEmpty() ? b.name : b.name;
             return nameA.compare(nameB, Qt::CaseInsensitive) < 0;
         });
 
@@ -433,7 +433,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
 
             QVariantMap appMap;
             appMap["appID"] = app.id;
-            appMap["name"] = app.name.isEmpty() ? app.executableName : app.name;
+            appMap["name"] = app.name.isEmpty() ? app.name : app.name;
             appMap["isMuted"] = app.isMuted;
             appMap["volume"] = app.volume;
             appMap["icon"] = "data:image/png;base64," + base64Icon;
@@ -469,8 +469,8 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
 
     // Group applications by executable name
     for (const Application &app : apps) {
-        if (app.executableName.isEmpty() ||
-            app.executableName.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
+        if (app.name.isEmpty() ||
+            app.name.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
             continue;
         }
 
@@ -478,7 +478,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
             systemSoundApps.append(app);
             continue;
         }
-        groupedApps[app.executableName].append(app);
+        groupedApps[app.name].append(app);
     }
 
     // Process grouped applications
@@ -821,7 +821,6 @@ void SoundPanelBridge::changeApplicationLanguage(int languageIndex)
 
     QString languageCode;
     if (languageIndex == 0) {
-        QLocale systemLocale;
         languageCode = getCurrentLanguageCode();
     } else {
         languageCode = getLanguageCodeFromIndex(languageIndex);
@@ -916,15 +915,9 @@ void SoundPanelBridge::loadCommAppsFromFile()
     for (const QJsonValue& value : commAppsArray) {
         QJsonObject appObj = value.toObject();
         CommApp app;
-        app.executableName = appObj["executableName"].toString();
-        app.displayName = appObj["displayName"].toString();
+        app.name = appObj["name"].toString();
         app.originalVolume = appObj["originalVolume"].toInt(100);
         m_commApps.append(app);
-    }
-
-    qDebug() << "Loaded" << m_commApps.count() << "comm apps from JSON";
-    for (const CommApp& app : m_commApps) {
-        qDebug() << "  -" << app.executableName << "(" << app.displayName << ") vol:" << app.originalVolume;
     }
 }
 
@@ -941,8 +934,7 @@ void SoundPanelBridge::saveCommAppsToFile()
     QJsonArray commAppsArray;
     for (const CommApp& app : m_commApps) {
         QJsonObject appObj;
-        appObj["executableName"] = app.executableName;
-        appObj["displayName"] = app.displayName;
+        appObj["name"] = app.name;
         appObj["originalVolume"] = app.originalVolume;
         commAppsArray.append(appObj);
     }
@@ -956,40 +948,39 @@ void SoundPanelBridge::saveCommAppsToFile()
     qDebug() << "Saved" << m_commApps.count() << "comm apps to JSON";
 }
 
-void SoundPanelBridge::addCommApp(const QString& executableName)
+void SoundPanelBridge::addCommApp(const QString& name)
 {
     // Check if already exists
     for (const CommApp& existing : m_commApps) {
-        if (existing.executableName.compare(executableName, Qt::CaseInsensitive) == 0) {
-            qDebug() << "CommApp already exists:" << executableName;
+        if (existing.name.compare(name, Qt::CaseInsensitive) == 0) {
+            qDebug() << "CommApp already exists:" << name;
             return;
         }
     }
 
     CommApp newApp;
-    newApp.executableName = executableName;
-    newApp.displayName = executableName;
+    newApp.name = name;
     newApp.originalVolume = 100; // Default, will be updated when chatmix is enabled
 
     m_commApps.append(newApp);
     saveCommAppsToFile();
     emit commAppsListChanged();
 
-    qDebug() << "Added comm app:" << executableName << "(" << newApp.displayName << ")";
+    qDebug() << "Added comm app:" << name;
 }
 
-void SoundPanelBridge::removeCommApp(const QString& executableName)
+void SoundPanelBridge::removeCommApp(const QString& name)
 {
     for (int i = 0; i < m_commApps.count(); ++i) {
-        if (m_commApps[i].executableName.compare(executableName, Qt::CaseInsensitive) == 0) {
-            qDebug() << "Removing comm app:" << executableName;
+        if (m_commApps[i].name.compare(name, Qt::CaseInsensitive) == 0) {
+            qDebug() << "Removing comm app:" << name;
             m_commApps.removeAt(i);
             saveCommAppsToFile();
             emit commAppsListChanged();
             return;
         }
     }
-    qDebug() << "CommApp not found for removal:" << executableName;
+    qDebug() << "CommApp not found for removal:" << name;
 }
 
 void SoundPanelBridge::saveOriginalVolumes()
@@ -1013,9 +1004,9 @@ void SoundPanelBridge::saveOriginalVolumes()
     for (const Application& app : applications) {
         // Find matching comm app and update its original volume
         for (CommApp& commApp : m_commApps) {
-            if (app.executableName.compare(commApp.executableName, Qt::CaseInsensitive) == 0) {
+            if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
                 commApp.originalVolume = app.volume;
-                qDebug() << "Saved original volume for" << commApp.executableName << ":" << app.volume;
+                qDebug() << "Saved original volume for" << commApp.name << ":" << app.volume;
             }
         }
     }
@@ -1033,7 +1024,7 @@ void SoundPanelBridge::restoreOriginalVolumes()
     for (const Application& app : applications) {
         // Find matching comm app and restore its volume
         for (const CommApp& commApp : m_commApps) {
-            if (app.executableName.compare(commApp.executableName, Qt::CaseInsensitive) == 0) {
+            if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
                 bool shouldGroup = settings.value("groupApplications", true).toBool();
                 if (shouldGroup) {
                     QStringList appIDs = app.id.split(";");
@@ -1043,7 +1034,7 @@ void SoundPanelBridge::restoreOriginalVolumes()
                 } else {
                     AudioManager::setApplicationVolumeAsync(app.id, commApp.originalVolume);
                 }
-                qDebug() << "Restored original volume for" << commApp.executableName << ":" << commApp.originalVolume;
+                qDebug() << "Restored original volume for" << commApp.name << ":" << commApp.originalVolume;
             }
         }
     }
@@ -1057,8 +1048,7 @@ QVariantList SoundPanelBridge::commAppsList() const
     QVariantList result;
     for (const CommApp& app : m_commApps) {
         QVariantMap appMap;
-        appMap["executableName"] = app.executableName;
-        appMap["displayName"] = app.displayName;
+        appMap["name"] = app.name;
         appMap["originalVolume"] = app.originalVolume;
         result.append(appMap);
     }
@@ -1084,9 +1074,9 @@ void SoundPanelBridge::saveOriginalVolumesAfterRefresh()
                 for (const Application& app : applications) {
                     // Find matching comm app and update its original volume
                     for (CommApp& commApp : m_commApps) {
-                        if (app.executableName.compare(commApp.executableName, Qt::CaseInsensitive) == 0) {
+                        if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
                             commApp.originalVolume = app.volume;
-                            qDebug() << "Saved fresh original volume for" << commApp.executableName << ":" << app.volume;
+                            qDebug() << "Saved fresh original volume for" << commApp.name << ":" << app.volume;
                         }
                     }
                 }

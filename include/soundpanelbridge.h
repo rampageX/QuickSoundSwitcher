@@ -91,14 +91,13 @@ public:
     Q_INVOKABLE void changeApplicationLanguage(int languageIndex);
     Q_INVOKABLE QString getLanguageCodeFromIndex(int index) const;
 
-    // ChatMix methods
     int chatMixValue() const;
     void setChatMixValue(int value);
     QVariantList commAppsList() const;
     Q_INVOKABLE void applyChatMixToApplications();
-    Q_INVOKABLE bool isCommApp(const QString& executableName) const;
-    Q_INVOKABLE void addCommApp(const QString& executableName);
-    Q_INVOKABLE void removeCommApp(const QString& executableName);
+    Q_INVOKABLE bool isCommApp(const QString& name) const;
+    Q_INVOKABLE void addCommApp(const QString& name);
+    Q_INVOKABLE void removeCommApp(const QString& name);
     Q_INVOKABLE void saveOriginalVolumes();
     Q_INVOKABLE void restoreOriginalVolumes();
     Q_INVOKABLE void saveOriginalVolumesAfterRefresh();
@@ -172,10 +171,8 @@ private:
 
     QTranslator *translator;
 
-    // ChatMix members
     struct CommApp {
-        QString executableName;
-        QString displayName;
+        QString name;
         int originalVolume = 100;
     };
 
@@ -183,9 +180,8 @@ private:
     QList<CommApp> m_commApps;
     QTimer* m_chatMixCheckTimer;
 
-    // ChatMix methods
     void checkAndApplyChatMixToNewApps();
-    QStringList getCommAppsFromSettings() const; // For backward compatibility
+    QStringList getCommAppsFromSettings() const;
     void startChatMixMonitoring();
     void stopChatMixMonitoring();
     QString getCommAppsFilePath() const;

@@ -133,11 +133,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="61"/>
-        <source>Original Volume: %2%</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="92"/>
         <source>Discord</source>
         <translation type="unfinished"></translation>
@@ -150,6 +145,11 @@
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="47"/>
         <source>Add application names that should be treated as communication apps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="61"/>
+        <source>Original Volume: %1%</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
