@@ -36,9 +36,13 @@ ApplicationWindow {
             contentOpacityTimer.stop()
             outputListOpacityTimer.stop()
             inputListOpacityTimer.stop()
-            SoundPanelBridge.stopAudioLevelMonitoring()
+            if (UserSettings.showAudioLevel) {
+                SoundPanelBridge.stopAudioLevelMonitoring()
+            }
         } else {
-            SoundPanelBridge.startAudioLevelMonitoring()
+            if (UserSettings.showAudioLevel) {
+                SoundPanelBridge.startAudioLevelMonitoring()
+            }
         }
     }
 
@@ -314,6 +318,40 @@ ApplicationWindow {
                     Qt.callLater(panel.startAnimation)
                 })
             })
+        }
+
+        function onApplicationAudioLevelsChanged() {
+            const audioLevels = SoundPanelBridge.applicationAudioLevels
+
+            // Create a map of individual app IDs to their audio levels
+            const levelMap = {}
+            for (let i = 0; i < audioLevels.length; i++) {
+                const levelData = audioLevels[i]
+                levelMap[levelData.appId] = levelData.level
+            }
+
+            // Update each app in the model
+            for (let j = 0; j < appModel.count; j++) {
+                const appID = appModel.get(j).appID
+
+                if (appID.includes(";")) {
+                    // This is a grouped app - find the max level among all its IDs
+                    const individualIDs = appID.split(";")
+                    let maxLevel = 0
+                    for (let k = 0; k < individualIDs.length; k++) {
+                        const id = individualIDs[k]
+                        if (levelMap[id] !== undefined) {
+                            maxLevel = Math.max(maxLevel, levelMap[id])
+                        }
+                    }
+                    appModel.setProperty(j, "audioLevel", maxLevel)
+                } else {
+                    // This is an individual app
+                    if (levelMap[appID] !== undefined) {
+                        appModel.setProperty(j, "audioLevel", levelMap[appID])
+                    }
+                }
+            }
         }
     }
 
@@ -776,7 +814,7 @@ ApplicationWindow {
                                 to: 100
                                 enabled: !UserSettings.chatMixEnabled && !muteRoundButton.highlighted
                                 opacity: enabled ? 1 : 0.5
-                                audioLevel: appModel.audioLevel
+                                audioLevel: applicationUnitLayout.model.audioLevel
                                 Layout.fillWidth: true
 
                                 // Updated to match simplified ChatMix logic

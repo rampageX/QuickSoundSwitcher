@@ -423,7 +423,7 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="876"/>
+        <location filename="../qml/SoundPanel.qml" line="914"/>
         <source>ChatMix</source>
         <translation></translation>
     </message>

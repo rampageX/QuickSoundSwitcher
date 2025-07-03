@@ -115,11 +115,11 @@ Slider {
                 // Audio level background (add this)
                 property Rectangle audioLevelTrack: Rectangle {
                     parent: control.background._background.groove
-                    y: control.horizontal ? 0 : parent.height - (parent.height * (control.audioLevel / 100))
+                    y: control.horizontal ? 0 : parent.height - (parent.height * ((control.audioLevel / 100) * control.position))
                     implicitWidth: control.horizontal ? control.__config.track.width : control.__config.track.height
                     implicitHeight: control.horizontal ? control.__config.track.height : control.__config.track.width
-                    width: control.horizontal ? parent.width * (control.audioLevel / 100) : parent.width
-                    height: control.horizontal ? parent.height : parent.height * (control.audioLevel / 100)
+                    width: control.horizontal ? parent.width * ((control.audioLevel / 100) * control.position) : parent.width
+                    height: control.horizontal ? parent.height : parent.height * ((control.audioLevel / 100) * control.position)
                     radius: control.__config.track.height * 0.5
                     color: control.palette.accent
 
