@@ -112,7 +112,12 @@
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="120"/>
         <source>Show audio level</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher le niveau audio</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="121"/>
+        <source>Display audio level value in slider</source>
+        <translation>Affiche la valeur du niveau audio dans les sliders</translation>
     </message>
 </context>
 <context>
@@ -425,7 +430,7 @@
     <message>
         <location filename="../qml/SoundPanel.qml" line="915"/>
         <source>ChatMix</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 </TS>

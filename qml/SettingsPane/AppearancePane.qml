@@ -118,7 +118,7 @@ ColumnLayout {
             Card {
                 Layout.fillWidth: true
                 title: qsTr("Show audio level")
-                description: "Display audio level value in slider"
+                description: qsTr("Display audio level value in slider")
 
                 additionalControl: Switch {
                     checked: UserSettings.showAudioLevel

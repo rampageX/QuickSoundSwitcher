@@ -114,6 +114,11 @@
         <source>Show audio level</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="121"/>
+        <source>Display audio level value in slider</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CommAppsPane</name>
