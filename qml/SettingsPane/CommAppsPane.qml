@@ -37,6 +37,7 @@ ColumnLayout {
                         if (checked) {
                             UserSettings.activateChatmix = checked
                             UserSettings.chatMixEnabled = checked
+                            SoundPanelBridge.applyChatMixToApplications()
                         } else {
                             UserSettings.activateChatmix = checked
                             UserSettings.chatMixEnabled = checked
@@ -57,6 +58,7 @@ ColumnLayout {
                     onClicked: {
                         if (checked) {
                             UserSettings.chatMixEnabled = checked
+                            SoundPanelBridge.applyChatMixToApplications()
                         } else {
                             UserSettings.chatMixEnabled = checked
                             SoundPanelBridge.restoreOriginalVolumes()

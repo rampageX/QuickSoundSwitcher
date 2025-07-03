@@ -30,30 +30,10 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     m_chatMixValue = settings.value("chatMixValue", 50).toInt();
 
     changeApplicationLanguage(settings.value("languageIndex", 0).toInt());
-
+    populateApplications();
     // Setup ChatMix monitoring timer
     m_chatMixCheckTimer->setInterval(500); // Check every 2 seconds
     connect(m_chatMixCheckTimer, &QTimer::timeout, this, &SoundPanelBridge::checkAndApplyChatMixToNewApps);
-
-    bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
-    if (chatMixEnabled) {
-        // Connect to apply ChatMix when applications are first loaded
-        connect(AudioManager::getWorker(), &AudioWorker::applicationsReady,
-                this, [this](const QList<Application>& apps) {
-                    static bool firstTime = true;
-                    if (firstTime) {
-                        firstTime = false;
-                        applications = apps;
-                        applyChatMixToApplications();
-                        startChatMixMonitoring();
-                    }
-                }, Qt::QueuedConnection);
-
-        // Trigger initial application enumeration
-        QTimer::singleShot(1000, [this]() {
-            AudioManager::enumerateApplicationsAsync();
-        });
-    }
 
     // Connect to audio worker signals for async operations
     if (AudioManager::getWorker()) {
@@ -83,7 +63,7 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     emit applicationsChanged(convertApplicationsToVariant(apps));
                     m_applicationsReady = true;
 
-                    // Check and apply chatmix to new apps
+                    // Apply ChatMix if enabled (works for both startup and panel refresh)
                     checkAndApplyChatMixToNewApps();
 
                     if (m_isInitializing) {
@@ -993,6 +973,8 @@ void SoundPanelBridge::restoreOriginalVolumes()
             AudioManager::setApplicationVolumeAsync(app.id, 100);
         }
     }
+
+    populateApplications();
 }
 
 QVariantList SoundPanelBridge::commAppsList() const

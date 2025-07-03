@@ -843,6 +843,7 @@ ApplicationWindow {
                         onClicked: {
                             if (!checked) {
                                 UserSettings.chatMixEnabled = !checked
+                                SoundPanelBridge.applyChatMixToApplications()
                             } else {
                                 UserSettings.chatMixEnabled = !checked
                                 SoundPanelBridge.restoreOriginalVolumes()
