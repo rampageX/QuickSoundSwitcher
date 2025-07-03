@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.FluentWinUI3
-import QtQuick.Dialogs
 import Odizinne.QuickSoundSwitcher
 
 ColumnLayout {
@@ -33,7 +32,6 @@ ColumnLayout {
                             UserSettings.chatMixEnabled = checked
                             SoundPanelBridge.saveOriginalVolumesAfterRefresh()
                         } else {
-                            // Disabling ChatMix
                             UserSettings.chatMixEnabled = checked
                             SoundPanelBridge.restoreOriginalVolumes()
                         }
@@ -54,16 +52,18 @@ ColumnLayout {
 
             Repeater {
                 model: SoundPanelBridge.commAppsList
-
                 Card {
+                    id: appCard
+                    required property var model
                     Layout.fillWidth: true
-                    title: modelData.name
-                    description: qsTr("Original Volume: %1%").arg(modelData.originalVolume)
-
+                    title: model.name
+                    iconSource: model.icon
+                    description: qsTr("Original Volume: %1%").arg(model.originalVolume)
+                    imageMode: true
                     additionalControl: Button {
                         text: qsTr("Remove")
                         onClicked: {
-                            SoundPanelBridge.removeCommApp(modelData.name)
+                            SoundPanelBridge.removeCommApp(appCard.model.name)
                         }
                     }
                 }

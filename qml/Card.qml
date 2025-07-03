@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.FluentWinUI3
 import Odizinne.QuickSoundSwitcher
+import QtQuick.Controls.impl
 
 Rectangle {
     id: card
@@ -10,6 +11,11 @@ Rectangle {
     property string title: ""
     property string description: ""
     property Item additionalControl
+    property string iconSource
+    property int iconWidth: 24
+    property int iconHeight: 24
+    property color iconColor
+    property bool imageMode: false
 
     color: Constants.cardColor
     radius: 5
@@ -34,6 +40,14 @@ Rectangle {
         spacing: 15
         anchors.fill: parent
         anchors.margins: 15
+
+        IconImage {
+            source: card.iconSource
+            visible: source
+            sourceSize.width: card.iconWidth
+            sourceSize.height: card.iconHeight
+            color: card.imageMode ? "transparent" : (card.iconColor ? card.iconColor : palette.text)
+        }
 
         ColumnLayout {
             Layout.fillWidth: true

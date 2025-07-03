@@ -113,22 +113,22 @@
 <context>
     <name>CommAppsPane</name>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="11"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="10"/>
         <source>Communication Apps</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="26"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="25"/>
         <source>Enable ChatMix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="27"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="26"/>
         <source>Control communication apps separately from other applications</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="46"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="44"/>
         <source>Communication Applications</source>
         <translation type="unfinished"></translation>
     </message>
@@ -138,12 +138,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="50"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="48"/>
         <source>Add App</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="47"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="45"/>
         <source>Add application names that should be treated as communication apps</source>
         <translation type="unfinished"></translation>
     </message>

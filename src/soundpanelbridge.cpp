@@ -917,6 +917,7 @@ void SoundPanelBridge::loadCommAppsFromFile()
         CommApp app;
         app.name = appObj["name"].toString();
         app.originalVolume = appObj["originalVolume"].toInt(100);
+        app.icon = appObj["icon"].toString(); // Add this line
         m_commApps.append(app);
     }
 }
@@ -936,6 +937,7 @@ void SoundPanelBridge::saveCommAppsToFile()
         QJsonObject appObj;
         appObj["name"] = app.name;
         appObj["originalVolume"] = app.originalVolume;
+        appObj["icon"] = app.icon; // Add this line
         commAppsArray.append(appObj);
     }
 
@@ -962,11 +964,26 @@ void SoundPanelBridge::addCommApp(const QString& name)
     newApp.name = name;
     newApp.originalVolume = 100; // Default, will be updated when chatmix is enabled
 
+    // Search for matching application to get the icon
+    for (const Application& app : applications) {
+        if (app.name.compare(name, Qt::CaseInsensitive) == 0) {
+            // Convert QIcon to base64 string
+            QPixmap iconPixmap = app.icon.pixmap(16, 16);
+            QByteArray byteArray;
+            QBuffer buffer(&byteArray);
+            buffer.open(QIODevice::WriteOnly);
+            iconPixmap.toImage().save(&buffer, "PNG");
+            QString base64Icon = QString::fromUtf8(byteArray.toBase64());
+            newApp.icon = "data:image/png;base64," + base64Icon;
+            break;
+        }
+    }
+
     m_commApps.append(newApp);
     saveCommAppsToFile();
     emit commAppsListChanged();
 
-    qDebug() << "Added comm app:" << name;
+    qDebug() << "Added comm app:" << name << "with icon:" << !newApp.icon.isEmpty();
 }
 
 void SoundPanelBridge::removeCommApp(const QString& name)
@@ -1050,6 +1067,7 @@ QVariantList SoundPanelBridge::commAppsList() const
         QVariantMap appMap;
         appMap["name"] = app.name;
         appMap["originalVolume"] = app.originalVolume;
+        appMap["icon"] = app.icon; // Add this line
         result.append(appMap);
     }
     return result;

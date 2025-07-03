@@ -174,6 +174,7 @@ private:
     struct CommApp {
         QString name;
         int originalVolume = 100;
+        QString icon;
     };
 
     int m_chatMixValue = 50;
