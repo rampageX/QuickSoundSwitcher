@@ -28,6 +28,7 @@ struct Application {
     bool isMuted;
     int volume;
     QIcon icon;
+    int audioLevel;
 };
 
 class AudioWorker : public QObject
@@ -65,10 +66,13 @@ signals:
     void applicationVolumeChanged(const QString& appId, bool success);
     void applicationMuteChanged(const QString& appId, bool success);
     void currentPropertiesReady(int playbackVol, int recordingVol, bool playbackMute, bool recordingMute);
+    void applicationAudioLevelsChanged(const QList<QPair<QString, int>>& levels);
 
 private:
     QTimer* m_audioLevelTimer = nullptr;
+    QList<Application> m_cachedApplications;  // Add this
     void initializeTimer();
+
 };
 
 namespace AudioManager

@@ -111,6 +111,31 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                         emit mediaInfoChanged();
                     });
         }
+
+        connect(AudioManager::getWorker(), &AudioWorker::applicationAudioLevelsChanged,
+                this, [this](const QList<QPair<QString, int>>& levels) {
+                    m_applicationAudioLevels.clear();
+                    for (const auto& pair : levels) {
+                        m_applicationAudioLevels[pair.first] = pair.second;
+                    }
+                    emit applicationAudioLevelsChanged();
+                });
+
+        connect(AudioManager::getWorker(), &AudioWorker::playbackAudioLevel,
+                this, [this](int level) {
+                    if (m_playbackAudioLevel != level) {
+                        m_playbackAudioLevel = level;
+                        emit playbackAudioLevelChanged();
+                    }
+                });
+
+        connect(AudioManager::getWorker(), &AudioWorker::recordingAudioLevel,
+                this, [this](int level) {
+                    if (m_recordingAudioLevel != level) {
+                        m_recordingAudioLevel = level;
+                        emit recordingAudioLevelChanged();
+                    }
+                });
     }
 }
 
@@ -404,6 +429,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
             appMap["isMuted"] = app.isMuted;
             appMap["volume"] = app.volume;
             appMap["icon"] = "data:image/png;base64," + base64Icon;
+            appMap["audioLevel"] = app.audioLevel;
 
             applicationList.append(appMap);
         }
@@ -423,6 +449,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
             appMap["isMuted"] = app.isMuted;
             appMap["volume"] = app.volume;
             appMap["icon"] = "data:image/png;base64," + base64Icon;
+            appMap["audioLevel"] = app.audioLevel;  // Fixed: use app.audioLevel instead of undefined maxLevel
 
             applicationList.append(appMap);
         }
@@ -470,6 +497,14 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
                      })->volume;
         }
 
+        // Calculate max audio level for grouped apps
+        int maxAudioLevel = 0;
+        if (!appGroup.isEmpty()) {
+            maxAudioLevel = std::max_element(appGroup.begin(), appGroup.end(), [](const Application &a, const Application &b) {
+                                return a.audioLevel < b.audioLevel;
+                            })->audioLevel;
+        }
+
         QPixmap iconPixmap = appGroup[0].icon.pixmap(16, 16);
         QByteArray byteArray;
         QBuffer buffer(&byteArray);
@@ -488,6 +523,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
         appMap["isMuted"] = isMuted;
         appMap["volume"] = volume;
         appMap["icon"] = "data:image/png;base64," + base64Icon;
+        appMap["audioLevel"] = maxAudioLevel;  // Added: max audio level for grouped apps
 
         applicationList.append(appMap);
     }
@@ -505,6 +541,14 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
             volume = std::max_element(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &a, const Application &b) {
                          return a.volume < b.volume;
                      })->volume;
+        }
+
+        // Calculate max audio level for system sounds
+        int maxAudioLevel = 0;
+        if (!systemSoundApps.isEmpty()) {
+            maxAudioLevel = std::max_element(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &a, const Application &b) {
+                                return a.audioLevel < b.audioLevel;
+                            })->audioLevel;
         }
 
         QPixmap iconPixmap = systemSoundApps[0].icon.pixmap(16, 16);
@@ -525,6 +569,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
         appMap["isMuted"] = isMuted;
         appMap["volume"] = volume;
         appMap["icon"] = "data:image/png;base64," + base64Icon;
+        appMap["audioLevel"] = maxAudioLevel;  // Added: max audio level for system sounds
 
         applicationList.append(appMap);
 
@@ -1025,4 +1070,31 @@ void SoundPanelBridge::updateMissingCommAppIcons()
         saveCommAppsToFile();
         emit commAppsListChanged();
     }
+}
+
+QVariantList SoundPanelBridge::applicationAudioLevels() const {
+    QVariantList result;
+    for (auto it = m_applicationAudioLevels.begin(); it != m_applicationAudioLevels.end(); ++it) {
+        QVariantMap item;
+        item["appId"] = it.key();
+        item["level"] = it.value();
+        result.append(item);
+    }
+    return result;
+}
+
+int SoundPanelBridge::playbackAudioLevel() const {
+    return m_playbackAudioLevel;
+}
+
+int SoundPanelBridge::recordingAudioLevel() const {
+    return m_recordingAudioLevel;
+}
+
+void SoundPanelBridge::startAudioLevelMonitoring() {
+    AudioManager::startAudioLevelMonitoring();
+}
+
+void SoundPanelBridge::stopAudioLevelMonitoring() {
+    AudioManager::stopAudioLevelMonitoring();
 }

@@ -36,6 +36,9 @@ ApplicationWindow {
             contentOpacityTimer.stop()
             outputListOpacityTimer.stop()
             inputListOpacityTimer.stop()
+            SoundPanelBridge.stopAudioLevelMonitoring()
+        } else {
+            SoundPanelBridge.startAudioLevelMonitoring()
         }
     }
 
@@ -475,12 +478,13 @@ ApplicationWindow {
                             }
                         }
 
-                        Slider {
+                        ProgressSlider {
                             id: outputSlider
                             value: pressed ? value : SoundPanelBridge.playbackVolume
                             from: 0
                             to: 100
                             Layout.fillWidth: true
+                            audioLevel: SoundPanelBridge.playbackAudioLevel
 
                             ToolTip {
                                 parent: outputSlider.handle
@@ -501,6 +505,16 @@ ApplicationWindow {
                                 }
                             }
                         }
+
+                        //ProgressBar {
+                        //    value: SoundPanelBridge.playbackAudioLevel
+                        //    from: 0
+                        //    to: 100
+                        //    Layout.fillWidth: true
+                        //    Layout.leftMargin: 20
+                        //    Layout.rightMargin: 20
+                        //    z: -1
+                        //}
                     }
 
                     Label {
@@ -594,11 +608,12 @@ ApplicationWindow {
                             }
                         }
 
-                        Slider {
+                        ProgressSlider {
                             id: inputSlider
                             value: pressed ? value : SoundPanelBridge.recordingVolume
                             from: 0
                             to: 100
+                            audioLevel: SoundPanelBridge.recordingAudioLevel
                             Layout.fillWidth: true
 
                             ToolTip {
@@ -755,12 +770,13 @@ ApplicationWindow {
                                 }
                             }
 
-                            Slider {
+                            ProgressSlider {
                                 id: volumeSlider
                                 from: 0
                                 to: 100
                                 enabled: !UserSettings.chatMixEnabled && !muteRoundButton.highlighted
                                 opacity: enabled ? 1 : 0.5
+                                audioLevel: appModel.audioLevel
                                 Layout.fillWidth: true
 
                                 // Updated to match simplified ChatMix logic

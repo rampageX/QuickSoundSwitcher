@@ -109,6 +109,11 @@
         <source>Applications and devices label</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="120"/>
+        <source>Show audio level</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>CommAppsPane</name>
@@ -356,28 +361,28 @@
 <context>
     <name>QuickSoundSwitcher</name>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="162"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="157"/>
         <source>Output: Loading...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="166"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="161"/>
         <source>Input: Loading...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="172"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="494"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="167"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="489"/>
         <source>Exit</source>
         <translation>Esci</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="506"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="501"/>
         <source>Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="515"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="510"/>
         <source>Input</source>
         <translation type="unfinished"></translation>
     </message>
@@ -418,7 +423,7 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="860"/>
+        <location filename="../qml/SoundPanel.qml" line="876"/>
         <source>ChatMix</source>
         <translation type="unfinished"></translation>
     </message>

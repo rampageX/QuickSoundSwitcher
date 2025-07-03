@@ -82,6 +82,66 @@ QIcon getAppIcon(const QString &executablePath) {
     return QIcon();
 }
 
+int getApplicationAudioLevelImpl(const QString& appId) {
+    DWORD processId = appId.toULong();
+
+    CComPtr<IMMDeviceEnumerator> pEnumerator;
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                                  __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+    if (FAILED(hr)) {
+        return 0;
+    }
+
+    CComPtr<IMMDevice> pDevice;
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+    if (FAILED(hr)) {
+        return 0;
+    }
+
+    CComPtr<IAudioSessionManager2> pSessionManager;
+    hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
+    if (FAILED(hr)) {
+        return 0;
+    }
+
+    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
+    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
+    if (FAILED(hr)) {
+        return 0;
+    }
+
+    int sessionCount;
+    pSessionEnumerator->GetCount(&sessionCount);
+
+    for (int i = 0; i < sessionCount; ++i) {
+        CComPtr<IAudioSessionControl> pSessionControl;
+        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
+        if (FAILED(hr)) continue;
+
+        CComPtr<IAudioSessionControl2> pSessionControl2;
+        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
+        if (FAILED(hr)) continue;
+
+        DWORD pid;
+        hr = pSessionControl2->GetProcessId(&pid);
+        if (FAILED(hr)) continue;
+
+        if (pid == processId) {
+            CComPtr<IAudioMeterInformation> pMeterInfo;
+            hr = pSessionControl->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&pMeterInfo);
+            if (SUCCEEDED(hr)) {
+                float peakLevel = 0.0f;
+                hr = pMeterInfo->GetPeakValue(&peakLevel);
+                if (SUCCEEDED(hr)) {
+                    return static_cast<int>(peakLevel * 100);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 // Implementation functions (these run on worker thread)
 void enumerateDevicesImpl(EDataFlow dataFlow, QList<AudioDevice>& devices) {
     CComPtr<IMMDeviceEnumerator> pEnumerator;
@@ -511,6 +571,7 @@ QList<Application> enumerateAudioApplicationsImpl() {
         app.isMuted = isMuted;
         app.volume = static_cast<int>(volumeLevel * 100);
         app.icon = appIcon;
+        app.audioLevel = 0;
 
         applications.append(app);
     }
@@ -689,7 +750,6 @@ bool getApplicationMuteImpl(const QString &appId) {
     return false;
 }
 
-// AudioWorker implementation
 void AudioWorker::initializeTimer() {
     m_audioLevelTimer = new QTimer(this);
     connect(m_audioLevelTimer, &QTimer::timeout, this, [this]() {
@@ -697,6 +757,20 @@ void AudioWorker::initializeTimer() {
         int recordingLevel = getAudioLevelPercentageImpl(eCapture);
         emit playbackAudioLevel(playbackLevel);
         emit recordingAudioLevel(recordingLevel);
+
+        // Get application audio levels
+        QList<QPair<QString, int>> appLevels;
+        for (const Application& app : m_cachedApplications) {
+            // Handle grouped applications
+            QStringList appIDs = app.id.split(";");
+            int maxLevel = 0;
+            for (const QString& id : appIDs) {
+                int level = getApplicationAudioLevelImpl(id);
+                maxLevel = qMax(maxLevel, level);
+            }
+            appLevels.append({app.id, maxLevel});
+        }
+        emit applicationAudioLevelsChanged(appLevels);
     });
 }
 
@@ -714,6 +788,19 @@ void AudioWorker::enumerateRecordingDevices() {
 
 void AudioWorker::enumerateApplications() {
     QList<Application> apps = enumerateAudioApplicationsImpl();
+
+    // Add initial audio levels and cache
+    for (Application& app : apps) {
+        QStringList appIDs = app.id.split(";");
+        int maxLevel = 0;
+        for (const QString& id : appIDs) {
+            int level = getApplicationAudioLevelImpl(id);
+            maxLevel = qMax(maxLevel, level);
+        }
+        app.audioLevel = maxLevel;
+    }
+
+    m_cachedApplications = apps;
     emit applicationsReady(apps);
 }
 

@@ -97,6 +97,7 @@ set(QML_FILES
     qml/SettingsPane/LanguagePane.qml
     qml/SettingsPane/DebugPane.qml
     qml/SettingsPane/CommAppsPane.qml
+    qml/ProgressSlider.qml
 )
 
 set(QML_SINGLETONS

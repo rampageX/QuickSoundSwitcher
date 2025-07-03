@@ -16,6 +16,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
+#include <QVariant>
 
 class SoundPanelBridge : public QObject
 {
@@ -39,6 +40,11 @@ class SoundPanelBridge : public QObject
     // ChatMix properties
     Q_PROPERTY(int chatMixValue READ chatMixValue WRITE setChatMixValue NOTIFY chatMixValueChanged)
     Q_PROPERTY(QVariantList commAppsList READ commAppsList NOTIFY commAppsListChanged)
+
+    Q_PROPERTY(QVariantList applicationAudioLevels READ applicationAudioLevels NOTIFY applicationAudioLevelsChanged)
+    Q_PROPERTY(int playbackAudioLevel READ playbackAudioLevel NOTIFY playbackAudioLevelChanged)
+    Q_PROPERTY(int recordingAudioLevel READ recordingAudioLevel NOTIFY recordingAudioLevelChanged)
+
 
 public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
@@ -101,6 +107,13 @@ public:
     Q_INVOKABLE void restoreOriginalVolumes();
     Q_INVOKABLE void updateMissingCommAppIcons();
 
+    QVariantList applicationAudioLevels() const;
+    int playbackAudioLevel() const;
+    int recordingAudioLevel() const;
+
+    Q_INVOKABLE void startAudioLevelMonitoring();
+    Q_INVOKABLE void stopAudioLevelMonitoring();
+
 public slots:
     void onPlaybackVolumeChanged(int volume);
     void onRecordingVolumeChanged(int volume);
@@ -133,6 +146,9 @@ signals:
     void languageChanged();
     void chatMixValueChanged();
     void commAppsListChanged();
+    void applicationAudioLevelsChanged();
+    void playbackAudioLevelChanged();
+    void recordingAudioLevelChanged();
 
 private:
     static SoundPanelBridge* m_instance;
@@ -186,6 +202,10 @@ private:
     QString getCommAppsFilePath() const;
     void loadCommAppsFromFile();
     void saveCommAppsToFile();
+
+    QVariantMap m_applicationAudioLevels;
+    int m_playbackAudioLevel = 0;
+    int m_recordingAudioLevel = 0;
 };
 
 #endif // SOUNDPANELBRIDGE_H
