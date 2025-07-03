@@ -101,6 +101,7 @@ public:
     Q_INVOKABLE void saveOriginalVolumes();
     Q_INVOKABLE void restoreOriginalVolumes();
     Q_INVOKABLE void saveOriginalVolumesAfterRefresh();
+    Q_INVOKABLE void updateMissingCommAppIcons();
 
 public slots:
     void onPlaybackVolumeChanged(int volume);

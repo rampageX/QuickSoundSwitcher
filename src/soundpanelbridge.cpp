@@ -1111,3 +1111,46 @@ void SoundPanelBridge::saveOriginalVolumesAfterRefresh()
     // Trigger the refresh
     populateApplications();
 }
+
+void SoundPanelBridge::updateMissingCommAppIcons()
+{
+    bool iconsUpdated = false;
+
+    qDebug() << "Checking for missing CommApp icons...";
+
+    for (CommApp& commApp : m_commApps) {
+        // Skip if already has an icon
+        if (!commApp.icon.isEmpty()) {
+            continue;
+        }
+
+        qDebug() << "Looking for icon for CommApp:" << commApp.name;
+
+        // Search for matching application to get the icon
+        for (const Application& app : applications) {
+            if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
+                // Convert QIcon to base64 string
+                QPixmap iconPixmap = app.icon.pixmap(16, 16);
+                if (!iconPixmap.isNull()) {
+                    QByteArray byteArray;
+                    QBuffer buffer(&byteArray);
+                    buffer.open(QIODevice::WriteOnly);
+                    iconPixmap.toImage().save(&buffer, "PNG");
+                    QString base64Icon = QString::fromUtf8(byteArray.toBase64());
+                    commApp.icon = "data:image/png;base64," + base64Icon;
+                    iconsUpdated = true;
+                    qDebug() << "Found and added icon for CommApp:" << commApp.name;
+                }
+                break;
+            }
+        }
+    }
+
+    if (iconsUpdated) {
+        saveCommAppsToFile();
+        emit commAppsListChanged();
+        qDebug() << "CommApp icons updated and saved";
+    } else {
+        qDebug() << "No missing icons were found";
+    }
+}
