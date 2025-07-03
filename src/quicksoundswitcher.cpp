@@ -85,15 +85,11 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     if (SoundPanelBridge::instance()) {
         bool chatMixEnabled = QSettings("Odizinne", "QuickSoundSwitcher").value("chatMixEnabled", false).toBool();
         if (chatMixEnabled) {
-            qDebug() << "App closing with ChatMix enabled - restoring original volumes";
             SoundPanelBridge::instance()->restoreOriginalVolumes();
 
-            // Wait a moment for async volume changes to complete
             QEventLoop loop;
             QTimer::singleShot(200, &loop, &QEventLoop::quit);
             loop.exec();
-
-            // Disable ChatMix in settings so it doesn't auto-enable on next startup
         }
     }
 

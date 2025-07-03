@@ -37,15 +37,12 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
 
     bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
     if (chatMixEnabled) {
-        qDebug() << "ChatMix enabled on startup - will apply when applications are ready";
-
         // Connect to apply ChatMix when applications are first loaded
         connect(AudioManager::getWorker(), &AudioWorker::applicationsReady,
                 this, [this](const QList<Application>& apps) {
                     static bool firstTime = true;
                     if (firstTime) {
                         firstTime = false;
-                        qDebug() << "First application load - applying ChatMix";
                         applications = apps;
                         applyChatMixToApplications();
                         startChatMixMonitoring();
@@ -54,7 +51,6 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
 
         // Trigger initial application enumeration
         QTimer::singleShot(1000, [this]() {
-            qDebug() << "Starting initial application enumeration for ChatMix";
             AudioManager::enumerateApplicationsAsync();
         });
     }
@@ -890,7 +886,6 @@ void SoundPanelBridge::loadCommAppsFromFile()
     QFile file(filePath);
 
     if (!file.exists()) {
-        qDebug() << "CommApps file doesn't exist, starting with empty list";
         return;
     }
 
@@ -917,7 +912,7 @@ void SoundPanelBridge::loadCommAppsFromFile()
         CommApp app;
         app.name = appObj["name"].toString();
         app.originalVolume = appObj["originalVolume"].toInt(100);
-        app.icon = appObj["icon"].toString(); // Add this line
+        app.icon = appObj["icon"].toString();
         m_commApps.append(app);
     }
 }
@@ -937,7 +932,7 @@ void SoundPanelBridge::saveCommAppsToFile()
         QJsonObject appObj;
         appObj["name"] = app.name;
         appObj["originalVolume"] = app.originalVolume;
-        appObj["icon"] = app.icon; // Add this line
+        appObj["icon"] = app.icon;
         commAppsArray.append(appObj);
     }
 
@@ -946,8 +941,6 @@ void SoundPanelBridge::saveCommAppsToFile()
 
     QJsonDocument doc(root);
     file.write(doc.toJson());
-
-    qDebug() << "Saved" << m_commApps.count() << "comm apps to JSON";
 }
 
 void SoundPanelBridge::addCommApp(const QString& name)
@@ -955,7 +948,6 @@ void SoundPanelBridge::addCommApp(const QString& name)
     // Check if already exists
     for (const CommApp& existing : m_commApps) {
         if (existing.name.compare(name, Qt::CaseInsensitive) == 0) {
-            qDebug() << "CommApp already exists:" << name;
             return;
         }
     }
@@ -982,40 +974,26 @@ void SoundPanelBridge::addCommApp(const QString& name)
     m_commApps.append(newApp);
     saveCommAppsToFile();
     emit commAppsListChanged();
-
-    qDebug() << "Added comm app:" << name << "with icon:" << !newApp.icon.isEmpty();
 }
 
 void SoundPanelBridge::removeCommApp(const QString& name)
 {
     for (int i = 0; i < m_commApps.count(); ++i) {
         if (m_commApps[i].name.compare(name, Qt::CaseInsensitive) == 0) {
-            qDebug() << "Removing comm app:" << name;
             m_commApps.removeAt(i);
             saveCommAppsToFile();
             emit commAppsListChanged();
             return;
         }
     }
-    qDebug() << "CommApp not found for removal:" << name;
 }
 
 void SoundPanelBridge::saveOriginalVolumes()
 {
-    qDebug() << "Saving original volumes for comm apps...";
-
     // ONLY save if ChatMix is currently disabled - otherwise we're saving modified volumes!
     bool chatMixCurrentlyEnabled = settings.value("chatMixEnabled", false).toBool();
     if (chatMixCurrentlyEnabled) {
-        qDebug() << "ChatMix is currently enabled - cannot save original volumes! Use existing saved volumes.";
         return;
-    }
-
-    qDebug() << "ChatMix is disabled, safe to save current volumes as originals";
-    qDebug() << "Current applications state:";
-
-    for (const Application& app : applications) {
-        qDebug() << "  App:" << app.name << "| Volume:" << app.volume;
     }
 
     for (const Application& app : applications) {
@@ -1023,7 +1001,6 @@ void SoundPanelBridge::saveOriginalVolumes()
         for (CommApp& commApp : m_commApps) {
             if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
                 commApp.originalVolume = app.volume;
-                qDebug() << "Saved original volume for" << commApp.name << ":" << app.volume;
             }
         }
     }
@@ -1034,8 +1011,6 @@ void SoundPanelBridge::saveOriginalVolumes()
 
 void SoundPanelBridge::restoreOriginalVolumes()
 {
-    qDebug() << "Restoring original volumes for comm apps...";
-
     stopChatMixMonitoring();
 
     for (const Application& app : applications) {
@@ -1051,13 +1026,9 @@ void SoundPanelBridge::restoreOriginalVolumes()
                 } else {
                     AudioManager::setApplicationVolumeAsync(app.id, commApp.originalVolume);
                 }
-                qDebug() << "Restored original volume for" << commApp.name << ":" << commApp.originalVolume;
             }
         }
     }
-
-    // Force refresh the applications list to update the UI
-    //populateApplications();
 }
 
 QVariantList SoundPanelBridge::commAppsList() const
@@ -1067,7 +1038,7 @@ QVariantList SoundPanelBridge::commAppsList() const
         QVariantMap appMap;
         appMap["name"] = app.name;
         appMap["originalVolume"] = app.originalVolume;
-        appMap["icon"] = app.icon; // Add this line
+        appMap["icon"] = app.icon;
         result.append(appMap);
     }
     return result;
@@ -1075,26 +1046,16 @@ QVariantList SoundPanelBridge::commAppsList() const
 
 void SoundPanelBridge::saveOriginalVolumesAfterRefresh()
 {
-    qDebug() << "Refreshing applications list before saving original volumes...";
-
     // Connect to get fresh application data, then save originals
     connect(AudioManager::getWorker(), &AudioWorker::applicationsReady,
             this, [this](const QList<Application>& apps) {
-                qDebug() << "Applications refreshed, now saving original volumes";
                 applications = apps;
-
-                // Now save the fresh volumes as originals
-                qDebug() << "Fresh applications state:";
-                for (const Application& app : applications) {
-                    qDebug() << "  App:" << app.name << "| Volume:" << app.volume;
-                }
 
                 for (const Application& app : applications) {
                     // Find matching comm app and update its original volume
                     for (CommApp& commApp : m_commApps) {
                         if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
                             commApp.originalVolume = app.volume;
-                            qDebug() << "Saved fresh original volume for" << commApp.name << ":" << app.volume;
                         }
                     }
                 }
@@ -1116,15 +1077,11 @@ void SoundPanelBridge::updateMissingCommAppIcons()
 {
     bool iconsUpdated = false;
 
-    qDebug() << "Checking for missing CommApp icons...";
-
     for (CommApp& commApp : m_commApps) {
         // Skip if already has an icon
         if (!commApp.icon.isEmpty()) {
             continue;
         }
-
-        qDebug() << "Looking for icon for CommApp:" << commApp.name;
 
         // Search for matching application to get the icon
         for (const Application& app : applications) {
@@ -1139,7 +1096,6 @@ void SoundPanelBridge::updateMissingCommAppIcons()
                     QString base64Icon = QString::fromUtf8(byteArray.toBase64());
                     commApp.icon = "data:image/png;base64," + base64Icon;
                     iconsUpdated = true;
-                    qDebug() << "Found and added icon for CommApp:" << commApp.name;
                 }
                 break;
             }
@@ -1149,8 +1105,5 @@ void SoundPanelBridge::updateMissingCommAppIcons()
     if (iconsUpdated) {
         saveCommAppsToFile();
         emit commAppsListChanged();
-        qDebug() << "CommApp icons updated and saved";
-    } else {
-        qDebug() << "No missing icons were found";
     }
 }

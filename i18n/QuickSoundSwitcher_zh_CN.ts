@@ -340,28 +340,28 @@
 <context>
     <name>QuickSoundSwitcher</name>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="172"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="494"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="168"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="490"/>
         <source>Exit</source>
         <translation type="unfinished">退出</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="162"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="158"/>
         <source>Output: Loading...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="166"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="162"/>
         <source>Input: Loading...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="506"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="502"/>
         <source>Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="515"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="511"/>
         <source>Input</source>
         <translation type="unfinished"></translation>
     </message>
@@ -402,22 +402,22 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="866"/>
+        <location filename="../qml/SoundPanel.qml" line="867"/>
         <source>ChatMix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="883"/>
+        <location filename="../qml/SoundPanel.qml" line="884"/>
         <source>Comm Apps Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="884"/>
+        <location filename="../qml/SoundPanel.qml" line="885"/>
         <source>Other Apps Only</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="885"/>
+        <location filename="../qml/SoundPanel.qml" line="886"/>
         <source>Balanced: %1</source>
         <translation type="unfinished"></translation>
     </message>
