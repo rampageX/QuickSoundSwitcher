@@ -116,7 +116,6 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
 
 SoundPanelBridge::~SoundPanelBridge()
 {
-    restoreOriginalVolumes();
     if (m_instance == this) {
         m_instance = nullptr;
     }
