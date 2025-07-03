@@ -29,11 +29,16 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
 
     m_chatMixValue = settings.value("chatMixValue", 50).toInt();
 
+
     changeApplicationLanguage(settings.value("languageIndex", 0).toInt());
     populateApplications();
     // Setup ChatMix monitoring timer
     m_chatMixCheckTimer->setInterval(500); // Check every 2 seconds
     connect(m_chatMixCheckTimer, &QTimer::timeout, this, &SoundPanelBridge::checkAndApplyChatMixToNewApps);
+
+    if (settings.value("chatMixEnabled").toBool()) {
+        startChatMixMonitoring();
+    }
 
     // Connect to audio worker signals for async operations
     if (AudioManager::getWorker()) {
