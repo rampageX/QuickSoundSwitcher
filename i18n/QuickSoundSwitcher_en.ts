@@ -115,72 +115,72 @@
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="10"/>
         <source>Communication Apps</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="53"/>
         <source>Enable ChatMix</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="54"/>
         <source>Control communication apps separately from other applications</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="73"/>
         <source>Communication Applications</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="125"/>
         <source>Discord</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="77"/>
         <source>Add App</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="32"/>
         <source>Activate ChatMix</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="74"/>
         <source>Add application names that should be treated as communication apps</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="92"/>
         <source>Original Volume: %1%</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="97"/>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="109"/>
         <source>Add Communication App</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="119"/>
         <source>Enter application name (e.g., Discord)</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="131"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="137"/>
         <source>Add</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -386,7 +386,7 @@
     <message>
         <location filename="../qml/SettingsWindow.qml" line="82"/>
         <source>ChatMix</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsWindow.qml" line="86"/>
@@ -398,36 +398,28 @@
         <source>Debug</source>
         <translation></translation>
     </message>
-    <message>
-        <source>Unknow author</source>
-        <translation type="vanished">Odizinne</translation>
-    </message>
-    <message>
-        <source>Unknow date</source>
-        <translation type="vanished">02.07.2025</translation>
-    </message>
 </context>
 <context>
     <name>SoundPanel</name>
     <message>
         <location filename="../qml/SoundPanel.qml" line="867"/>
         <source>ChatMix</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SoundPanel.qml" line="884"/>
         <source>Comm Apps Only</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SoundPanel.qml" line="885"/>
         <source>Other Apps Only</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SoundPanel.qml" line="886"/>
         <source>Balanced: %1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 </TS>
