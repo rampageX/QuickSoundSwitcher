@@ -423,9 +423,9 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="914"/>
+        <location filename="../qml/SoundPanel.qml" line="915"/>
         <source>ChatMix</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

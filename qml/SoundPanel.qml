@@ -763,7 +763,7 @@ ApplicationWindow {
                             checkable: true
                             highlighted: checked
                             checked: applicationUnitLayout.model.isMuted
-                            enabled: !UserSettings.chatMixEnabled
+                            //enabled: !UserSettings.chatMixEnabled
                             ToolTip.text: applicationUnitLayout.model.name
                             ToolTip.visible: hovered
                             ToolTip.delay: 1000
@@ -889,6 +889,7 @@ ApplicationWindow {
                         icon.color: palette.text
                         checkable: true
                         checked: !UserSettings.chatMixEnabled
+                        opacity: checked ? 0.3 : 1
 
                         Component.onCompleted: {
                             palette.accent = palette.button
