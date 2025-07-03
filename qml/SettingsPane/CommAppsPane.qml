@@ -29,11 +29,32 @@ ColumnLayout {
 
             Card {
                 Layout.fillWidth: true
+                title: qsTr("Activate ChatMix")
+
+                additionalControl: Switch {
+                    checked: UserSettings.activateChatmix
+                    onClicked: {
+                        if (checked) {
+                            UserSettings.activateChatmix = checked
+                            UserSettings.chatMixEnabled = checked
+                            SoundPanelBridge.saveOriginalVolumesAfterRefresh()
+                        } else {
+                            UserSettings.activateChatmix = checked
+                            UserSettings.chatMixEnabled = checked
+                            SoundPanelBridge.restoreOriginalVolumes()
+                        }
+                    }
+                }
+            }
+
+            Card {
+                visible: UserSettings.activateChatmix
+                Layout.fillWidth: true
                 title: qsTr("Enable ChatMix")
                 description: qsTr("Control communication apps separately from other applications")
 
                 additionalControl: Switch {
-                    checked: UserSettings.chatMixEnabled
+                    checked: UserSettings.activateChatmix
                     onClicked: {
                         if (checked) {
                             UserSettings.chatMixEnabled = checked
@@ -47,6 +68,7 @@ ColumnLayout {
             }
 
             Card {
+                visible: UserSettings.activateChatmix
                 Layout.fillWidth: true
                 title: qsTr("Communication Applications")
                 description: qsTr("Add application names that should be treated as communication apps")
@@ -58,8 +80,10 @@ ColumnLayout {
             }
 
             Repeater {
+                visible: UserSettings.activateChatmix
                 model: SoundPanelBridge.commAppsList
                 Card {
+                    visible: UserSettings.activateChatmix
                     id: appCard
                     required property var model
                     Layout.fillWidth: true
@@ -67,6 +91,8 @@ ColumnLayout {
                     iconSource: model.icon
                     description: qsTr("Original Volume: %1%").arg(model.originalVolume)
                     imageMode: true
+                    iconWidth: 20
+                    iconHeight: 20
                     additionalControl: Button {
                         text: qsTr("Remove")
                         onClicked: {

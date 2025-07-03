@@ -20,4 +20,5 @@ Settings {
     property var commApps: []
     property int chatMixValue: 50
     property bool chatMixEnabled: false
+    property bool activateChatmix: false
 }

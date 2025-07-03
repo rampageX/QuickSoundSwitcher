@@ -814,6 +814,7 @@ ApplicationWindow {
             }
 
             Rectangle {
+                visible: UserSettings.activateChatmix
                 Layout.preferredHeight: 1
                 Layout.fillWidth: true
                 color: Constants.separatorColor
@@ -823,6 +824,7 @@ ApplicationWindow {
             }
 
             ColumnLayout {
+                visible: UserSettings.activateChatmix
                 id: chatMixLayout
                 spacing: 5
 

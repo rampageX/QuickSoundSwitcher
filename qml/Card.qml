@@ -11,7 +11,7 @@ Rectangle {
     property string title: ""
     property string description: ""
     property Item additionalControl
-    property string iconSource
+    property string iconSource: ""
     property int iconWidth: 24
     property int iconHeight: 24
     property color iconColor
@@ -43,10 +43,12 @@ Rectangle {
 
         IconImage {
             source: card.iconSource
-            visible: source
+            visible: card.iconSource && card.iconSource !== ""
             sourceSize.width: card.iconWidth
             sourceSize.height: card.iconHeight
             color: card.imageMode ? "transparent" : (card.iconColor ? card.iconColor : palette.text)
+            Layout.preferredHeight: card.iconHeight
+            Layout.preferredWidth: card.iconWidth
         }
 
         ColumnLayout {
