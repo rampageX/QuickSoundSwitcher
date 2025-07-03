@@ -448,7 +448,7 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="915"/>
+        <location filename="../qml/SoundPanel.qml" line="925"/>
         <source>ChatMix</source>
         <translation>ChatMix</translation>
     </message>

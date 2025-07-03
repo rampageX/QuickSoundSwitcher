@@ -313,7 +313,16 @@ ApplicationWindow {
             panel.dataLoaded = true
             Qt.callLater(function() {
                 Qt.callLater(function() {
-                    const newHeight = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
+                    let newHeight = mainLayout.implicitHeight + 30 + 15
+
+                    if (mediaLayout.visible) {
+                        newHeight += mediaLayout.implicitHeight
+                    }
+
+                    if (spacer.visible) {
+                        newHeight += spacer.height
+                    }
+
                     panel.height = newHeight
                     Qt.callLater(panel.startAnimation)
                 })
@@ -358,7 +367,17 @@ ApplicationWindow {
     function updatePanelHeight() {
         Qt.callLater(function() {
             Qt.callLater(function() {
-                const newHeight = mediaLayout.implicitHeight + spacer.height + mainLayout.implicitHeight + 30 + 15
+                let newHeight = mainLayout.implicitHeight + 30 + 15
+
+                if (mediaLayout.visible) {
+                    newHeight += mediaLayout.implicitHeight
+                } else {
+                    newHeight -= 5
+                }
+
+                if (spacer.visible) {
+                    newHeight += spacer.height
+                }
 
                 if (panel.visible && !panel.isAnimatingIn && !panel.isAnimatingOut) {
                     panel.height = newHeight
@@ -420,6 +439,7 @@ ApplicationWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: 15
+            visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
             onImplicitHeightChanged: {
                 if (panel.visible) {
                     panel.updatePanelHeight()
@@ -433,7 +453,7 @@ ApplicationWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             height: 30
-
+            visible: mediaLayout.visible
             onImplicitHeightChanged: {
                 if (panel.visible) {
                     panel.updatePanelHeight()
@@ -443,7 +463,7 @@ ApplicationWindow {
 
         ColumnLayout {
             id: mainLayout
-            anchors.top: spacer.bottom
+            anchors.top: mediaLayout.visible ? spacer.bottom : parent.top
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
@@ -543,16 +563,6 @@ ApplicationWindow {
                                 }
                             }
                         }
-
-                        //ProgressBar {
-                        //    value: SoundPanelBridge.playbackAudioLevel
-                        //    from: 0
-                        //    to: 100
-                        //    Layout.fillWidth: true
-                        //    Layout.leftMargin: 20
-                        //    Layout.rightMargin: 20
-                        //    z: -1
-                        //}
                     }
 
                     Label {

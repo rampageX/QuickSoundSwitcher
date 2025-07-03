@@ -7,7 +7,6 @@ ColumnLayout {
     id: mediaLayout
     opacity: 0
     spacing: 10
-    visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
 
     Behavior on opacity {
         NumberAnimation {
