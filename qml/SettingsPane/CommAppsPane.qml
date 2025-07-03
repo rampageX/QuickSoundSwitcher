@@ -32,12 +32,11 @@ ColumnLayout {
                 title: qsTr("Activate ChatMix")
 
                 additionalControl: Switch {
+                    id: activateChatMixSwitch
                     checked: UserSettings.activateChatmix
                     onClicked: {
                         if (checked) {
-                            UserSettings.activateChatmix = checked
-                            UserSettings.chatMixEnabled = checked
-                            SoundPanelBridge.applyChatMixToApplications()
+                            chatMixWarningDialog.open()
                         } else {
                             UserSettings.activateChatmix = checked
                             UserSettings.chatMixEnabled = checked
@@ -54,7 +53,7 @@ ColumnLayout {
                 description: qsTr("Control communication apps separately from other applications")
 
                 additionalControl: Switch {
-                    checked: UserSettings.activateChatmix
+                    checked: UserSettings.chatMixEnabled
                     onClicked: {
                         if (checked) {
                             UserSettings.chatMixEnabled = checked
@@ -97,6 +96,65 @@ ColumnLayout {
                         onClicked: {
                             SoundPanelBridge.removeCommApp(appCard.model.name)
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: chatMixWarningDialog
+        title: qsTr("Enable ChatMix Warning")
+        modal: true
+        width: 400
+        anchors.centerIn: parent
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 20
+
+            Label {
+                text: qsTr("Important Notice")
+                font.pixelSize: 16
+                font.bold: true
+            }
+
+            Label {
+                text: qsTr("Activating ChatMix will initially set all non communication application volumes to 50%. This might cause loud audio output.")
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: qsTr("It is recommended to lower your master volume before proceeding to avoid sudden loud sounds.")
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                font.bold: true
+                color: "orange"
+            }
+
+            RowLayout {
+                spacing: 15
+                Layout.topMargin: 10
+
+                Button {
+                    text: qsTr("Cancel")
+                    onClicked: {
+                        activateChatMixSwitch.checked = false
+                        chatMixWarningDialog.close()
+                    }
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: qsTr("Activate")
+                    highlighted: true
+                    Layout.fillWidth: true
+                    onClicked: {
+                        UserSettings.activateChatmix = true
+                        UserSettings.chatMixEnabled = true
+                        SoundPanelBridge.applyChatMixToApplications()
+                        chatMixWarningDialog.close()
                     }
                 }
             }

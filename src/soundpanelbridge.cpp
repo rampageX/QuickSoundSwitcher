@@ -961,8 +961,8 @@ void SoundPanelBridge::restoreOriginalVolumes()
 {
     stopChatMixMonitoring();
 
-    // Restore ALL applications to 100% volume (quick fix)
-    for (const Application& app : applications) {
+    // Restore ALL applications to 100% volume
+    for (Application& app : applications) {  // Note: non-const reference
         bool shouldGroup = settings.value("groupApplications", true).toBool();
         if (shouldGroup) {
             QStringList appIDs = app.id.split(";");
@@ -972,9 +972,13 @@ void SoundPanelBridge::restoreOriginalVolumes()
         } else {
             AudioManager::setApplicationVolumeAsync(app.id, 100);
         }
+
+        // Update the model data immediately
+        app.volume = 100;
     }
 
-    populateApplications();
+    // Emit the updated model to refresh UI
+    emit applicationsChanged(convertApplicationsToVariant(applications));
 }
 
 QVariantList SoundPanelBridge::commAppsList() const
