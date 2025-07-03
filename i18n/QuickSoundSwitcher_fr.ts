@@ -385,23 +385,33 @@
         <translation>Sortie: Chargement...</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="161"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="160"/>
         <source>Input: Loading...</source>
         <translation>Entrée: Chargement...</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="167"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="489"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="165"/>
+        <source>Windows sound settings (Legacy)</source>
+        <translation>Paramètres audio Windows (Herité)</translation>
+    </message>
+    <message>
+        <location filename="../src/quicksoundswitcher.cpp" line="168"/>
+        <source>Windows sound settings (Modern)</source>
+        <translation>Paramètres audio Windows (Moderne)</translation>
+    </message>
+    <message>
+        <location filename="../src/quicksoundswitcher.cpp" line="173"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="500"/>
         <source>Exit</source>
         <translation>Quitter</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="501"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="512"/>
         <source>Output</source>
         <translation>Sortie</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="510"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="521"/>
         <source>Input</source>
         <translation>Entrée</translation>
     </message>

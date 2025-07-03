@@ -24,6 +24,8 @@ private slots:
     void onPanelHideAnimationFinished();
     void onDataInitializationComplete();
     void onLanguageChanged();
+    void openLegacySoundSettings();
+    void openModernSoundSettings();
 
 private:
     QSystemTrayIcon *trayIcon;

@@ -376,8 +376,8 @@
 <context>
     <name>QuickSoundSwitcher</name>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="167"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="489"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="173"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="500"/>
         <source>Exit</source>
         <translation></translation>
     </message>
@@ -387,17 +387,27 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="161"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="160"/>
         <source>Input: Loading...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="501"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="165"/>
+        <source>Windows sound settings (Legacy)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/quicksoundswitcher.cpp" line="168"/>
+        <source>Windows sound settings (Modern)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/quicksoundswitcher.cpp" line="512"/>
         <source>Output</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="510"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="521"/>
         <source>Input</source>
         <translation></translation>
     </message>

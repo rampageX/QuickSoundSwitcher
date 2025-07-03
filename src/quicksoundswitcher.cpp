@@ -12,6 +12,7 @@
 #include <QTimer>
 #include <QFontMetrics>
 #include <Windows.h>
+#include <QProcess>
 
 HHOOK QuickSoundSwitcher::keyboardHook = NULL;
 HHOOK QuickSoundSwitcher::mouseHook = NULL;
@@ -153,20 +154,30 @@ void QuickSoundSwitcher::createTrayIcon()
 
     QMenu *trayMenu = new QMenu(this);
 
-    // Add device info actions (disabled)
     outputDeviceAction = new QAction(tr("Output: Loading..."), this);
-    //outputDeviceAction->setEnabled(false);
     trayMenu->addAction(outputDeviceAction);
 
     inputDeviceAction = new QAction(tr("Input: Loading..."), this);
-    //inputDeviceAction->setEnabled(false);
     trayMenu->addAction(inputDeviceAction);
 
     trayMenu->addSeparator();
 
+    QAction *lSoundSettingsAction = new QAction(tr("Windows sound settings (Legacy)"), this);
+    trayMenu->addAction(lSoundSettingsAction);
+
+    QAction *mSoundSettingsAction = new QAction(tr("Windows sound settings (Modern)"), this);
+    trayMenu->addAction(mSoundSettingsAction);
+
+    trayMenu->addSeparator();
+
     QAction *exitAction = new QAction(tr("Exit"), this);
-    connect(exitAction, &QAction::triggered, this, &QApplication::quit);
     trayMenu->addAction(exitAction);
+
+    connect(exitAction, &QAction::triggered, this, &QApplication::quit);
+    connect(lSoundSettingsAction, &QAction::triggered, this, &QuickSoundSwitcher::openLegacySoundSettings);
+    connect(mSoundSettingsAction, &QAction::triggered, this, &QuickSoundSwitcher::openModernSoundSettings);
+
+
 
     trayIcon->setContextMenu(trayMenu);
     trayIcon->setToolTip("Quick Sound Switcher");
@@ -510,4 +521,12 @@ void QuickSoundSwitcher::updateTrayMenu()
             inputDeviceAction->setText(tr("Input") + deviceInfo);
         }
     }
+}
+
+void QuickSoundSwitcher::openLegacySoundSettings() {
+    QProcess::startDetached("control", QStringList() << "mmsys.cpl");
+}
+
+void QuickSoundSwitcher::openModernSoundSettings() {
+    QProcess::startDetached("explorer", QStringList() << "ms-settings:sound");
 }
