@@ -114,12 +114,6 @@ ColumnLayout {
             spacing: 20
 
             Label {
-                text: qsTr("Important Notice")
-                font.pixelSize: 16
-                font.bold: true
-            }
-
-            Label {
                 text: qsTr("Activating ChatMix will initially set all non communication application volumes to 50%. This might cause loud audio output.")
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true

@@ -870,16 +870,6 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             enabled: UserSettings.chatMixEnabled
 
-                            ToolTip {
-                                parent: chatMixSlider.handle
-                                visible: chatMixSlider.pressed
-                                text: {
-                                    if (chatMixSlider.value === 0) return qsTr("Comm Apps Only")
-                                    if (chatMixSlider.value === 100) return qsTr("Other Apps Only")
-                                    return qsTr("Balanced: %1").arg(Math.round(chatMixSlider.value))
-                                }
-                            }
-
                             onValueChanged: {
                                 UserSettings.chatMixValue = value
                             }
