@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(QuickSoundSwitcher VERSION 1.3.1 LANGUAGES C CXX)
+project(QuickSoundSwitcher VERSION 1.3.2 LANGUAGES C CXX)
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Installation directory" FORCE)
 set(CMAKE_CXX_STANDARD 20)
@@ -158,7 +158,7 @@ qt_add_translations(${CMAKE_PROJECT_NAME}
         i18n/QuickSoundSwitcher_it.ts
         i18n/QuickSoundSwitcher_zh_CN.ts
     RESOURCE_PREFIX "/i18n"
-    LUPDATE_OPTIONS "-no-ui-lines -no-obsolete"
+    LUPDATE_OPTIONS "-no-ui-lines"
 )
 
 add_dependencies(${CMAKE_PROJECT_NAME} update_translations)

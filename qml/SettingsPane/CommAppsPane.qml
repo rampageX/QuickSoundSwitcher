@@ -69,6 +69,21 @@ ColumnLayout {
             Card {
                 visible: UserSettings.activateChatmix
                 Layout.fillWidth: true
+                title: qsTr("Restored volume")
+                description: qsTr("The volume to set for applications when ChatMix is disabled")
+
+                additionalControl: SpinBox {
+                    from: 0
+                    to: 100
+                    editable: true
+                    value: UserSettings.chatmixRestoreVolume
+                    onValueChanged: UserSettings.chatmixRestoreVolume = value
+                }
+            }
+
+            Card {
+                visible: UserSettings.activateChatmix
+                Layout.fillWidth: true
                 title: qsTr("Communication Applications")
                 description: qsTr("Add application names that should be treated as communication apps")
 

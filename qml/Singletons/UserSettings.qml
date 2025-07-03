@@ -22,4 +22,5 @@ Settings {
     property bool chatMixEnabled: false
     property bool activateChatmix: false
     property bool showAudioLevel: true
+    property int chatmixRestoreVolume: 80
 }
