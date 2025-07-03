@@ -29,7 +29,7 @@ Rectangle {
     Rectangle {
         anchors.fill: parent
         border.width: 1
-        color: "transparent"
+        color: Constants.cardColor
         border.color: Constants.cardBorderColor
         opacity: 0.5
         radius: 5

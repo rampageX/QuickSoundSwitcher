@@ -80,7 +80,7 @@ ApplicationWindow {
                         },
                         {
                             text: qsTr("ChatMix"),
-                            icon: "qrc:/icons/mic.png"
+                            icon: "qrc:/icons/headset.svg"
                         },
                         {
                             text: qsTr("Language"),
