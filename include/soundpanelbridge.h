@@ -98,9 +98,7 @@ public:
     Q_INVOKABLE bool isCommApp(const QString& name) const;
     Q_INVOKABLE void addCommApp(const QString& name);
     Q_INVOKABLE void removeCommApp(const QString& name);
-    Q_INVOKABLE void saveOriginalVolumes();
     Q_INVOKABLE void restoreOriginalVolumes();
-    Q_INVOKABLE void saveOriginalVolumesAfterRefresh();
     Q_INVOKABLE void updateMissingCommAppIcons();
 
 public slots:
@@ -174,7 +172,6 @@ private:
 
     struct CommApp {
         QString name;
-        int originalVolume = 100;
         QString icon;
     };
 

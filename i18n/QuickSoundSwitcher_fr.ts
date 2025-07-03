@@ -118,27 +118,27 @@
         <translation>Applications de communication</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="53"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="52"/>
         <source>Enable ChatMix</source>
         <translation>Activer ChatMix</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="54"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="53"/>
         <source>Control communication apps separately from other applications</source>
         <translation>Controller les applicatiosn de communication indépendamment des autres</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="73"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="71"/>
         <source>Communication Applications</source>
         <translation>Applications de communication</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="125"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="122"/>
         <source>Discord</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="77"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="75"/>
         <source>Add App</source>
         <translation>Ajouter</translation>
     </message>
@@ -148,37 +148,32 @@
         <translation>Démarrer ChatMix</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="74"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="72"/>
         <source>Add application names that should be treated as communication apps</source>
         <translation>Ajouter les applications à traiter en tant qu&apos;applications de communication</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="92"/>
-        <source>Original Volume: %1%</source>
-        <translation>Volume original:%1%</translation>
-    </message>
-    <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="97"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="94"/>
         <source>Remove</source>
         <translation>Supprimer</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="109"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="106"/>
         <source>Add Communication App</source>
         <translation>Ajouter une application de communication</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="119"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="116"/>
         <source>Enter application name (e.g., Discord)</source>
         <translation>Entrer le nom de l&apos;application (ex, Discord)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="131"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="128"/>
         <source>Cancel</source>
         <translation>Annuler</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="137"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="134"/>
         <source>Add</source>
         <translation>Ajouter</translation>
     </message>
@@ -340,28 +335,28 @@
 <context>
     <name>QuickSoundSwitcher</name>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="158"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="162"/>
         <source>Output: Loading...</source>
         <translation>Sortie: Chargement...</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="162"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="166"/>
         <source>Input: Loading...</source>
         <translation>Entrée: Chargement...</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="168"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="490"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="172"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="494"/>
         <source>Exit</source>
         <translation>Quitter</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="502"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="506"/>
         <source>Output</source>
         <translation>Sortie</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="511"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="515"/>
         <source>Input</source>
         <translation>Entrée</translation>
     </message>
@@ -402,24 +397,24 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="867"/>
+        <location filename="../qml/SoundPanel.qml" line="859"/>
         <source>ChatMix</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="884"/>
+        <location filename="../qml/SoundPanel.qml" line="876"/>
         <source>Comm Apps Only</source>
-        <translation>Communications uniquement</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="885"/>
+        <location filename="../qml/SoundPanel.qml" line="877"/>
         <source>Other Apps Only</source>
-        <translation>Autres sources uniquement</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="886"/>
+        <location filename="../qml/SoundPanel.qml" line="878"/>
         <source>Balanced: %1</source>
-        <translation>Équilibré %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

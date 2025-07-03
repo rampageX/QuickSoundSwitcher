@@ -763,7 +763,7 @@ ApplicationWindow {
                                 opacity: enabled ? 1 : 0.5
                                 Layout.fillWidth: true
 
-                                // Bind directly to chatmix value and calculate the display volume
+                                // Updated to match simplified ChatMix logic
                                 value: {
                                     if (!UserSettings.chatMixEnabled) {
                                         return applicationUnitLayout.model.volume
@@ -772,16 +772,9 @@ ApplicationWindow {
                                     // Check if this app is a comm app
                                     let appName = applicationUnitLayout.model.name
                                     let isCommApp = SoundPanelBridge.isCommApp(appName)
-                                    let chatMixVal = UserSettings.chatMixValue
 
-                                    // Calculate the volume based on chatmix position
-                                    if (chatMixVal <= 50) {
-                                        // Left side: comm apps at 100%, other apps fade in
-                                        return isCommApp ? 100 : (chatMixVal * 2)
-                                    } else {
-                                        // Right side: other apps at 100%, comm apps fade out
-                                        return isCommApp ? (100 - (chatMixVal - 50) * 2) : 100
-                                    }
+                                    // Comm apps: always 100%, Non-comm apps: slider value
+                                    return isCommApp ? 100 : UserSettings.chatMixValue
                                 }
 
                                 ToolTip {
@@ -850,7 +843,6 @@ ApplicationWindow {
                         onClicked: {
                             if (!checked) {
                                 UserSettings.chatMixEnabled = !checked
-                                SoundPanelBridge.saveOriginalVolumesAfterRefresh()
                             } else {
                                 UserSettings.chatMixEnabled = !checked
                                 SoundPanelBridge.restoreOriginalVolumes()

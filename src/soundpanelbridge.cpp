@@ -249,33 +249,25 @@ bool SoundPanelBridge::isCommApp(const QString& name) const
 
 void SoundPanelBridge::applyChatMixToApplications()
 {
-    // Calculate actual volume levels (not multipliers)
-    int commAppVolume;
-    int otherAppVolume;
+    // ChatMix slider controls ONLY non-comm apps
+    // 100% = non-comm apps at 100%, 0% = non-comm apps at 0%
+    // Comm apps are always set to 100%
 
-    if (m_chatMixValue <= 50) {
-        // Left side: comm apps stay at 100%, other apps fade in from 0% to 100%
-        commAppVolume = 100;
-        otherAppVolume = m_chatMixValue * 2;
-    } else {
-        // Right side: other apps stay at 100%, comm apps fade out from 100% to 0%
-        commAppVolume = 100 - (m_chatMixValue - 50) * 2;
-        otherAppVolume = 100;
-    }
+    int nonCommAppVolume = m_chatMixValue; // Direct mapping: slider value = volume
 
     for (const Application& app : applications) {
         bool isComm = isCommApp(app.name);
-        int newVolume = isComm ? commAppVolume : otherAppVolume;
+        int targetVolume = isComm ? 100 : nonCommAppVolume;
 
-        // Apply the actual volume level directly
+        // Apply volume to all apps
         bool shouldGroup = settings.value("groupApplications", true).toBool();
         if (shouldGroup) {
             QStringList appIDs = app.id.split(";");
             for (const QString& id : appIDs) {
-                AudioManager::setApplicationVolumeAsync(id, newVolume);
+                AudioManager::setApplicationVolumeAsync(id, targetVolume);
             }
         } else {
-            AudioManager::setApplicationVolumeAsync(app.id, newVolume);
+            AudioManager::setApplicationVolumeAsync(app.id, targetVolume);
         }
     }
 
@@ -911,7 +903,6 @@ void SoundPanelBridge::loadCommAppsFromFile()
         QJsonObject appObj = value.toObject();
         CommApp app;
         app.name = appObj["name"].toString();
-        app.originalVolume = appObj["originalVolume"].toInt(100);
         app.icon = appObj["icon"].toString();
         m_commApps.append(app);
     }
@@ -931,7 +922,6 @@ void SoundPanelBridge::saveCommAppsToFile()
     for (const CommApp& app : m_commApps) {
         QJsonObject appObj;
         appObj["name"] = app.name;
-        appObj["originalVolume"] = app.originalVolume;
         appObj["icon"] = app.icon;
         commAppsArray.append(appObj);
     }
@@ -954,7 +944,6 @@ void SoundPanelBridge::addCommApp(const QString& name)
 
     CommApp newApp;
     newApp.name = name;
-    newApp.originalVolume = 100; // Default, will be updated when chatmix is enabled
 
     // Search for matching application to get the icon
     for (const Application& app : applications) {
@@ -988,45 +977,20 @@ void SoundPanelBridge::removeCommApp(const QString& name)
     }
 }
 
-void SoundPanelBridge::saveOriginalVolumes()
-{
-    // ONLY save if ChatMix is currently disabled - otherwise we're saving modified volumes!
-    bool chatMixCurrentlyEnabled = settings.value("chatMixEnabled", false).toBool();
-    if (chatMixCurrentlyEnabled) {
-        return;
-    }
-
-    for (const Application& app : applications) {
-        // Find matching comm app and update its original volume
-        for (CommApp& commApp : m_commApps) {
-            if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
-                commApp.originalVolume = app.volume;
-            }
-        }
-    }
-
-    saveCommAppsToFile();
-    emit commAppsListChanged();
-}
-
 void SoundPanelBridge::restoreOriginalVolumes()
 {
     stopChatMixMonitoring();
 
+    // Restore ALL applications to 100% volume (quick fix)
     for (const Application& app : applications) {
-        // Find matching comm app and restore its volume
-        for (const CommApp& commApp : m_commApps) {
-            if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
-                bool shouldGroup = settings.value("groupApplications", true).toBool();
-                if (shouldGroup) {
-                    QStringList appIDs = app.id.split(";");
-                    for (const QString& id : appIDs) {
-                        AudioManager::setApplicationVolumeAsync(id, commApp.originalVolume);
-                    }
-                } else {
-                    AudioManager::setApplicationVolumeAsync(app.id, commApp.originalVolume);
-                }
+        bool shouldGroup = settings.value("groupApplications", true).toBool();
+        if (shouldGroup) {
+            QStringList appIDs = app.id.split(";");
+            for (const QString& id : appIDs) {
+                AudioManager::setApplicationVolumeAsync(id, 100);
             }
+        } else {
+            AudioManager::setApplicationVolumeAsync(app.id, 100);
         }
     }
 }
@@ -1037,40 +1001,10 @@ QVariantList SoundPanelBridge::commAppsList() const
     for (const CommApp& app : m_commApps) {
         QVariantMap appMap;
         appMap["name"] = app.name;
-        appMap["originalVolume"] = app.originalVolume;
         appMap["icon"] = app.icon;
         result.append(appMap);
     }
     return result;
-}
-
-void SoundPanelBridge::saveOriginalVolumesAfterRefresh()
-{
-    // Connect to get fresh application data, then save originals
-    connect(AudioManager::getWorker(), &AudioWorker::applicationsReady,
-            this, [this](const QList<Application>& apps) {
-                applications = apps;
-
-                for (const Application& app : applications) {
-                    // Find matching comm app and update its original volume
-                    for (CommApp& commApp : m_commApps) {
-                        if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
-                            commApp.originalVolume = app.volume;
-                        }
-                    }
-                }
-
-                saveCommAppsToFile();
-                emit commAppsListChanged();
-
-                // Now apply ChatMix
-                applyChatMixToApplications();
-                startChatMixMonitoring();
-
-            }, Qt::SingleShotConnection); // Single shot so it only triggers once
-
-    // Trigger the refresh
-    populateApplications();
 }
 
 void SoundPanelBridge::updateMissingCommAppIcons()

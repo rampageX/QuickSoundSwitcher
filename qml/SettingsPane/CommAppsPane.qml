@@ -37,7 +37,6 @@ ColumnLayout {
                         if (checked) {
                             UserSettings.activateChatmix = checked
                             UserSettings.chatMixEnabled = checked
-                            SoundPanelBridge.saveOriginalVolumesAfterRefresh()
                         } else {
                             UserSettings.activateChatmix = checked
                             UserSettings.chatMixEnabled = checked
@@ -58,7 +57,6 @@ ColumnLayout {
                     onClicked: {
                         if (checked) {
                             UserSettings.chatMixEnabled = checked
-                            SoundPanelBridge.saveOriginalVolumesAfterRefresh()
                         } else {
                             UserSettings.chatMixEnabled = checked
                             SoundPanelBridge.restoreOriginalVolumes()
@@ -89,7 +87,6 @@ ColumnLayout {
                     Layout.fillWidth: true
                     title: model.name
                     iconSource: model.icon
-                    description: qsTr("Original Volume: %1%").arg(model.originalVolume)
                     imageMode: true
                     iconWidth: 20
                     iconHeight: 20
