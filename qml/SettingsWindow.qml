@@ -102,7 +102,7 @@ ApplicationWindow {
 
                         function onLanguageIndexChanged() {
                             Qt.callLater(function() {
-                                sidebarList.currentIndex = 2
+                                sidebarList.currentIndex = 4
                             })
                         }
                     }
