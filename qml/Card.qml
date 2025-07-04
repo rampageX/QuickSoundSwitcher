@@ -46,7 +46,7 @@ Rectangle {
             visible: card.iconSource && card.iconSource !== ""
             sourceSize.width: card.iconWidth
             sourceSize.height: card.iconHeight
-            color: card.imageMode ? "transparent" : (card.iconColor ? card.iconColor : palette.text)
+            color: card.imageMode ? "#00000000" : (card.iconColor ? card.iconColor : palette.text)
             Layout.preferredHeight: card.iconHeight
             Layout.preferredWidth: card.iconWidth
         }

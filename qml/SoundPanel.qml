@@ -13,7 +13,7 @@ ApplicationWindow {
     height: 200
     visible: false
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
-    color: "transparent"
+    color: "#00000000"
     property bool isAnimatingIn: false
     property bool isAnimatingOut: false
     property int margin: UserSettings.panelMargin
@@ -409,7 +409,7 @@ ApplicationWindow {
             radius: 12
             Rectangle {
                 anchors.fill: parent
-                color: "transparent"
+                color: "#00000000"
                 radius: 12
                 border.width: 1
                 border.color: "#E3E3E3"
@@ -425,7 +425,7 @@ ApplicationWindow {
             radius: 12
             Rectangle {
                 anchors.fill: parent
-                color: "transparent"
+                color: "#00000000"
                 radius: 12
                 border.width: 1
                 border.color: "#E3E3E3"
