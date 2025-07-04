@@ -40,82 +40,92 @@
     </message>
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="54"/>
-        <source>Panel margin</source>
+        <source>Panel X margin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="55"/>
-        <source>How far the panel should be pushed from screen edge</source>
+        <source>Control panel X axis margin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="70"/>
-        <source>Use short device names</source>
+        <source>Panel Y margin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="71"/>
+        <source>Control panel Y axis margin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="86"/>
+        <source>Use short device names</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
         <source>Shorten device names by shrinking description</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="81"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="97"/>
         <source>Volume value display mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="82"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="98"/>
         <source>Control how you want sound value to be displayed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
         <source>Slider tooltip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
         <source>Label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Hidden</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="95"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="111"/>
         <source>Media info display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="96"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="112"/>
         <source>Display currently playing media from Windows known sources</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Flyout (interactive)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Panel (informative)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="109"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="125"/>
         <source>Applications and devices label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="120"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="136"/>
         <source>Show audio level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="121"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="137"/>
         <source>Display audio level value in slider</source>
         <translation type="unfinished"></translation>
     </message>
@@ -448,7 +458,7 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="925"/>
+        <location filename="../qml/SoundPanel.qml" line="923"/>
         <source>ChatMix</source>
         <translation type="unfinished"></translation>
     </message>

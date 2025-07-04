@@ -39,83 +39,101 @@
         <translation>相对任务栏偏移量</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="54"/>
         <source>Panel margin</source>
-        <translation>面板边距</translation>
+        <translation type="vanished">面板边距</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="54"/>
+        <source>Panel X margin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>How far the panel should be pushed from screen edge</source>
+        <translation type="vanished">面板与屏幕边缘的间距</translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="55"/>
-        <source>How far the panel should be pushed from screen edge</source>
-        <translation>面板与屏幕边缘的间距</translation>
+        <source>Control panel X axis margin</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="70"/>
+        <source>Panel Y margin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="71"/>
+        <source>Control panel Y axis margin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="86"/>
         <source>Use short device names</source>
         <translation>对设备使用短名称</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="71"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
         <source>Shorten device names by shrinking description</source>
         <translation>只显示主设备名称，忽略端口以及描述等其他信息</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="81"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="97"/>
         <source>Volume value display mode</source>
         <translation>音量显示模式</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="82"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="98"/>
         <source>Control how you want sound value to be displayed</source>
         <translation>控制音量的显示方式</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
         <source>Slider tooltip</source>
         <translation>滑动条提示</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
         <source>Label</source>
         <translation>标签</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Hidden</source>
         <translation>隐藏</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="95"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="111"/>
         <source>Media info display</source>
         <translation>媒体信息显示方式</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="96"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="112"/>
         <source>Display currently playing media from Windows known sources</source>
         <translation>显示Windows识别的当前播放媒体信息</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Flyout (interactive)</source>
         <translation>弹出面板（可交互）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Panel (informative)</source>
         <translation>固定面板（仅显示信息）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="109"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="125"/>
         <source>Applications and devices label</source>
         <translation>应用程序及设备标签</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="120"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="136"/>
         <source>Show audio level</source>
         <translation>显示音量</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="121"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="137"/>
         <source>Display audio level value in slider</source>
         <translation>在滑动条显示音量</translation>
     </message>
@@ -448,7 +466,7 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="925"/>
+        <location filename="../qml/SoundPanel.qml" line="923"/>
         <source>ChatMix</source>
         <translation>ChatMix</translation>
     </message>

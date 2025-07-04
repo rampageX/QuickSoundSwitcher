@@ -16,8 +16,6 @@ ApplicationWindow {
     color: "#00000000"
     property bool isAnimatingIn: false
     property bool isAnimatingOut: false
-    property int margin: UserSettings.panelMargin
-    property int taskbarHeight: UserSettings.taskbarOffset
     property bool dataLoaded: false
     property string taskbarPos: SoundPanelBridge.taskbarPosition
 
@@ -165,24 +163,24 @@ ApplicationWindow {
 
         switch (panel.taskbarPos) {
         case "top":
-            panel.x = screenWidth - width - margin
-            panel.y = margin + taskbarHeight
+            panel.x = screenWidth - width - UserSettings.xAxisMargin
+            panel.y = UserSettings.yAxisMargin + UserSettings.taskbarOffset
             break
         case "bottom":
-            panel.x = screenWidth - width - margin
-            panel.y = screenHeight - height - margin - taskbarHeight
+            panel.x = screenWidth - width - UserSettings.xAxisMargin
+            panel.y = screenHeight - height - UserSettings.yAxisMargin - UserSettings.taskbarOffset
             break
         case "left":
-            panel.x = taskbarHeight
-            panel.y = screenHeight - height - margin
+            panel.x = UserSettings.taskbarOffset + UserSettings.xAxisMargin
+            panel.y = screenHeight - height - UserSettings.yAxisMargin
             break
         case "right":
-            panel.x = screenWidth - width - taskbarHeight
-            panel.y = screenHeight - height - margin
+            panel.x = screenWidth - width - UserSettings.xAxisMargin - UserSettings.taskbarOffset
+            panel.y = screenHeight - height - UserSettings.yAxisMargin
             break
         default:
-            panel.x = screenWidth - width - margin
-            panel.y = screenHeight - height - margin - taskbarHeight
+            panel.x = screenWidth - width - UserSettings.xAxisMargin
+            panel.y = screenHeight - height - UserSettings.yAxisMargin - UserSettings.taskbarOffset
             break
         }
     }

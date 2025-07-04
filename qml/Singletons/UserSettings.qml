@@ -7,10 +7,11 @@ Settings {
     property bool linkIO: false
     property bool keepAlive: false
     property int panelPosition: 1
-    property int taskbarOffset: 52
+    property int taskbarOffset: 48
     property bool deviceShortName: true
     property int volumeValueMode: 0
-    property int panelMargin: 12
+    property int xAxisMargin: 12
+    property int yAxisMargin: 12
     property int mediaMode: 0
     property bool displayDevAppLabel: true
     property bool closeDeviceListOnClick: true

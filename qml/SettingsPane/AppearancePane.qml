@@ -36,7 +36,7 @@ ColumnLayout {
             Card {
                 Layout.fillWidth: true
                 title: qsTr("Taskbar offset")
-                description: ""
+                description: "Windows taskbar size"
 
                 additionalControl: SpinBox {
                     Layout.preferredHeight: 35
@@ -51,8 +51,8 @@ ColumnLayout {
 
             Card {
                 Layout.fillWidth: true
-                title: qsTr("Panel margin")
-                description: qsTr("How far the panel should be pushed from screen edge")
+                title: qsTr("Panel X margin")
+                description: qsTr("Control panel X axis margin")
 
                 additionalControl: SpinBox {
                     Layout.preferredHeight: 35
@@ -60,8 +60,24 @@ ColumnLayout {
                     from: 0
                     to: 200
                     editable: true
-                    value: UserSettings.panelMargin
-                    onValueModified: UserSettings.panelMargin = value
+                    value: UserSettings.xAxisMargin
+                    onValueModified: UserSettings.xAxisMargin = value
+                }
+            }
+
+            Card {
+                Layout.fillWidth: true
+                title: qsTr("Panel Y margin")
+                description: qsTr("Control panel Y axis margin")
+
+                additionalControl: SpinBox {
+                    Layout.preferredHeight: 35
+                    Layout.preferredWidth: 160
+                    from: 0
+                    to: 200
+                    editable: true
+                    value: UserSettings.yAxisMargin
+                    onValueModified: UserSettings.yAxisMargin = value
                 }
             }
 

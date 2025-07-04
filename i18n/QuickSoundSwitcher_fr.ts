@@ -39,83 +39,101 @@
         <translation>Compensation de la barre des taches</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="54"/>
         <source>Panel margin</source>
-        <translation>Marge du panneau</translation>
+        <translation type="vanished">Marge du panneau</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="54"/>
+        <source>Panel X margin</source>
+        <translation>Marge du panneau (X)</translation>
+    </message>
+    <message>
+        <source>How far the panel should be pushed from screen edge</source>
+        <translation type="vanished">Distance entre le panneau et le bord de l’écran</translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="55"/>
-        <source>How far the panel should be pushed from screen edge</source>
-        <translation>Distance entre le panneau et le bord de l’écran</translation>
+        <source>Control panel X axis margin</source>
+        <translation>Controle la marge du panneau sur l&apos;axe X</translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/AppearancePane.qml" line="70"/>
+        <source>Panel Y margin</source>
+        <translation>Marge du panneau (Y)</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="71"/>
+        <source>Control panel Y axis margin</source>
+        <translation>Controle la marge du panneau sur l&apos;axe Y</translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="86"/>
         <source>Use short device names</source>
         <translation>Utiliser un nom court pour les périphériques</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="71"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
         <source>Shorten device names by shrinking description</source>
         <translation>Réduire les noms des périphériques en raccourcissant leur description</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="81"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="97"/>
         <source>Volume value display mode</source>
         <translation>Mode d&apos;affichage du volume</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="82"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="98"/>
         <source>Control how you want sound value to be displayed</source>
         <translation>Contrôlez la façon dont la valeur du volume est affichée</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
         <source>Slider tooltip</source>
         <translation>Infobulle</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
         <source>Label</source>
         <translation>Texte</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="87"/>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="103"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Hidden</source>
         <translation>Caché</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="95"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="111"/>
         <source>Media info display</source>
         <translation>Affichage des infos média</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="96"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="112"/>
         <source>Display currently playing media from Windows known sources</source>
         <translation>Afficher les médias en cours de lecture depuis les sources reconnues de Windows</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Flyout (interactive)</source>
         <translation>Flyout (interactif)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="101"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="117"/>
         <source>Panel (informative)</source>
         <translation>Panneau (informatif)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="109"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="125"/>
         <source>Applications and devices label</source>
         <translation>Nom des périphériques et applications</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="120"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="136"/>
         <source>Show audio level</source>
         <translation>Afficher le niveau audio</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/AppearancePane.qml" line="121"/>
+        <location filename="../qml/SettingsPane/AppearancePane.qml" line="137"/>
         <source>Display audio level value in slider</source>
         <translation>Affiche la valeur du niveau audio dans les sliders</translation>
     </message>
@@ -452,7 +470,7 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="925"/>
+        <location filename="../qml/SoundPanel.qml" line="923"/>
         <source>ChatMix</source>
         <translation></translation>
     </message>
