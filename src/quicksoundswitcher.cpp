@@ -350,12 +350,76 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
+// In quicksoundswitcher.cpp - add these helper functions
+bool QuickSoundSwitcher::isModifierPressed(int qtModifier)
+{
+    bool result = true;
+    if (qtModifier & Qt::ControlModifier) {
+        result &= (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+    }
+    if (qtModifier & Qt::ShiftModifier) {
+        result &= (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+    }
+    if (qtModifier & Qt::AltModifier) {
+        result &= (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
+    }
+    return result;
+}
+
+int QuickSoundSwitcher::qtKeyToVirtualKey(int qtKey)
+{
+    // Convert common Qt keys to Windows virtual keys
+    switch (qtKey) {
+    case Qt::Key_A: return 0x41;
+    case Qt::Key_B: return 0x42;
+    case Qt::Key_C: return 0x43;
+    case Qt::Key_D: return 0x44;
+    case Qt::Key_E: return 0x45;
+    case Qt::Key_F: return 0x46;
+    case Qt::Key_G: return 0x47;
+    case Qt::Key_H: return 0x48;
+    case Qt::Key_I: return 0x49;
+    case Qt::Key_J: return 0x4A;
+    case Qt::Key_K: return 0x4B;
+    case Qt::Key_L: return 0x4C;
+    case Qt::Key_M: return 0x4D;
+    case Qt::Key_N: return 0x4E;
+    case Qt::Key_O: return 0x4F;
+    case Qt::Key_P: return 0x50;
+    case Qt::Key_Q: return 0x51;
+    case Qt::Key_R: return 0x52;
+    case Qt::Key_S: return 0x53;
+    case Qt::Key_T: return 0x54;
+    case Qt::Key_U: return 0x55;
+    case Qt::Key_V: return 0x56;
+    case Qt::Key_W: return 0x57;
+    case Qt::Key_X: return 0x58;
+    case Qt::Key_Y: return 0x59;
+    case Qt::Key_Z: return 0x5A;
+    case Qt::Key_F1: return VK_F1;
+    case Qt::Key_F2: return VK_F2;
+    case Qt::Key_F3: return VK_F3;
+    case Qt::Key_F4: return VK_F4;
+    case Qt::Key_F5: return VK_F5;
+    case Qt::Key_F6: return VK_F6;
+    case Qt::Key_F7: return VK_F7;
+    case Qt::Key_F8: return VK_F8;
+    case Qt::Key_F9: return VK_F9;
+    case Qt::Key_F10: return VK_F10;
+    case Qt::Key_F11: return VK_F11;
+    case Qt::Key_F12: return VK_F12;
+    default: return 0;
+    }
+}
+
+// Update the KeyboardProc function
 LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode == HC_ACTION) {
         PKBDLLHOOKSTRUCT pKeyboard = reinterpret_cast<PKBDLLHOOKSTRUCT>(lParam);
 
         if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
+            // Handle volume keys first
             switch (pKeyboard->vkCode) {
             case VK_VOLUME_UP:
                 instance->adjustOutputVolume(true);
@@ -367,12 +431,73 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
                 instance->toggleMuteWithKey();
                 break;
             default:
+                // Check for custom shortcuts
+                if (instance->settings.value("globalShortcutsEnabled", true).toBool()) {
+                    instance->handleCustomShortcut(pKeyboard->vkCode);
+                }
                 break;
             }
         }
     }
 
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
+}
+
+// In src/quicksoundswitcher.cpp - update handleCustomShortcut:
+void QuickSoundSwitcher::handleCustomShortcut(DWORD vkCode)
+{
+    // Check if global shortcuts are enabled in settings
+    if (!settings.value("globalShortcutsEnabled", true).toBool()) {
+        return;
+    }
+
+    // Check if shortcuts are temporarily suspended (e.g., dialog open)
+    if (SoundPanelBridge::instance() && SoundPanelBridge::instance()->areGlobalShortcutsSuspended()) {
+        return;
+    }
+
+    // Panel shortcut
+    int panelKey = qtKeyToVirtualKey(settings.value("panelShortcutKey", static_cast<int>(Qt::Key_S)).toInt());
+    int panelModifiers = settings.value("panelShortcutModifiers", static_cast<int>(Qt::ControlModifier | Qt::ShiftModifier)).toInt();
+
+    if (vkCode == panelKey && isModifierPressed(panelModifiers)) {
+        togglePanel();
+        return;
+    }
+
+    // ChatMix shortcut
+    int chatMixKey = qtKeyToVirtualKey(settings.value("chatMixShortcutKey", static_cast<int>(Qt::Key_M)).toInt());
+    int chatMixModifiers = settings.value("chatMixShortcutModifiers", static_cast<int>(Qt::ControlModifier | Qt::ShiftModifier)).toInt();
+
+    if (vkCode == chatMixKey && isModifierPressed(chatMixModifiers)) {
+        toggleChatMix();
+        return;
+    }
+}
+
+void QuickSoundSwitcher::toggleChatMix()
+{
+    if (!settings.value("activateChatmix", false).toBool()) {
+        return;
+    }
+
+    if (SoundPanelBridge::instance()) {
+        settings.sync();
+        bool currentState = settings.value("chatMixEnabled", false).toBool();
+        QString statusText = currentState ? tr("Disabled") : tr("Enabled");
+        QString message = tr("ChatMix %1").arg(statusText);
+
+        SoundPanelBridge::instance()->toggleChatMixFromShortcut(!currentState);
+
+        if (settings.value("chatMixShortcutNotification", true).toBool()) {
+            trayIcon->showMessage(
+                message,
+                QString(),
+                QSystemTrayIcon::Information,
+                1000
+                );
+        }
+    }
 }
 
 void QuickSoundSwitcher::adjustOutputVolume(bool up)

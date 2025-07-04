@@ -347,11 +347,11 @@
 <context>
     <name>LanguagePane</name>
     <message>
-        <location filename="../qml/SettingsPane/LanguagePane.qml" line="10"/>
         <source>Debug and information</source>
-        <translation type="unfinished">Debug e informazioni</translation>
+        <translation type="obsolete">Debug e informazioni</translation>
     </message>
     <message>
+        <location filename="../qml/SettingsPane/LanguagePane.qml" line="10"/>
         <location filename="../qml/SettingsPane/LanguagePane.qml" line="25"/>
         <source>Application language</source>
         <translation type="unfinished"></translation>
@@ -411,17 +411,32 @@
     </message>
     <message>
         <location filename="../src/quicksoundswitcher.cpp" line="173"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="500"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="625"/>
         <source>Exit</source>
         <translation>Esci</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="512"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="487"/>
+        <source>Enabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/quicksoundswitcher.cpp" line="487"/>
+        <source>Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/quicksoundswitcher.cpp" line="488"/>
+        <source>ChatMix %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/quicksoundswitcher.cpp" line="637"/>
         <source>Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="521"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="646"/>
         <source>Input</source>
         <translation type="unfinished"></translation>
     </message>
@@ -450,19 +465,101 @@
     </message>
     <message>
         <location filename="../qml/SettingsWindow.qml" line="86"/>
-        <source>Language</source>
+        <source>Shortcuts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../qml/SettingsWindow.qml" line="90"/>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsWindow.qml" line="94"/>
         <source>Debug</source>
         <translation>Debug</translation>
     </message>
 </context>
 <context>
+    <name>ShortcutsPane</name>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="12"/>
+        <source>Global Shortcuts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="27"/>
+        <source>Enable global shortcuts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="28"/>
+        <source>Allow QuickSoundSwitcher to respond to keyboard shortcuts globally</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="38"/>
+        <source>Notification on ChatMix toggle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="48"/>
+        <source>Show/Hide Panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="49"/>
+        <source>Shortcut to toggle the main panel visibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="61"/>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="82"/>
+        <source>Change</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="70"/>
+        <source>Toggle ChatMix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="71"/>
+        <source>Shortcut to enable/disable ChatMix feature</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="123"/>
+        <source>Set Panel Shortcut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="144"/>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="234"/>
+        <source>Press the desired key combination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="191"/>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="281"/>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="197"/>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="287"/>
+        <source>Apply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="213"/>
+        <source>Set ChatMix Shortcut</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="923"/>
+        <location filename="../qml/SoundPanel.qml" line="935"/>
         <source>ChatMix</source>
         <translation type="unfinished"></translation>
     </message>

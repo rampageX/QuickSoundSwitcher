@@ -360,6 +360,18 @@ ApplicationWindow {
                 }
             }
         }
+
+        function onChatMixEnabledChanged(enabled) {
+            if (enabled) {
+                UserSettings.chatMixEnabled = true
+                UserSettings.sync()
+                SoundPanelBridge.applyChatMixToApplications()
+            } else {
+                UserSettings.chatMixEnabled = false
+                UserSettings.sync()
+                SoundPanelBridge.restoreOriginalVolumes()
+            }
+        }
     }
 
     function updatePanelHeight() {

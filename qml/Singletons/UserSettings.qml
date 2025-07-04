@@ -24,4 +24,11 @@ Settings {
     property bool activateChatmix: false
     property bool showAudioLevel: true
     property int chatmixRestoreVolume: 80
+
+    property bool globalShortcutsEnabled: true
+    property int panelShortcutKey: 83        // Qt.Key_S
+    property int panelShortcutModifiers: 117440512  // Qt.ControlModifier | Qt.ShiftModifier
+    property int chatMixShortcutKey: 77      // Qt.Key_M
+    property int chatMixShortcutModifiers: 117440512  // Qt.ControlModifier | Qt.ShiftModifier
+    property bool chatMixShortcutNotification: true
 }

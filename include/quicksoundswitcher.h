@@ -60,6 +60,10 @@ private:
     void uninstallKeyboardHook();
 
     void updateTrayMenu();
+    void handleCustomShortcut(DWORD vkCode);
+    void toggleChatMix();
+    bool isModifierPressed(int qtModifier);
+    int qtKeyToVirtualKey(int qtKey);
 };
 
 #endif // QUICKSOUNDSWITCHER_H

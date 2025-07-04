@@ -1104,3 +1104,24 @@ void SoundPanelBridge::startAudioLevelMonitoring() {
 void SoundPanelBridge::stopAudioLevelMonitoring() {
     AudioManager::stopAudioLevelMonitoring();
 }
+
+void SoundPanelBridge::toggleChatMixFromShortcut(bool enabled)
+{
+    // Force emit the signal to update any connected UI elements
+    emit chatMixEnabledChanged(enabled);
+}
+
+void SoundPanelBridge::suspendGlobalShortcuts()
+{
+    m_globalShortcutsSuspended = true;
+}
+
+void SoundPanelBridge::resumeGlobalShortcuts()
+{
+    m_globalShortcutsSuspended = false;
+}
+
+bool SoundPanelBridge::areGlobalShortcutsSuspended() const
+{
+    return m_globalShortcutsSuspended;
+}

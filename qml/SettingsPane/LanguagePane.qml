@@ -7,7 +7,7 @@ ColumnLayout {
     spacing: 3
 
     Label {
-        text: qsTr("Debug and information")
+        text: qsTr("Application language")
         font.pixelSize: 22
         font.bold: true
         Layout.bottomMargin: 15

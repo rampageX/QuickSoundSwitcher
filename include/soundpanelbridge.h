@@ -114,6 +114,11 @@ public:
     Q_INVOKABLE void startAudioLevelMonitoring();
     Q_INVOKABLE void stopAudioLevelMonitoring();
 
+    Q_INVOKABLE void toggleChatMixFromShortcut(bool enabled);
+    Q_INVOKABLE void suspendGlobalShortcuts();
+    Q_INVOKABLE void resumeGlobalShortcuts();
+    bool areGlobalShortcutsSuspended() const;
+
 public slots:
     void onPlaybackVolumeChanged(int volume);
     void onRecordingVolumeChanged(int volume);
@@ -149,6 +154,7 @@ signals:
     void applicationAudioLevelsChanged();
     void playbackAudioLevelChanged();
     void recordingAudioLevelChanged();
+    void chatMixEnabledChanged(bool enabled);
 
 private:
     static SoundPanelBridge* m_instance;
@@ -206,6 +212,7 @@ private:
     QVariantMap m_applicationAudioLevels;
     int m_playbackAudioLevel = 0;
     int m_recordingAudioLevel = 0;
+    bool m_globalShortcutsSuspended = false;
 };
 
 #endif // SOUNDPANELBRIDGE_H

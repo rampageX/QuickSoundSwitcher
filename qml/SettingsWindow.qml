@@ -83,6 +83,10 @@ ApplicationWindow {
                             icon: "qrc:/icons/headset.svg"
                         },
                         {
+                            text: qsTr("Shortcuts"),
+                            icon: "qrc:/icons/keyboard.svg"
+                        },
+                        {
                             text: qsTr("Language"),
                             icon: "qrc:/icons/language.svg"
                         },
@@ -126,8 +130,9 @@ ApplicationWindow {
                                     case 0: stackView.push(generalPaneComponent); break
                                     case 1: stackView.push(appearancePaneComponent); break
                                     case 2: stackView.push(commAppsPaneComponent); break
-                                    case 3: stackView.push(languagePaneComponent); break
-                                    case 4: stackView.push(debugPaneComponent); break
+                                    case 3: stackView.push(shortcutsPaneComponent); break
+                                    case 4: stackView.push(languagePaneComponent); break
+                                    case 5: stackView.push(debugPaneComponent); break
                                 }
                             }
                         }
@@ -184,6 +189,11 @@ ApplicationWindow {
             Component {
                 id: commAppsPaneComponent
                 CommAppsPane {}
+            }
+
+            Component {
+                id: shortcutsPaneComponent
+                ShortcutsPane {}
             }
 
             Component {
