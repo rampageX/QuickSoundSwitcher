@@ -19,6 +19,7 @@ ColumnLayout {
         ColumnLayout {
             width: parent.width
             spacing: 3
+
             Card {
                 Layout.fillWidth: true
                 title: qsTr("Application version")
@@ -31,12 +32,12 @@ ColumnLayout {
                     onClicked: {
                         parent.clickCount++
                         if (parent.clickCount >= 5) {
-                            //easterEggDialog.open()
                             Context.easterEggRequested()
                             parent.clickCount = 0
                         }
                     }
                 }
+
                 additionalControl: Label {
                     text: SoundPanelBridge.getAppVersion()
                     opacity: 0.5

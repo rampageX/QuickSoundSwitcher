@@ -237,22 +237,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/DebugPane.qml" line="24"/>
+        <location filename="../qml/SettingsPane/DebugPane.qml" line="25"/>
         <source>Application version</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/DebugPane.qml" line="48"/>
+        <location filename="../qml/SettingsPane/DebugPane.qml" line="49"/>
         <source>QT version</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/DebugPane.qml" line="59"/>
+        <location filename="../qml/SettingsPane/DebugPane.qml" line="60"/>
         <source>Commit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/DebugPane.qml" line="70"/>
+        <location filename="../qml/SettingsPane/DebugPane.qml" line="71"/>
         <source>Build date</source>
         <translation type="unfinished"></translation>
     </message>
@@ -344,7 +344,7 @@
     <name>LanguagePane</name>
     <message>
         <location filename="../qml/SettingsPane/LanguagePane.qml" line="10"/>
-        <source>Debug and information</source>
+        <source>Application Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -386,38 +386,38 @@
 <context>
     <name>QuickSoundSwitcher</name>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="173"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="500"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="181"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="506"/>
         <source>Exit</source>
         <translation>종료</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="157"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="165"/>
         <source>Output: Loading...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="160"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="168"/>
         <source>Input: Loading...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="165"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="173"/>
         <source>Windows sound settings (Legacy)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="168"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="176"/>
         <source>Windows sound settings (Modern)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="512"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="518"/>
         <source>Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="521"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="527"/>
         <source>Input</source>
         <translation type="unfinished"></translation>
     </message>
@@ -451,6 +451,11 @@
     </message>
     <message>
         <location filename="../qml/SettingsWindow.qml" line="90"/>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsWindow.qml" line="94"/>
         <source>Debug</source>
         <translation type="unfinished"></translation>
     </message>
@@ -460,6 +465,59 @@
     <message>
         <location filename="../qml/SoundPanel.qml" line="923"/>
         <source>ChatMix</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UpdatePane</name>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="21"/>
+        <source>Updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="37"/>
+        <source>Update available: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="38"/>
+        <source>A new version is ready to download and install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="41"/>
+        <source>Update now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="52"/>
+        <source>Automatic updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="53"/>
+        <source>Check for updates every 4 hours automatically</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="67"/>
+        <source>Check for updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="68"/>
+        <source>Manually check for application updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="72"/>
+        <source>Checking...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/UpdatePane.qml" line="72"/>
+        <source>Check now</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

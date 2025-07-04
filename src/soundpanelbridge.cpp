@@ -7,6 +7,9 @@
 #include "version.h"
 #include "translation_progress.h"
 #include "mediasessionmanager.h"
+#include <QNetworkRequest>
+#include <QProcess>
+#include <QCoreApplication>
 
 SoundPanelBridge* SoundPanelBridge::m_instance = nullptr;
 
@@ -22,23 +25,30 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     , translator(new QTranslator(this))
     , m_chatMixValue(50)
     , m_chatMixCheckTimer(new QTimer(this))
+    , m_networkManager(new QNetworkAccessManager(this))
+    , m_updateTimer(new QTimer(this))
+    , m_updateCheckInProgress(false)
 {
     m_instance = this;
 
     loadCommAppsFromFile();
-
     m_chatMixValue = settings.value("chatMixValue", 50).toInt();
-
 
     changeApplicationLanguage(settings.value("languageIndex", 0).toInt());
     populateApplications();
-    // Setup ChatMix monitoring timer
-    m_chatMixCheckTimer->setInterval(500); // Check every 2 seconds
+
+    m_chatMixCheckTimer->setInterval(500);
     connect(m_chatMixCheckTimer, &QTimer::timeout, this, &SoundPanelBridge::checkAndApplyChatMixToNewApps);
 
     if (settings.value("chatMixEnabled").toBool()) {
         startChatMixMonitoring();
     }
+
+    // Setup update timer - check every 4 hours
+    m_updateTimer->setInterval(4 * 60 * 60 * 1000);
+    m_updateTimer->setSingleShot(false);
+    connect(m_updateTimer, &QTimer::timeout, this, &SoundPanelBridge::performPeriodicCheck);
+    connect(m_networkManager, &QNetworkAccessManager::finished, this, &SoundPanelBridge::onUpdateCheckFinished);
 
     // Connect to audio worker signals for async operations
     if (AudioManager::getWorker()) {
@@ -68,7 +78,6 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     emit applicationsChanged(convertApplicationsToVariant(apps));
                     m_applicationsReady = true;
 
-                    // Apply ChatMix if enabled (works for both startup and panel refresh)
                     checkAndApplyChatMixToNewApps();
 
                     if (m_isInitializing) {
@@ -167,6 +176,159 @@ SoundPanelBridge* SoundPanelBridge::instance()
     return m_instance;
 }
 
+// Update methods
+void SoundPanelBridge::startPeriodicUpdateCheck()
+{
+    if (settings.value("autoUpdateCheck", true).toBool()) {
+        m_updateTimer->start();
+    }
+}
+
+void SoundPanelBridge::setAutoUpdateCheck(bool enabled)
+{
+    if (enabled) {
+        m_updateTimer->start();
+    } else {
+        m_updateTimer->stop();
+    }
+}
+
+bool SoundPanelBridge::updateCheckInProgress() const
+{
+    return m_updateCheckInProgress;
+}
+
+void SoundPanelBridge::checkForUpdates()
+{
+    if (m_updateCheckInProgress) {
+        return;
+    }
+
+    qDebug() << "Checking for updates...";
+    m_updateCheckInProgress = true;
+    emit updateCheckInProgressChanged();
+
+    QNetworkRequest request;
+    request.setUrl(QUrl("https://api.github.com/repos/Odizinne/QuickSoundSwitcher/releases/latest"));
+    request.setRawHeader("User-Agent", "QuickSoundSwitcher-UpdateChecker");
+    request.setRawHeader("Accept", "application/vnd.github.v3+json");
+
+    m_networkManager->get(request);
+}
+
+void SoundPanelBridge::onUpdateCheckFinished(QNetworkReply* reply)
+{
+    reply->deleteLater();
+    m_updateCheckInProgress = false;
+    emit updateCheckInProgressChanged();
+
+    if (reply->error() != QNetworkReply::NoError) {
+        qDebug() << "Update check failed:" << reply->errorString();
+        emit updateCheckCompleted(false, "");
+        return;
+    }
+
+    QByteArray data = reply->readAll();
+
+    try {
+        parseGitHubResponse(data);
+        bool hasUpdate = isVersionNewer(getCurrentVersion(), m_pendingUpdateVersion);
+
+        qDebug() << "Current version:" << getCurrentVersion();
+        qDebug() << "Available version:" << m_pendingUpdateVersion;
+        qDebug() << "Has update:" << hasUpdate;
+
+        emit updateCheckCompleted(hasUpdate, m_pendingUpdateVersion);
+
+        bool testMode = true;
+        if (hasUpdate || testMode) {
+            settings.setValue("pendingUpdate/version", m_pendingUpdateVersion);
+            settings.setValue("pendingUpdate/downloadUrl", m_pendingUpdateUrl);
+            qDebug() << m_pendingUpdateUrl;
+            emit updateAvailable(m_pendingUpdateVersion, m_pendingUpdateUrl);
+        }
+    } catch (const std::exception& e) {
+        qDebug() << "Failed to parse response:" << e.what();
+        emit updateCheckCompleted(false, "");
+    }
+}
+
+void SoundPanelBridge::performPeriodicCheck()
+{
+    checkForUpdates();
+}
+
+void SoundPanelBridge::startUpdate()
+{
+    QString version = settings.value("pendingUpdate/version").toString();
+    QString downloadUrl = settings.value("pendingUpdate/downloadUrl").toString();
+
+    if (downloadUrl.isEmpty()) {
+        qDebug() << "No update URL available";
+        return;
+    }
+
+    qDebug() << "Starting update to version:" << version;
+
+    QString updaterPath = QCoreApplication::applicationDirPath() + "/QSSUpdater.exe";
+    QStringList arguments;
+    arguments << downloadUrl << QCoreApplication::applicationFilePath();
+
+    if (QProcess::startDetached(updaterPath, arguments)) {
+        qDebug() << "Updater launched successfully";
+        QCoreApplication::quit();
+    } else {
+        qDebug() << "Failed to start updater";
+    }
+}
+
+void SoundPanelBridge::parseGitHubResponse(const QByteArray& data)
+{
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        throw std::runtime_error(error.errorString().toStdString());
+    }
+
+    QJsonObject obj = doc.object();
+    m_pendingUpdateVersion = obj["tag_name"].toString();
+
+    QJsonArray assets = obj["assets"].toArray();
+    m_pendingUpdateUrl.clear();
+
+    for (const auto& asset : assets) {
+        QJsonObject assetObj = asset.toObject();
+        QString name = assetObj["name"].toString();
+        // Look for zip file instead of exe
+        if (name.contains("QuickSoundSwitcher") && name.endsWith(".zip")) {
+            m_pendingUpdateUrl = assetObj["browser_download_url"].toString();
+            break;
+        }
+    }
+
+    if (m_pendingUpdateUrl.isEmpty()) {
+        throw std::runtime_error("No Windows zip file found in release assets");
+    }
+}
+
+bool SoundPanelBridge::isVersionNewer(const QString& current, const QString& available)
+{
+    QString cleanCurrent = current.startsWith('v') ? current.mid(1) : current;
+    QString cleanAvailable = available.startsWith('v') ? available.mid(1) : available;
+
+    QVersionNumber currentVersion = QVersionNumber::fromString(cleanCurrent);
+    QVersionNumber availableVersion = QVersionNumber::fromString(cleanAvailable);
+
+    return QVersionNumber::compare(availableVersion, currentVersion) > 0;
+}
+
+QString SoundPanelBridge::getCurrentVersion() const
+{
+    return APP_VERSION_STRING;
+}
+
+// All existing methods remain the same...
 bool SoundPanelBridge::getShortcutState()
 {
     return ShortcutManager::isShortcutPresent("QuickSoundSwitcher.lnk");
@@ -234,7 +396,6 @@ int SoundPanelBridge::panelMode() const
     return settings.value("panelMode", 0).toInt();
 }
 
-// ChatMix methods
 int SoundPanelBridge::chatMixValue() const
 {
     return m_chatMixValue;
@@ -242,7 +403,6 @@ int SoundPanelBridge::chatMixValue() const
 
 QStringList SoundPanelBridge::getCommAppsFromSettings() const
 {
-    // Convert from new format for backward compatibility if needed
     QStringList result;
     for (const CommApp& app : m_commApps) {
         result.append(app.name);
@@ -258,17 +418,12 @@ bool SoundPanelBridge::isCommApp(const QString& name) const
 
 void SoundPanelBridge::applyChatMixToApplications()
 {
-    // ChatMix slider controls ONLY non-comm apps
-    // 100% = non-comm apps at 100%, 0% = non-comm apps at 0%
-    // Comm apps are always set to 100%
-
-    int nonCommAppVolume = m_chatMixValue; // Direct mapping: slider value = volume
+    int nonCommAppVolume = m_chatMixValue;
 
     for (const Application& app : applications) {
         bool isComm = isCommApp(app.name);
         int targetVolume = isComm ? 100 : nonCommAppVolume;
 
-        // Apply volume to all apps
         bool shouldGroup = settings.value("groupApplications", true).toBool();
         if (shouldGroup) {
             QStringList appIDs = app.id.split(";");
@@ -318,7 +473,7 @@ void SoundPanelBridge::initializeData() {
     m_applicationsReady = false;
     m_currentPropertiesReady = false;
 
-    if (mode == 0 || mode == 2) {  // devices + mixer OR devices only
+    if (mode == 0 || mode == 2) {
         populatePlaybackDevices();
         populateRecordingDevices();
         AudioManager::queryCurrentPropertiesAsync();
@@ -328,7 +483,7 @@ void SoundPanelBridge::initializeData() {
         m_recordingDevicesReady = true;
     }
 
-    if (mode == 0 || mode == 1) {  // devices + mixer OR mixer only
+    if (mode == 0 || mode == 1) {
         populateApplications();
     } else {
         m_applicationsReady = true;
@@ -394,11 +549,9 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
     bool shouldGroup = settings.value("groupApplications", true).toBool();
 
     if (!shouldGroup) {
-        // Show individual sinks without grouping, but sorted alphabetically
         QList<Application> filteredApps;
         QList<Application> systemSoundApps;
 
-        // First filter and separate system sounds from regular apps
         for (const Application &app : apps) {
             if (app.name.isEmpty() ||
                 app.name.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
@@ -412,14 +565,12 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
             }
         }
 
-        // Sort regular apps alphabetically by display name
         std::sort(filteredApps.begin(), filteredApps.end(), [](const Application &a, const Application &b) {
             QString nameA = a.name.isEmpty() ? a.name : a.name;
             QString nameB = b.name.isEmpty() ? b.name : b.name;
             return nameA.compare(nameB, Qt::CaseInsensitive) < 0;
         });
 
-        // Convert regular apps to variant list
         for (const Application &app : filteredApps) {
             QPixmap iconPixmap = app.icon.pixmap(16, 16);
             QByteArray byteArray;
@@ -439,7 +590,6 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
             applicationList.append(appMap);
         }
 
-        // Add system sounds at the end (each individual sink)
         for (const Application &app : systemSoundApps) {
             QPixmap iconPixmap = app.icon.pixmap(16, 16);
             QByteArray byteArray;
@@ -454,7 +604,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
             appMap["isMuted"] = app.isMuted;
             appMap["volume"] = app.volume;
             appMap["icon"] = "data:image/png;base64," + base64Icon;
-            appMap["audioLevel"] = app.audioLevel;  // Fixed: use app.audioLevel instead of undefined maxLevel
+            appMap["audioLevel"] = app.audioLevel;
 
             applicationList.append(appMap);
         }
@@ -462,11 +612,9 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
         return applicationList;
     }
 
-    // Original grouping logic (naturally sorted by QMap keys)
     QMap<QString, QVector<Application>> groupedApps;
     QVector<Application> systemSoundApps;
 
-    // Group applications by executable name
     for (const Application &app : apps) {
         if (app.name.isEmpty() ||
             app.name.compare("QuickSoundSwitcher", Qt::CaseInsensitive) == 0) {
@@ -480,7 +628,6 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
         groupedApps[app.name].append(app);
     }
 
-    // Process grouped applications
     for (auto it = groupedApps.begin(); it != groupedApps.end(); ++it) {
         QString executableName = it.key();
         QVector<Application> appGroup = it.value();
@@ -502,7 +649,6 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
                      })->volume;
         }
 
-        // Calculate max audio level for grouped apps
         int maxAudioLevel = 0;
         if (!appGroup.isEmpty()) {
             maxAudioLevel = std::max_element(appGroup.begin(), appGroup.end(), [](const Application &a, const Application &b) {
@@ -528,12 +674,11 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
         appMap["isMuted"] = isMuted;
         appMap["volume"] = volume;
         appMap["icon"] = "data:image/png;base64," + base64Icon;
-        appMap["audioLevel"] = maxAudioLevel;  // Added: max audio level for grouped apps
+        appMap["audioLevel"] = maxAudioLevel;
 
         applicationList.append(appMap);
     }
 
-    // Process system sounds (grouped version - at the end)
     if (!systemSoundApps.isEmpty()) {
         QString displayName = systemSoundApps[0].name.isEmpty() ? "Windows system sounds" : systemSoundApps[0].name;
 
@@ -548,7 +693,6 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
                      })->volume;
         }
 
-        // Calculate max audio level for system sounds
         int maxAudioLevel = 0;
         if (!systemSoundApps.isEmpty()) {
             maxAudioLevel = std::max_element(systemSoundApps.begin(), systemSoundApps.end(), [](const Application &a, const Application &b) {
@@ -574,7 +718,7 @@ QVariantList SoundPanelBridge::convertApplicationsToVariant(const QList<Applicat
         appMap["isMuted"] = isMuted;
         appMap["volume"] = volume;
         appMap["icon"] = "data:image/png;base64," + base64Icon;
-        appMap["audioLevel"] = maxAudioLevel;  // Added: max audio level for system sounds
+        appMap["audioLevel"] = maxAudioLevel;
 
         applicationList.append(appMap);
 
@@ -623,7 +767,6 @@ void SoundPanelBridge::onApplicationVolumeSliderValueChanged(QString appID, int 
     bool shouldGroup = settings.value("groupApplications", true).toBool();
     bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
 
-    // Don't allow direct volume changes when chatmix is enabled
     if (chatMixEnabled) {
         return;
     }
@@ -794,13 +937,12 @@ QString SoundPanelBridge::getCurrentLanguageCode() const {
     QLocale locale;
     QString languageCode = locale.name().section('_', 0, 0);
 
-    // Handle Chinese variants specifically
     if (languageCode == "zh") {
         QString fullLocale = locale.name();
         if (fullLocale.startsWith("zh_CN")) {
             return "zh_CN";
         }
-        return "zh_CN"; // Default to simplified Chinese
+        return "zh_CN";
     }
 
     return languageCode;
@@ -809,13 +951,12 @@ QString SoundPanelBridge::getCurrentLanguageCode() const {
 int SoundPanelBridge::getTotalTranslatableStrings() const {
     auto allProgress = getTranslationProgressMap();
 
-    // Just get the total from any language (they should all be the same)
     for (auto it = allProgress.begin(); it != allProgress.end(); ++it) {
         QVariantMap langData = it.value().toMap();
         return langData["total"].toInt();
     }
 
-    return 0; // Fallback
+    return 0;
 }
 
 int SoundPanelBridge::getCurrentLanguageFinishedStrings(int languageIndex) const {
@@ -827,7 +968,7 @@ int SoundPanelBridge::getCurrentLanguageFinishedStrings(int languageIndex) const
         return langData["finished"].toInt();
     }
 
-    return 0; // Fallback
+    return 0;
 }
 
 void SoundPanelBridge::changeApplicationLanguage(int languageIndex)
@@ -964,7 +1105,6 @@ void SoundPanelBridge::saveCommAppsToFile()
 
 void SoundPanelBridge::addCommApp(const QString& name)
 {
-    // Check if already exists
     for (const CommApp& existing : m_commApps) {
         if (existing.name.compare(name, Qt::CaseInsensitive) == 0) {
             return;
@@ -974,10 +1114,8 @@ void SoundPanelBridge::addCommApp(const QString& name)
     CommApp newApp;
     newApp.name = name;
 
-    // Search for matching application to get the icon
     for (const Application& app : applications) {
         if (app.name.compare(name, Qt::CaseInsensitive) == 0) {
-            // Convert QIcon to base64 string
             QPixmap iconPixmap = app.icon.pixmap(16, 16);
             QByteArray byteArray;
             QBuffer buffer(&byteArray);
@@ -1011,8 +1149,7 @@ void SoundPanelBridge::restoreOriginalVolumes()
     stopChatMixMonitoring();
 
     int restoredVolume = settings.value("chatmixRestoreVolume", 80).toInt();
-    // Restore ALL applications to 100% volume
-    for (Application& app : applications) {  // Note: non-const reference
+    for (Application& app : applications) {
         bool shouldGroup = settings.value("groupApplications", true).toBool();
         if (shouldGroup) {
             QStringList appIDs = app.id.split(";");
@@ -1023,11 +1160,9 @@ void SoundPanelBridge::restoreOriginalVolumes()
             AudioManager::setApplicationVolumeAsync(app.id, restoredVolume);
         }
 
-        // Update the model data immediately
         app.volume = restoredVolume;
     }
 
-    // Emit the updated model to refresh UI
     emit applicationsChanged(convertApplicationsToVariant(applications));
 }
 
@@ -1048,15 +1183,12 @@ void SoundPanelBridge::updateMissingCommAppIcons()
     bool iconsUpdated = false;
 
     for (CommApp& commApp : m_commApps) {
-        // Skip if already has an icon
         if (!commApp.icon.isEmpty()) {
             continue;
         }
 
-        // Search for matching application to get the icon
         for (const Application& app : applications) {
             if (app.name.compare(commApp.name, Qt::CaseInsensitive) == 0) {
-                // Convert QIcon to base64 string
                 QPixmap iconPixmap = app.icon.pixmap(16, 16);
                 if (!iconPixmap.isNull()) {
                     QByteArray byteArray;

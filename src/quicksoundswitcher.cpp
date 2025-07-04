@@ -28,6 +28,7 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , settings("Odizinne", "QuickSoundSwitcher")
     , outputDeviceAction(nullptr)
     , inputDeviceAction(nullptr)
+    , m_updateAction(nullptr)
     , currentOutputDevice("")
     , currentInputDevice("")
 {
@@ -61,6 +62,11 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     if (SoundPanelBridge::instance()) {
         connect(SoundPanelBridge::instance(), &SoundPanelBridge::languageChanged,
                 this, &QuickSoundSwitcher::onLanguageChanged);
+
+        // Start periodic update checking
+        SoundPanelBridge::instance()->startPeriodicUpdateCheck();
+        connect(SoundPanelBridge::instance(), &SoundPanelBridge::updateAvailable,
+                this, &QuickSoundSwitcher::onUpdateAvailable);
     }
 
     createTrayIcon();
@@ -154,6 +160,8 @@ void QuickSoundSwitcher::createTrayIcon()
 
     QMenu *trayMenu = new QMenu(this);
 
+    // Update action will be inserted here dynamically when available
+
     outputDeviceAction = new QAction(tr("Output: Loading..."), this);
     trayMenu->addAction(outputDeviceAction);
 
@@ -176,8 +184,6 @@ void QuickSoundSwitcher::createTrayIcon()
     connect(exitAction, &QAction::triggered, this, &QApplication::quit);
     connect(lSoundSettingsAction, &QAction::triggered, this, &QuickSoundSwitcher::openLegacySoundSettings);
     connect(mSoundSettingsAction, &QAction::triggered, this, &QuickSoundSwitcher::openModernSoundSettings);
-
-
 
     trayIcon->setContextMenu(trayMenu);
     trayIcon->setToolTip("Quick Sound Switcher");
@@ -529,4 +535,47 @@ void QuickSoundSwitcher::openLegacySoundSettings() {
 
 void QuickSoundSwitcher::openModernSoundSettings() {
     QProcess::startDetached("explorer", QStringList() << "ms-settings:sound");
+}
+
+void QuickSoundSwitcher::onUpdateAvailable(const QString& version, const QString& downloadUrl)
+{
+    qDebug() << "Update available:" << version;
+
+    QString message = QString("Version %1 is available!\n\nClick here to update.").arg(version);
+    trayIcon->showMessage("Update Available", message, QSystemTrayIcon::Information, 10000);
+
+    // Add update action to tray menu
+    QMenu* menu = trayIcon->contextMenu();
+    if (menu) {
+        // Remove existing update action if any
+        if (m_updateAction) {
+            menu->removeAction(m_updateAction);
+            delete m_updateAction;
+            m_updateAction = nullptr;
+        }
+
+        // Create new update action
+        m_updateAction = new QAction(QString("🔄 Update to %1").arg(version), this);
+        connect(m_updateAction, &QAction::triggered, [this]() {
+            if (SoundPanelBridge::instance()) {
+                SoundPanelBridge::instance()->startUpdate();
+            }
+        });
+
+        // Insert at the top of the menu
+        QList<QAction*> actions = menu->actions();
+        if (!actions.isEmpty()) {
+            menu->insertAction(actions.first(), m_updateAction);
+            menu->insertSeparator(actions.at(0));
+        } else {
+            menu->addAction(m_updateAction);
+        }
+    }
+
+    // Connect to tray icon message click to also trigger update
+    connect(trayIcon, &QSystemTrayIcon::messageClicked, [this]() {
+        if (SoundPanelBridge::instance()) {
+            SoundPanelBridge::instance()->startUpdate();
+        }
+    });
 }

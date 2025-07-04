@@ -17,6 +17,9 @@
 #include <QDir>
 #include <QFile>
 #include <QVariant>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QVersionNumber>
 
 class SoundPanelBridge : public QObject
 {
@@ -45,6 +48,8 @@ class SoundPanelBridge : public QObject
     Q_PROPERTY(int playbackAudioLevel READ playbackAudioLevel NOTIFY playbackAudioLevelChanged)
     Q_PROPERTY(int recordingAudioLevel READ recordingAudioLevel NOTIFY recordingAudioLevelChanged)
 
+    // Update properties
+    Q_PROPERTY(bool updateCheckInProgress READ updateCheckInProgress NOTIFY updateCheckInProgressChanged)
 
 public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
@@ -114,6 +119,13 @@ public:
     Q_INVOKABLE void startAudioLevelMonitoring();
     Q_INVOKABLE void stopAudioLevelMonitoring();
 
+    // Update methods
+    Q_INVOKABLE void checkForUpdates();
+    Q_INVOKABLE void startUpdate();
+    bool updateCheckInProgress() const;
+    void startPeriodicUpdateCheck();
+    Q_INVOKABLE void setAutoUpdateCheck(bool enabled);
+
 public slots:
     void onPlaybackVolumeChanged(int volume);
     void onRecordingVolumeChanged(int volume);
@@ -149,6 +161,15 @@ signals:
     void applicationAudioLevelsChanged();
     void playbackAudioLevelChanged();
     void recordingAudioLevelChanged();
+
+    // Update signals
+    void updateCheckInProgressChanged();
+    void updateCheckCompleted(bool hasUpdate, const QString& version);
+    void updateAvailable(const QString& version, const QString& downloadUrl);
+
+private slots:
+    void onUpdateCheckFinished(QNetworkReply* reply);
+    void performPeriodicCheck();
 
 private:
     static SoundPanelBridge* m_instance;
@@ -206,6 +227,18 @@ private:
     QVariantMap m_applicationAudioLevels;
     int m_playbackAudioLevel = 0;
     int m_recordingAudioLevel = 0;
+
+    // Update members
+    QNetworkAccessManager* m_networkManager;
+    QTimer* m_updateTimer;
+    bool m_updateCheckInProgress;
+    QString m_pendingUpdateVersion;
+    QString m_pendingUpdateUrl;
+
+    // Update helper methods
+    bool isVersionNewer(const QString& current, const QString& available);
+    void parseGitHubResponse(const QByteArray& data);
+    QString getCurrentVersion() const;
 };
 
 #endif // SOUNDPANELBRIDGE_H

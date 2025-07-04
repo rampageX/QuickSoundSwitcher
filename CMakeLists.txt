@@ -17,6 +17,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Widgets
     LinguistTools
     Multimedia
+    Network
 )
 
 qt_standard_project_setup(REQUIRES 6.9)
@@ -32,6 +33,7 @@ set(SOURCES
     src/utils.cpp
     src/main.cpp
     src/mediasessionmanager.cpp
+    src/updatechecker.cpp
 )
 
 set(HEADERS
@@ -42,6 +44,7 @@ set(HEADERS
     include/soundpanelbridge.h
     include/utils.h
     include/mediasessionmanager.h
+    include/updatechecker.h
 )
 
 # Get git commit hash
@@ -97,6 +100,7 @@ set(QML_FILES
     qml/SettingsPane/LanguagePane.qml
     qml/SettingsPane/DebugPane.qml
     qml/SettingsPane/CommAppsPane.qml
+    qml/SettingsPane/UpdatePane.qml
     qml/ProgressSlider.qml
 )
 
@@ -133,6 +137,7 @@ target_link_libraries(QuickSoundSwitcher PRIVATE
     Qt::Quick
     Qt::Widgets
     Qt::Multimedia
+    Qt::Network
     gdi32
     winmm
     windowsapp
@@ -163,8 +168,14 @@ qt_add_translations(${CMAKE_PROJECT_NAME}
 
 add_dependencies(${CMAKE_PROJECT_NAME} update_translations)
 
+add_subdirectory(updater)
+
 install(TARGETS QuickSoundSwitcher
     BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(TARGETS QSSUpdater
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
@@ -172,6 +183,7 @@ qt_generate_deploy_qml_app_script(
     TARGET QuickSoundSwitcher
     OUTPUT_SCRIPT deploy_script
     NO_TRANSLATIONS
-    DEPLOY_TOOL_OPTIONS --no-compiler-runtime --no-opengl-sw --no-system-dxc-compiler --no-system-d3d-compiler --skip-plugin-types designer,iconengines,qmllint,generic,networkinformation,help,qmltooling,sqldrivers,tls,qmlls
+    DEPLOY_TOOL_OPTIONS --no-compiler-runtime --no-opengl-sw --no-system-dxc-compiler --no-system-d3d-compiler --skip-plugin-types designer,iconengines,qmllint,generic,networkinformation,help,qmltooling,sqldrivers,qmlls
 )
 install(SCRIPT ${deploy_script})
+

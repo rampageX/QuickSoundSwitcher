@@ -26,6 +26,7 @@ private slots:
     void onLanguageChanged();
     void openLegacySoundSettings();
     void openModernSoundSettings();
+    void onUpdateAvailable(const QString& version, const QString& downloadUrl);
 
 private:
     QSystemTrayIcon *trayIcon;
@@ -35,6 +36,7 @@ private:
     QSettings settings;
     QAction *outputDeviceAction;
     QAction *inputDeviceAction;
+    QAction *m_updateAction;
     QString currentOutputDevice;
     QString currentInputDevice;
 
