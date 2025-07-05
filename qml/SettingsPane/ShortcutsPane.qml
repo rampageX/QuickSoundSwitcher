@@ -53,13 +53,14 @@ ColumnLayout {
 
                     Label {
                         text: lyt.getShortcutText(UserSettings.panelShortcutModifiers, UserSettings.panelShortcutKey)
-                        //font.family: "Consolas, monospace"
                         opacity: 0.7
                     }
 
                     Button {
                         text: qsTr("Change")
-                        onClicked: panelShortcutDialog.open()
+                        onClicked: {
+                            shortcutDialog.openForPanel()
+                        }
                     }
                 }
             }
@@ -74,13 +75,14 @@ ColumnLayout {
                     spacing: 15
                     Label {
                         text: lyt.getShortcutText(UserSettings.chatMixShortcutModifiers, UserSettings.chatMixShortcutKey)
-                        //font.family: "Consolas, monospace"
                         opacity: 0.7
                     }
 
                     Button {
                         text: qsTr("Change")
-                        onClicked: chatMixShortcutDialog.open()
+                        onClicked: {
+                            shortcutDialog.openForChatMix()
+                        }
                     }
                 }
             }
@@ -94,7 +96,6 @@ ColumnLayout {
         if (modifiers & Qt.ShiftModifier) parts.push("Shift")
         if (modifiers & Qt.AltModifier) parts.push("Alt")
 
-        // Convert key code to readable string
         let keyText = getKeyText(key)
         if (keyText) parts.push(keyText)
 
@@ -117,114 +118,47 @@ ColumnLayout {
         return keyMap[key] || "Unknown"
     }
 
-    // Panel shortcut dialog
+    // Single reusable shortcut dialog
     Dialog {
-        id: panelShortcutDialog
-        title: qsTr("Set Panel Shortcut")
+        id: shortcutDialog
         modal: true
         width: 400
         anchors.centerIn: parent
 
-        onOpened: {
-            SoundPanelBridge.suspendGlobalShortcuts()
-        }
-
-        onClosed: {
-            SoundPanelBridge.resumeGlobalShortcuts()
-        }
-
+        property string dialogTitle: ""
+        property string shortcutType: "" // "panel" or "chatmix"
         property int tempModifiers: Qt.ControlModifier | Qt.ShiftModifier
         property int tempKey: Qt.Key_S
 
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 15
-
-            Label {
-                text: qsTr("Press the desired key combination")
-                Layout.fillWidth: true
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 60
-                color: Constants.footerColor
-                radius: 5
-                Rectangle {
-                    opacity: 0.15
-                    border.width: 1
-                    border.color: Constants.footerBorderColor
-                    color: Constants.footerColor
-                    radius: 5
-                    anchors.fill: parent
-                }
-
-                Label {
-                    anchors.centerIn: parent
-                    text: lyt.getShortcutText(panelShortcutDialog.tempModifiers, panelShortcutDialog.tempKey)
-                    font.family: "Consolas, monospace"
-                    font.pixelSize: 16
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: parent.forceActiveFocus()
-                }
-
-                Keys.onPressed: function(event) {
-                    let modifiers = 0
-                    if (event.modifiers & Qt.ControlModifier) modifiers |= Qt.ControlModifier
-                    if (event.modifiers & Qt.ShiftModifier) modifiers |= Qt.ShiftModifier
-                    if (event.modifiers & Qt.AltModifier) modifiers |= Qt.AltModifier
-
-                    panelShortcutDialog.tempModifiers = modifiers
-                    panelShortcutDialog.tempKey = event.key
-                    event.accepted = true
-                }
-
-                focus: true
-            }
-
-            RowLayout {
-                spacing: 15
-                Button {
-                    text: qsTr("Cancel")
-                    onClicked: panelShortcutDialog.close()
-                    Layout.fillWidth: true
-                }
-
-                Button {
-                    text: qsTr("Apply")
-                    highlighted: true
-                    Layout.fillWidth: true
-                    onClicked: {
-                        UserSettings.panelShortcutModifiers = panelShortcutDialog.tempModifiers
-                        UserSettings.panelShortcutKey = panelShortcutDialog.tempKey
-                        panelShortcutDialog.close()
-                    }
-                }
-            }
-        }
-    }
-
-    // ChatMix shortcut dialog (similar structure)
-    Dialog {
-        id: chatMixShortcutDialog
-        title: qsTr("Set ChatMix Shortcut")
-        modal: true
-        width: 400
-        anchors.centerIn: parent
+        title: dialogTitle
 
         onOpened: {
             SoundPanelBridge.suspendGlobalShortcuts()
+            // Focus the input rectangle when dialog opens
+            Qt.callLater(function() {
+                inputRect.forceActiveFocus()
+            })
         }
 
         onClosed: {
             SoundPanelBridge.resumeGlobalShortcuts()
         }
 
-        property int tempModifiers: Qt.ControlModifier | Qt.ShiftModifier
-        property int tempKey: Qt.Key_M
+        function openForPanel() {
+            dialogTitle = qsTr("Set Panel Shortcut")
+            shortcutType = "panel"
+            tempModifiers = UserSettings.panelShortcutModifiers
+            tempKey = UserSettings.panelShortcutKey
+            open()
+        }
+
+        function openForChatMix() {
+            dialogTitle = qsTr("Set ChatMix Shortcut")
+            shortcutType = "chatmix"
+            tempModifiers = UserSettings.chatMixShortcutModifiers
+            tempKey = UserSettings.chatMixShortcutKey
+            open()
+        }
 
         ColumnLayout {
             anchors.fill: parent
@@ -236,22 +170,39 @@ ColumnLayout {
             }
 
             Rectangle {
+                id: inputRect
                 Layout.fillWidth: true
                 Layout.preferredHeight: 60
                 color: Constants.footerColor
                 radius: 5
+                focus: true
+
                 Rectangle {
-                    opacity: 0.15
+                    opacity: parent.focus ? 1 : 0.15
                     border.width: 1
-                    border.color: Constants.footerBorderColor
+                    border.color: parent.focus? palette.accent : Constants.footerBorderColor
                     color: Constants.footerColor
                     radius: 5
                     anchors.fill: parent
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutQuad
+                        }
+                    }
+
+                    Behavior on border.color {
+                        ColorAnimation {
+                            duration: 200
+                            easing.type: Easing.OutQuad
+                        }
+                    }
                 }
 
                 Label {
                     anchors.centerIn: parent
-                    text: lyt.getShortcutText(chatMixShortcutDialog.tempModifiers, chatMixShortcutDialog.tempKey)
+                    text: lyt.getShortcutText(shortcutDialog.tempModifiers, shortcutDialog.tempKey)
                     font.family: "Consolas, monospace"
                     font.pixelSize: 16
                 }
@@ -267,19 +218,17 @@ ColumnLayout {
                     if (event.modifiers & Qt.ShiftModifier) modifiers |= Qt.ShiftModifier
                     if (event.modifiers & Qt.AltModifier) modifiers |= Qt.AltModifier
 
-                    chatMixShortcutDialog.tempModifiers = modifiers
-                    chatMixShortcutDialog.tempKey = event.key
+                    shortcutDialog.tempModifiers = modifiers
+                    shortcutDialog.tempKey = event.key
                     event.accepted = true
                 }
-
-                focus: true
             }
 
             RowLayout {
                 spacing: 15
                 Button {
                     text: qsTr("Cancel")
-                    onClicked: chatMixShortcutDialog.close()
+                    onClicked: shortcutDialog.close()
                     Layout.fillWidth: true
                 }
 
@@ -288,9 +237,14 @@ ColumnLayout {
                     highlighted: true
                     Layout.fillWidth: true
                     onClicked: {
-                        UserSettings.chatMixShortcutModifiers = chatMixShortcutDialog.tempModifiers
-                        UserSettings.chatMixShortcutKey = chatMixShortcutDialog.tempKey
-                        chatMixShortcutDialog.close()
+                        if (shortcutDialog.shortcutType === "panel") {
+                            UserSettings.panelShortcutModifiers = shortcutDialog.tempModifiers
+                            UserSettings.panelShortcutKey = shortcutDialog.tempKey
+                        } else if (shortcutDialog.shortcutType === "chatmix") {
+                            UserSettings.chatMixShortcutModifiers = shortcutDialog.tempModifiers
+                            UserSettings.chatMixShortcutKey = shortcutDialog.tempKey
+                        }
+                        shortcutDialog.close()
                     }
                 }
             }

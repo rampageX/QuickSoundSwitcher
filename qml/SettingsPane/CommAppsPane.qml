@@ -23,12 +23,13 @@ ColumnLayout {
     ScrollView {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        ColumnLayout {
+
+        Column {
             width: parent.width
             spacing: 3
 
             Card {
-                Layout.fillWidth: true
+                width: parent.width
                 title: qsTr("Activate ChatMix")
 
                 additionalControl: Switch {
@@ -47,8 +48,8 @@ ColumnLayout {
             }
 
             Card {
-                visible: UserSettings.activateChatmix
-                Layout.fillWidth: true
+                show: UserSettings.activateChatmix
+                width: parent.width
                 title: qsTr("Enable ChatMix")
                 description: qsTr("Control communication apps separately from other applications")
 
@@ -67,8 +68,8 @@ ColumnLayout {
             }
 
             Card {
-                visible: UserSettings.activateChatmix
-                Layout.fillWidth: true
+                show: UserSettings.activateChatmix
+                width: parent.width
                 title: qsTr("Restored volume")
                 description: qsTr("The volume to set for applications when ChatMix is disabled")
 
@@ -82,8 +83,8 @@ ColumnLayout {
             }
 
             Card {
-                visible: UserSettings.activateChatmix
-                Layout.fillWidth: true
+                show: UserSettings.activateChatmix
+                width: parent.width
                 title: qsTr("Communication Applications")
                 description: qsTr("Add application names that should be treated as communication apps")
 
@@ -94,13 +95,12 @@ ColumnLayout {
             }
 
             Repeater {
-                visible: UserSettings.activateChatmix
                 model: SoundPanelBridge.commAppsList
                 Card {
-                    visible: UserSettings.activateChatmix
+                    show: UserSettings.activateChatmix
                     id: appCard
                     required property var model
-                    Layout.fillWidth: true
+                    width: parent.width
                     title: model.name
                     iconSource: model.icon
                     imageMode: true

@@ -6,7 +6,6 @@ import QtQuick.Controls.impl
 
 Rectangle {
     id: card
-    implicitHeight: 70
 
     property string title: ""
     property string description: ""
@@ -17,8 +16,59 @@ Rectangle {
     property color iconColor
     property bool imageMode: false
 
+    // Use a custom property instead of visible
+    property bool show: true
+
+    implicitHeight: 70
     color: Constants.cardColor
     radius: 5
+
+    // Animate opacity and transform
+    opacity: show ? 1 : 0
+
+    transform: Translate {
+        id: translateTransform
+        y: show ? 0 : -20
+
+        Behavior on y {
+            NumberAnimation {
+                duration: 200
+                easing.type: Easing.OutQuad
+            }
+        }
+    }
+
+    // Smooth animations
+    Behavior on opacity {
+        NumberAnimation {
+            duration: 100
+            easing.type: Easing.OutQuad
+        }
+    }
+
+    // Timer for hiding after animation
+    Timer {
+        id: hideTimer
+        interval: 100 // Match animation duration
+        onTriggered: card.visible = false
+    }
+
+    onShowChanged: {
+        if (show) {
+            // Show immediately
+            visible = true
+        } else {
+            // Start hide animation, then hide after delay
+            hideTimer.start()
+        }
+    }
+
+    // Stop timer if show becomes true while hiding
+    onVisibleChanged: {
+        if (visible && !show) {
+            hideTimer.stop()
+        }
+    }
 
     onAdditionalControlChanged: {
         if (additionalControl) {
