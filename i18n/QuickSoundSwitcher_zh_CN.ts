@@ -169,27 +169,28 @@
         <translation>独立控制通讯程序与其他程序</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="73"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="102"/>
         <source>Restored volume</source>
         <translation>恢复音量</translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="74"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="103"/>
         <source>The volume to set for applications when ChatMix is disabled</source>
         <translation>当 ChatMix 停用时应用程序默认音量</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="88"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="122"/>
         <source>Communication Applications</source>
         <translation>通讯程序</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="191"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="225"/>
         <source>Discord</source>
         <translation>Discord</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="92"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="126"/>
         <source>Add App</source>
         <translation>添加程序</translation>
     </message>
@@ -199,53 +200,58 @@
         <translation>启用 ChatMix</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="89"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="73"/>
+        <source>ChatMix volume</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="123"/>
         <source>Add application names that should be treated as communication apps</source>
         <translation>添加需要被当作通讯程序的应用程序名称</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="110"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="144"/>
         <source>Remove</source>
         <translation>移除</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="122"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="156"/>
         <source>Enable ChatMix Warning</source>
         <translation>启用 ChatMix 警告</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="132"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="166"/>
         <source>Activating ChatMix will initially set all non communication application volumes to 50%. This might cause loud audio output.</source>
         <translation>启用 ChatMix 将会导致所有非通讯程序的初始音量被设置为 50%. 这可能是非常大的音量.</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="138"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="172"/>
         <source>It is recommended to lower your master volume before proceeding to avoid sudden loud sounds.</source>
         <translation>建议在继续操作之前降低主音量，以避免突然出现大音量</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="159"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="193"/>
         <source>Activate</source>
         <translation>启用</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="175"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="209"/>
         <source>Add Communication App</source>
         <translation>添加通讯程序</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="185"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="219"/>
         <source>Enter application name (e.g., Discord)</source>
         <translation>输入应用程序名称（例如: Discord）</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="150"/>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="197"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="184"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="231"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="203"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="237"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>

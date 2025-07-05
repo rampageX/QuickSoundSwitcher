@@ -70,15 +70,49 @@ ColumnLayout {
             Card {
                 show: UserSettings.activateChatmix
                 width: parent.width
-                title: qsTr("Restored volume")
+                title: qsTr("ChatMix volume")
                 description: qsTr("The volume to set for applications when ChatMix is disabled")
+                enabled: UserSettings.chatMixEnabled
 
-                additionalControl: SpinBox {
+                additionalControl: Slider {
+                    value: UserSettings.chatMixValue
                     from: 0
                     to: 100
-                    editable: true
+                    Layout.fillWidth: true
+                    enabled: UserSettings.chatMixEnabled
+
+                    onValueChanged: {
+                        UserSettings.chatMixValue = value
+                    }
+
+                    onPressedChanged: {
+                        if (pressed) return
+
+                        SoundPanelBridge.chatMixValue = UserSettings.chatMixValue
+                        if (UserSettings.chatMixEnabled) {
+                            SoundPanelBridge.applyChatMixToApplications()
+                        }
+                    }
+                }
+            }
+
+            Card {
+                show: UserSettings.activateChatmix
+                width: parent.width
+                title: qsTr("Restored volume")
+                description: qsTr("The volume to set for applications when ChatMix is disabled")
+                enabled: UserSettings.chatMixEnabled
+
+                additionalControl: Slider {
+                    id: chatMixSlider
                     value: UserSettings.chatmixRestoreVolume
-                    onValueChanged: UserSettings.chatmixRestoreVolume = value
+                    from: 0
+                    to: 100
+                    Layout.fillWidth: true
+
+                    onValueChanged: {
+                        UserSettings.chatmixRestoreVolume = value
+                    }
                 }
             }
 
