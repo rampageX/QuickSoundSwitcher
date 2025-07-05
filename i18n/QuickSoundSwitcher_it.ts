@@ -135,6 +135,19 @@
     </message>
 </context>
 <context>
+    <name>ChatMixNotification</name>
+    <message>
+        <location filename="../qml/ChatMixNotification.qml" line="109"/>
+        <source>ChatMix Enabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/ChatMixNotification.qml" line="116"/>
+        <source>ChatMix Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CommAppsPane</name>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="10"/>
@@ -142,93 +155,93 @@
         <translation>App comunicazione</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="61"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="53"/>
         <source>Enable ChatMix</source>
         <translation>Abilita ChatMix</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="62"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="54"/>
         <source>Control communication apps separately from other applications</source>
         <translation>Controlla app di comunicazione separatamente da altre applicazioni</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="81"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="73"/>
         <source>Restored volume</source>
         <translation>Volume ripristinato</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="82"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="74"/>
         <source>The volume to set for applications when ChatMix is disabled</source>
         <translation>Il volume da impostare per le applicazioni quando ChatMix è disabilitato</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="96"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="88"/>
         <source>Communication Applications</source>
         <translation>Applicazioni comunicazioni</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="199"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="191"/>
         <source>Discord</source>
         <translation>Discord</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="100"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="92"/>
         <source>Add App</source>
         <translation>Aggiungi app</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="41"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="33"/>
         <source>Activate ChatMix</source>
         <translation>Attiva ChatMix</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="97"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="89"/>
         <source>Add application names that should be treated as communication apps</source>
         <translation>Aggiungi nomi applicazioni che devono essere trattati come app comunicazione</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="118"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="110"/>
         <source>Remove</source>
         <translation>Rimuovi</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="130"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="122"/>
         <source>Enable ChatMix Warning</source>
         <translation>Abilita ChatMix</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="140"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="132"/>
         <source>Activating ChatMix will initially set all non communication application volumes to 50%. This might cause loud audio output.</source>
         <translation>L&apos;attivazione di Chatmix imposterà tutti i volumi di applicazioni non di comunicazione al 50%. Ciò potrebbe causare un forte output audio.</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="146"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="138"/>
         <source>It is recommended to lower your master volume before proceeding to avoid sudden loud sounds.</source>
         <translation>Prima di procedere ti consigliamo di ridurre il volume principale per evitare suoni rumorosi improvvisi.</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="167"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="159"/>
         <source>Activate</source>
         <translation>Attiva</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="183"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="175"/>
         <source>Add Communication App</source>
         <translation>Aggiungi app comunicazione</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="193"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="185"/>
         <source>Enter application name (e.g., Discord)</source>
         <translation>Inserisci nome applicazione (es. Discord)</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="158"/>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="205"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="150"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="197"/>
         <source>Cancel</source>
         <translation>Annulla</translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="211"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="203"/>
         <source>Add</source>
         <translation>Aggiungi</translation>
     </message>
@@ -407,7 +420,7 @@
     </message>
     <message>
         <location filename="../src/quicksoundswitcher.cpp" line="173"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="625"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="627"/>
         <source>Exit</source>
         <translation>Esci</translation>
     </message>
@@ -427,12 +440,12 @@
         <translation>ChatMix: %1</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="637"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="639"/>
         <source>Output</source>
         <translation>Output</translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="646"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="648"/>
         <source>Input</source>
         <translation>Input</translation>
     </message>
@@ -552,7 +565,7 @@
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="935"/>
+        <location filename="../qml/SoundPanel.qml" line="937"/>
         <source>ChatMix</source>
         <translation>ChatMix</translation>
     </message>

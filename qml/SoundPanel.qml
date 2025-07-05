@@ -23,6 +23,8 @@ ApplicationWindow {
     signal showAnimationFinished()
     signal hideAnimationStarted()
 
+    ChatMixNotification {}
+
     onVisibleChanged: {
         if (!visible) {
             outputDevicesRect.expanded = false

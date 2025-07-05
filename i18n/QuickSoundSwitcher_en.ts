@@ -131,6 +131,19 @@
     </message>
 </context>
 <context>
+    <name>ChatMixNotification</name>
+    <message>
+        <location filename="../qml/ChatMixNotification.qml" line="109"/>
+        <source>ChatMix Enabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qml/ChatMixNotification.qml" line="116"/>
+        <source>ChatMix Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>CommAppsPane</name>
     <message>
         <location filename="../qml/SettingsPane/CommAppsPane.qml" line="10"/>
@@ -138,93 +151,93 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="61"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="53"/>
         <source>Enable ChatMix</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="62"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="54"/>
         <source>Control communication apps separately from other applications</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="81"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="73"/>
         <source>Restored volume</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="82"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="74"/>
         <source>The volume to set for applications when ChatMix is disabled</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="96"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="88"/>
         <source>Communication Applications</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="199"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="191"/>
         <source>Discord</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="100"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="92"/>
         <source>Add App</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="41"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="33"/>
         <source>Activate ChatMix</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="97"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="89"/>
         <source>Add application names that should be treated as communication apps</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="118"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="110"/>
         <source>Remove</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="130"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="122"/>
         <source>Enable ChatMix Warning</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="140"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="132"/>
         <source>Activating ChatMix will initially set all non communication application volumes to 50%. This might cause loud audio output.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="146"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="138"/>
         <source>It is recommended to lower your master volume before proceeding to avoid sudden loud sounds.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="167"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="159"/>
         <source>Activate</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="183"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="175"/>
         <source>Add Communication App</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="193"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="185"/>
         <source>Enter application name (e.g., Discord)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="158"/>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="205"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="150"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="197"/>
         <source>Cancel</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="211"/>
+        <location filename="../qml/SettingsPane/CommAppsPane.qml" line="203"/>
         <source>Add</source>
         <translation></translation>
     </message>
@@ -383,7 +396,7 @@
     <name>QuickSoundSwitcher</name>
     <message>
         <location filename="../src/quicksoundswitcher.cpp" line="173"/>
-        <location filename="../src/quicksoundswitcher.cpp" line="625"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="627"/>
         <source>Exit</source>
         <translation></translation>
     </message>
@@ -410,25 +423,25 @@
     <message>
         <location filename="../src/quicksoundswitcher.cpp" line="487"/>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/quicksoundswitcher.cpp" line="487"/>
         <source>Disabled</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/quicksoundswitcher.cpp" line="488"/>
         <source>ChatMix %1</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="637"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="639"/>
         <source>Output</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/quicksoundswitcher.cpp" line="646"/>
+        <location filename="../src/quicksoundswitcher.cpp" line="648"/>
         <source>Input</source>
         <translation></translation>
     </message>
@@ -458,7 +471,7 @@
     <message>
         <location filename="../qml/SettingsWindow.qml" line="86"/>
         <source>Shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsWindow.qml" line="90"/>
@@ -476,79 +489,79 @@
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="12"/>
         <source>Global Shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="27"/>
         <source>Enable global shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="28"/>
         <source>Allow QuickSoundSwitcher to respond to keyboard shortcuts globally</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="38"/>
         <source>Notification on ChatMix toggle</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="48"/>
         <source>Show/Hide Panel</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="49"/>
         <source>Shortcut to toggle the main panel visibility</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="60"/>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="82"/>
         <source>Change</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="71"/>
         <source>Toggle ChatMix</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="72"/>
         <source>Shortcut to enable/disable ChatMix feature</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="148"/>
         <source>Set Panel Shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="168"/>
         <source>Press the desired key combination</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="230"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="236"/>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../qml/SettingsPane/ShortcutsPane.qml" line="156"/>
         <source>Set ChatMix Shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>SoundPanel</name>
     <message>
-        <location filename="../qml/SoundPanel.qml" line="935"/>
+        <location filename="../qml/SoundPanel.qml" line="937"/>
         <source>ChatMix</source>
         <translation></translation>
     </message>

@@ -490,12 +490,14 @@ void QuickSoundSwitcher::toggleChatMix()
         SoundPanelBridge::instance()->toggleChatMixFromShortcut(!currentState);
 
         if (settings.value("chatMixShortcutNotification", true).toBool()) {
-            trayIcon->showMessage(
-                message,
-                QString(),
-                QSystemTrayIcon::Information,
-                1000
-                );
+            //trayIcon->showMessage(
+            //    message,
+            //    QString(),
+            //    QSystemTrayIcon::Information,
+            //    1000
+            //    );
+
+            SoundPanelBridge::instance()->requestChatMixNotification(message);
         }
     }
 }

@@ -99,6 +99,7 @@ set(QML_FILES
     qml/SettingsPane/CommAppsPane.qml
     qml/SettingsPane/ShortcutsPane.qml
     qml/ProgressSlider.qml
+    qml/ChatMixNotification.qml
 )
 
 set(QML_SINGLETONS

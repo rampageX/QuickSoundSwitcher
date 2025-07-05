@@ -118,6 +118,7 @@ public:
     Q_INVOKABLE void suspendGlobalShortcuts();
     Q_INVOKABLE void resumeGlobalShortcuts();
     bool areGlobalShortcutsSuspended() const;
+    void requestChatMixNotification(QString message);
 
 public slots:
     void onPlaybackVolumeChanged(int volume);
@@ -155,6 +156,7 @@ signals:
     void playbackAudioLevelChanged();
     void recordingAudioLevelChanged();
     void chatMixEnabledChanged(bool enabled);
+    void chatMixNotificationRequested(QString mesasge);
 
 private:
     static SoundPanelBridge* m_instance;

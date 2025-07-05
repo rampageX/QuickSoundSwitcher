@@ -1125,3 +1125,7 @@ bool SoundPanelBridge::areGlobalShortcutsSuspended() const
 {
     return m_globalShortcutsSuspended;
 }
+
+void SoundPanelBridge::requestChatMixNotification(QString message) {
+    emit chatMixNotificationRequested(message);
+}
