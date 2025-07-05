@@ -80,8 +80,8 @@ configure_file(
 qt_add_executable(QuickSoundSwitcher WIN32 MACOSX_BUNDLE
     ${SOURCES}
     ${HEADERS}
-    resources/resources.qrc
-    #resources/appicon.rc
+    resources/icons/icons.qrc
+    resources/sounds/sounds.qrc
     "${CMAKE_CURRENT_BINARY_DIR}/windows_metadata.rc"
 )
 

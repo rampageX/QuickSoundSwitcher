@@ -137,12 +137,12 @@
 <context>
     <name>ChatMixNotification</name>
     <message>
-        <location filename="../qml/ChatMixNotification.qml" line="109"/>
+        <location filename="../qml/ChatMixNotification.qml" line="127"/>
         <source>ChatMix Enabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qml/ChatMixNotification.qml" line="116"/>
+        <location filename="../qml/ChatMixNotification.qml" line="134"/>
         <source>ChatMix Disabled</source>
         <translation type="unfinished"></translation>
     </message>

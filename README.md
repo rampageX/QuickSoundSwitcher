@@ -25,3 +25,5 @@ Click anywhere to close the panel.
 Download latest version [here](https://github.com/Odizinne/QuickSoundSwitcher/releases/latest).  
 Use the provided installer or download the archive, extract it, and run `bin/QuickSoundSwitcher.exe`.
 
+## Resources
+- Used OCEAN sound effects from KDE

@@ -4,6 +4,7 @@ import QtQuick.Controls.FluentWinUI3
 import QtQuick.Controls.impl
 import QtQuick.Window
 import Odizinne.QuickSoundSwitcher
+import QtMultimedia
 
 ApplicationWindow {
     id: notificationWindow
@@ -29,10 +30,27 @@ ApplicationWindow {
         positionWindow()
     }
 
+    SoundEffect {
+        id: chatMixOffEffect
+        source: "qrc:/sounds/outcome-failure.wav"
+    }
+
+    SoundEffect {
+        id: chatMixOnEffect
+        source: "qrc:/sounds/outcome-success.wav"
+    }
+
     Connections {
         target: SoundPanelBridge
         function onChatMixNotificationRequested(message) {
             notificationWindow.showNotification(message)
+
+            if (!UserSettings.chatMixShortcutNotification) return
+            if (UserSettings.chatMixEnabled) {
+                chatMixOnEffect.play()
+            } else {
+                chatMixOffEffect.play()
+            }
         }
     }
 
