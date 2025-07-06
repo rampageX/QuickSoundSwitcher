@@ -107,6 +107,10 @@
         <source>Display audio level value in slider</source>
         <translation>Visualizza livello audio nel cursore</translation>
     </message>
+    <message>
+        <source>Windows taskbar size</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ChatMixNotification</name>

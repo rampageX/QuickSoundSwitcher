@@ -36,7 +36,7 @@ ColumnLayout {
             Card {
                 Layout.fillWidth: true
                 title: qsTr("Taskbar offset")
-                description: "Windows taskbar size"
+                description: qsTr("Windows taskbar size")
 
                 additionalControl: SpinBox {
                     Layout.preferredHeight: 35

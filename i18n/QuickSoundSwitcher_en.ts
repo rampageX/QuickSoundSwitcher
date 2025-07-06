@@ -103,6 +103,10 @@
         <source>Display audio level value in slider</source>
         <translation></translation>
     </message>
+    <message>
+        <source>Windows taskbar size</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ChatMixNotification</name>

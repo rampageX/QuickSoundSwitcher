@@ -111,6 +111,10 @@
         <source>Display audio level value in slider</source>
         <translation>Affiche la valeur du niveau audio dans les sliders</translation>
     </message>
+    <message>
+        <source>Windows taskbar size</source>
+        <translation>Taille de la barre des taches de Windows</translation>
+    </message>
 </context>
 <context>
     <name>ChatMixNotification</name>
