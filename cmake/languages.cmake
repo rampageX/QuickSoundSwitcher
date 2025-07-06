@@ -5,7 +5,7 @@ set(SUPPORTED_LANGUAGES
     "fr|French|français" 
     "de|German|deutsch"
     "it|Italian|italiano"
-    "ko|Korean|한글"
+    "ko|Korean|한국어"
     "zh_CN|Chinese (Simplified)|简体中文"
 )
 
