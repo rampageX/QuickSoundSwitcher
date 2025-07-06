@@ -135,7 +135,7 @@
     </message>
     <message>
         <source>Control communication apps separately from other applications</source>
-        <translation>Controller les applicatiosn de communication indépendamment des autres</translation>
+        <translation>Controller les applications de communication indépendamment des autres</translation>
     </message>
     <message>
         <source>ChatMix volume</source>
