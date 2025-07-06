@@ -346,10 +346,6 @@
         <source>Error: %1</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>test string</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QuickSoundSwitcher</name>

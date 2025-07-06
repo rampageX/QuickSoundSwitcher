@@ -71,7 +71,6 @@ ColumnLayout {
             Card {
                 Layout.fillWidth: true
                 title: qsTr("Application language")
-                description: qsTr("test string")
 
                 additionalControl: ComboBox {
                     Layout.preferredHeight: 35
