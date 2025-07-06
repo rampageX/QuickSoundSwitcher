@@ -33,14 +33,12 @@ ApplicationWindow {
     property bool dataLoaded: false
     property string taskbarPos: SoundPanelBridge.taskbarPosition
 
-    // Calculate the maximum space needed for device lists
     property real maxDeviceListSpace: {
         let outputSpace = outputDevicesRect.expandedNeededHeight || 0
         let inputSpace = inputDevicesRect.expandedNeededHeight || 0
         return outputSpace + inputSpace
     }
 
-    // Calculate current used space by expanded lists
     property real currentUsedListSpace: {
         let usedSpace = 0
         if (outputDevicesRect.expanded) {
@@ -52,7 +50,6 @@ ApplicationWindow {
         return usedSpace
     }
 
-    // Transform offset to compensate for reserved space
     property real listCompensationOffset: maxDeviceListSpace - currentUsedListSpace
 
     signal hideAnimationFinished()
@@ -89,12 +86,11 @@ ApplicationWindow {
                 newHeight += spacer.height
             }
 
-            // Add space for device lists
             newHeight += panel.maxDeviceListSpace
 
             if (panel.visible && !panel.isAnimatingIn && !panel.isAnimatingOut) {
                 panel.height = newHeight
-                //panel.positionPanelAtTarget()
+                panel.positionPanelAtTarget()
             } else {
                 panel.height = newHeight
         }
@@ -143,20 +139,20 @@ ApplicationWindow {
         SoundPanelBridge.stopMediaMonitoring()
     }
 
-    //PropertyAnimation {
-    //    id: showAnimation
-    //    target: contentTransform
-    //    duration: 210
-    //    easing.type: Easing.OutCubic
-    //    onStarted: {
-    //        contentOpacityTimer.start()
-    //        flyoutOpacityTimer.start()
-    //    }
-    //    onFinished: {
-    //        panel.isAnimatingIn = false
-    //        panel.showAnimationFinished()
-    //    }
-    //}
+    PropertyAnimation {
+        id: showAnimation
+        target: contentTransform
+        duration: 210
+        easing.type: Easing.OutCubic
+        onStarted: {
+            contentOpacityTimer.start()
+            flyoutOpacityTimer.start()
+        }
+        onFinished: {
+            panel.isAnimatingIn = false
+            panel.showAnimationFinished()
+        }
+    }
 
     PropertyAnimation {
         id: hideAnimation
@@ -183,20 +179,19 @@ ApplicationWindow {
         property real y: 0
     }
 
-    // Transform to compensate for reserved device list space
-    //Translate {
-    //    id: listCompensationTransform
-    //    x: 0
-    //    y: (panel.isAnimatingIn || panel.isAnimatingOut) ? 0 : -panel.listCompensationOffset
-//
-    //    Behavior on y {
-    //        enabled: !panel.isAnimatingIn && !panel.isAnimatingOut
-    //        NumberAnimation {
-    //            duration: 150
-    //            easing.type: Easing.OutQuad
-    //        }
-    //    }
-    //}
+    Translate {
+        id: listCompensationTransform
+        x: 0
+        y: (panel.isAnimatingIn || panel.isAnimatingOut) ? 0 : -panel.listCompensationOffset
+
+        Behavior on y {
+            enabled: !panel.isAnimatingIn && !panel.isAnimatingOut
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutQuad
+            }
+        }
+    }
 
     function showPanel() {
         if (isAnimatingIn || isAnimatingOut) {
@@ -208,8 +203,8 @@ ApplicationWindow {
         panel.taskbarPos = SoundPanelBridge.taskbarPosition
         panel.visible = true
 
-        //positionPanelAtTarget()
-        //setInitialTransform()
+        positionPanelAtTarget()
+        setInitialTransform()
     }
 
     function positionPanelAtTarget() {
@@ -373,11 +368,10 @@ ApplicationWindow {
                         newHeight += spacer.height
                     }
 
-                    // Add space for device lists
                     newHeight += panel.maxDeviceListSpace
 
                     panel.height = newHeight
-                    //Qt.callLater(panel.startAnimation)
+                    Qt.callLater(panel.startAnimation)
                 })
             })
         }
@@ -432,16 +426,14 @@ ApplicationWindow {
     }
 
     Item {
-        anchors.bottom: SoundPanelBridge.taskbarPosition === "top" ? undefined : parent.bottom
-        anchors.top: SoundPanelBridge.taskbarPosition === "top" ? parent.top : undefined
+        id: cont
+        anchors.bottom: UserSettings.panelPosition === 0 ? undefined : parent.bottom
+        anchors.top: UserSettings.panelPosition === 0 ? parent.top : undefined
         anchors.right: parent.right
         anchors.left: parent.left
-
-        Rectangle {
-            color: "transparent"
-            border.color: "red"
-            anchors.fill: parent
-            border.width: 1
+        transform: Translate {
+            x: contentTransform.x
+            y: contentTransform.y
         }
 
         height: {
