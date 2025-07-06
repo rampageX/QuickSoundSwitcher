@@ -10,7 +10,21 @@ import Odizinne.QuickSoundSwitcher
 ApplicationWindow {
     id: panel
     width: 360
-    height: 200
+    height: {
+        let newHeight = mainLayout.implicitHeight + 30 + 15
+        if (mediaLayout.visible) {
+            newHeight += mediaLayout.implicitHeight
+        } else {
+            newHeight -= 5
+        }
+        if (spacer.visible) {
+            newHeight += spacer.height
+        }
+        newHeight += panel.maxDeviceListSpace
+        return newHeight
+    }
+
+
     visible: false
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "#00000000"
@@ -18,6 +32,28 @@ ApplicationWindow {
     property bool isAnimatingOut: false
     property bool dataLoaded: false
     property string taskbarPos: SoundPanelBridge.taskbarPosition
+
+    // Calculate the maximum space needed for device lists
+    property real maxDeviceListSpace: {
+        let outputSpace = outputDevicesRect.expandedNeededHeight || 0
+        let inputSpace = inputDevicesRect.expandedNeededHeight || 0
+        return outputSpace + inputSpace
+    }
+
+    // Calculate current used space by expanded lists
+    property real currentUsedListSpace: {
+        let usedSpace = 0
+        if (outputDevicesRect.expanded) {
+            usedSpace += outputDevicesRect.expandedNeededHeight || 0
+        }
+        if (inputDevicesRect.expanded) {
+            usedSpace += inputDevicesRect.expandedNeededHeight || 0
+        }
+        return usedSpace
+    }
+
+    // Transform offset to compensate for reserved space
+    property real listCompensationOffset: maxDeviceListSpace - currentUsedListSpace
 
     signal hideAnimationFinished()
     signal showAnimationFinished()
@@ -29,10 +65,6 @@ ApplicationWindow {
         if (!visible) {
             outputDevicesRect.expanded = false
             inputDevicesRect.expanded = false
-            mainLayout.opacity = 0
-            mediaLayout.opacity = 0
-            outputDevicesRect.contentOpacity = 0
-            inputDevicesRect.contentOpacity = 0
             contentOpacityTimer.stop()
             outputListOpacityTimer.stop()
             inputListOpacityTimer.stop()
@@ -44,23 +76,29 @@ ApplicationWindow {
                 SoundPanelBridge.startAudioLevelMonitoring()
             }
         }
-    }
 
-    // Simple ListView height animations
-    PropertyAnimation {
-        id: outputExpandAnimation
-        target: outputDevicesRect
-        property: "Layout.preferredHeight"
-        duration: 150
-        easing.type: Easing.OutQuad
-    }
+            let newHeight = mainLayout.implicitHeight + 30 + 15
 
-    PropertyAnimation {
-        id: inputExpandAnimation
-        target: inputDevicesRect
-        property: "Layout.preferredHeight"
-        duration: 150
-        easing.type: Easing.OutQuad
+            if (mediaLayout.visible) {
+                newHeight += mediaLayout.implicitHeight
+            } else {
+                newHeight -= 5
+            }
+
+            if (spacer.visible) {
+                newHeight += spacer.height
+            }
+
+            // Add space for device lists
+            newHeight += panel.maxDeviceListSpace
+
+            if (panel.visible && !panel.isAnimatingIn && !panel.isAnimatingOut) {
+                panel.height = newHeight
+                //panel.positionPanelAtTarget()
+            } else {
+                panel.height = newHeight
+        }
+
     }
 
     Timer {
@@ -105,20 +143,20 @@ ApplicationWindow {
         SoundPanelBridge.stopMediaMonitoring()
     }
 
-    PropertyAnimation {
-        id: showAnimation
-        target: contentTransform
-        duration: 210
-        easing.type: Easing.OutCubic
-        onStarted: {
-            contentOpacityTimer.start()
-            flyoutOpacityTimer.start()
-        }
-        onFinished: {
-            panel.isAnimatingIn = false
-            panel.showAnimationFinished()
-        }
-    }
+    //PropertyAnimation {
+    //    id: showAnimation
+    //    target: contentTransform
+    //    duration: 210
+    //    easing.type: Easing.OutCubic
+    //    onStarted: {
+    //        contentOpacityTimer.start()
+    //        flyoutOpacityTimer.start()
+    //    }
+    //    onFinished: {
+    //        panel.isAnimatingIn = false
+    //        panel.showAnimationFinished()
+    //    }
+    //}
 
     PropertyAnimation {
         id: hideAnimation
@@ -145,6 +183,21 @@ ApplicationWindow {
         property real y: 0
     }
 
+    // Transform to compensate for reserved device list space
+    //Translate {
+    //    id: listCompensationTransform
+    //    x: 0
+    //    y: (panel.isAnimatingIn || panel.isAnimatingOut) ? 0 : -panel.listCompensationOffset
+//
+    //    Behavior on y {
+    //        enabled: !panel.isAnimatingIn && !panel.isAnimatingOut
+    //        NumberAnimation {
+    //            duration: 150
+    //            easing.type: Easing.OutQuad
+    //        }
+    //    }
+    //}
+
     function showPanel() {
         if (isAnimatingIn || isAnimatingOut) {
             return
@@ -155,8 +208,8 @@ ApplicationWindow {
         panel.taskbarPos = SoundPanelBridge.taskbarPosition
         panel.visible = true
 
-        positionPanelAtTarget()
-        setInitialTransform()
+        //positionPanelAtTarget()
+        //setInitialTransform()
     }
 
     function positionPanelAtTarget() {
@@ -285,7 +338,6 @@ ApplicationWindow {
                                                isDefault: devices[i].isDefault
                                            })
             }
-            panel.updatePanelHeight()
         }
 
         function onRecordingDevicesChanged(devices) {
@@ -298,7 +350,6 @@ ApplicationWindow {
                                                 isDefault: devices[i].isDefault
                                             })
             }
-            panel.updatePanelHeight()
         }
 
         function onApplicationsChanged(apps) {
@@ -306,7 +357,6 @@ ApplicationWindow {
             for (let i = 0; i < apps.length; i++) {
                 appModel.append(apps[i])
             }
-            panel.updatePanelHeight()
         }
 
         function onDataInitializationComplete() {
@@ -323,8 +373,11 @@ ApplicationWindow {
                         newHeight += spacer.height
                     }
 
+                    // Add space for device lists
+                    newHeight += panel.maxDeviceListSpace
+
                     panel.height = newHeight
-                    Qt.callLater(panel.startAnimation)
+                    //Qt.callLater(panel.startAnimation)
                 })
             })
         }
@@ -332,19 +385,16 @@ ApplicationWindow {
         function onApplicationAudioLevelsChanged() {
             const audioLevels = SoundPanelBridge.applicationAudioLevels
 
-            // Create a map of individual app IDs to their audio levels
             const levelMap = {}
             for (let i = 0; i < audioLevels.length; i++) {
                 const levelData = audioLevels[i]
                 levelMap[levelData.appId] = levelData.level
             }
 
-            // Update each app in the model
             for (let j = 0; j < appModel.count; j++) {
                 const appID = appModel.get(j).appID
 
                 if (appID.includes(";")) {
-                    // This is a grouped app - find the max level among all its IDs
                     const individualIDs = appID.split(";")
                     let maxLevel = 0
                     for (let k = 0; k < individualIDs.length; k++) {
@@ -355,7 +405,6 @@ ApplicationWindow {
                     }
                     appModel.setProperty(j, "audioLevel", maxLevel)
                 } else {
-                    // This is an individual app
                     if (levelMap[appID] !== undefined) {
                         appModel.setProperty(j, "audioLevel", levelMap[appID])
                     }
@@ -376,31 +425,6 @@ ApplicationWindow {
         }
     }
 
-    function updatePanelHeight() {
-        Qt.callLater(function() {
-            Qt.callLater(function() {
-                let newHeight = mainLayout.implicitHeight + 30 + 15
-
-                if (mediaLayout.visible) {
-                    newHeight += mediaLayout.implicitHeight
-                } else {
-                    newHeight -= 5
-                }
-
-                if (spacer.visible) {
-                    newHeight += spacer.height
-                }
-
-                if (panel.visible && !panel.isAnimatingIn && !panel.isAnimatingOut) {
-                    panel.height = newHeight
-                    positionPanelAtTarget()
-                } else {
-                    panel.height = newHeight
-                }
-            })
-        })
-    }
-
     KeepAlive {}
 
     SettingsWindow {
@@ -408,10 +432,29 @@ ApplicationWindow {
     }
 
     Item {
-        anchors.fill: parent
-        transform: Translate {
-            x: contentTransform.x
-            y: contentTransform.y
+        anchors.bottom: SoundPanelBridge.taskbarPosition === "top" ? undefined : parent.bottom
+        anchors.top: SoundPanelBridge.taskbarPosition === "top" ? parent.top : undefined
+        anchors.right: parent.right
+        anchors.left: parent.left
+
+        Rectangle {
+            color: "transparent"
+            border.color: "red"
+            anchors.fill: parent
+            border.width: 1
+        }
+
+        height: {
+            let newHeight = mainLayout.implicitHeight + 30 + 15
+            if (mediaLayout.visible) {
+                newHeight += mediaLayout.implicitHeight
+            } else {
+                newHeight -= 5
+            }
+            if (spacer.visible) {
+                newHeight += spacer.height
+            }
+            return newHeight
         }
 
         Rectangle {
@@ -451,10 +494,13 @@ ApplicationWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: 15
+            opacity: 1
             visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
-            onImplicitHeightChanged: {
-                if (panel.visible) {
-                    panel.updatePanelHeight()
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.OutQuad
                 }
             }
         }
@@ -466,11 +512,6 @@ ApplicationWindow {
             anchors.right: parent.right
             height: 30
             visible: mediaLayout.visible
-            onImplicitHeightChanged: {
-                if (panel.visible) {
-                    panel.updatePanelHeight()
-                }
-            }
         }
 
         ColumnLayout {
@@ -481,13 +522,7 @@ ApplicationWindow {
             anchors.right: parent.right
             anchors.margins: 15
             spacing: 10
-            opacity: 0
-
-            onImplicitHeightChanged: {
-                if (panel.visible) {
-                    panel.updatePanelHeight()
-                }
-            }
+            opacity: 1
 
             Behavior on opacity {
                 NumberAnimation {
@@ -705,7 +740,7 @@ ApplicationWindow {
 
                     ToolButton {
                         icon.source: "qrc:/icons/arrow.svg"
-                        rotation: outputDevicesRect.expanded ? 90 : 0
+                        rotation: inputDevicesRect.expanded ? 90 : 0
                         Layout.preferredHeight: 35
                         Layout.preferredWidth: 35
                         visible: recordingDeviceModel.count > 1
@@ -785,7 +820,6 @@ ApplicationWindow {
                             checkable: true
                             highlighted: checked
                             checked: applicationUnitLayout.model.isMuted
-                            //enabled: !UserSettings.chatMixEnabled
                             ToolTip.text: applicationUnitLayout.model.name
                             ToolTip.visible: hovered
                             ToolTip.delay: 1000
@@ -839,17 +873,14 @@ ApplicationWindow {
                                 audioLevel: applicationUnitLayout.model.audioLevel
                                 Layout.fillWidth: true
 
-                                // Updated to match simplified ChatMix logic
                                 value: {
                                     if (!UserSettings.chatMixEnabled) {
                                         return applicationUnitLayout.model.volume
                                     }
 
-                                    // Check if this app is a comm app
                                     let appName = applicationUnitLayout.model.name
                                     let isCommApp = SoundPanelBridge.isCommApp(appName)
 
-                                    // Comm apps: always 100%, Non-comm apps: slider value
                                     return isCommApp ? 100 : UserSettings.chatMixValue
                                 }
 
@@ -861,10 +892,7 @@ ApplicationWindow {
 
                                 onValueChanged: {
                                     if (!UserSettings.chatMixEnabled && pressed) {
-                                        // Update the model using the correct index
                                         appModel.setProperty(applicationUnitLayout.index, "volume", value)
-
-                                        // Then send to audio manager
                                         SoundPanelBridge.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
                                     }
                                 }

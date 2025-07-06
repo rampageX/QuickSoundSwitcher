@@ -12,11 +12,14 @@ Rectangle {
     property bool expanded: false
     property real contentOpacity: 0
 
+    // Export the height needed when fully expanded
+    property real expandedNeededHeight: devicesList.contentHeight + 20
+
     // Signals
     signal deviceClicked(string name, string shortName, int index)
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 0
+    Layout.preferredHeight: expanded ? expandedNeededHeight : 0
     Layout.leftMargin: -14
     Layout.rightMargin: -14
     color: Constants.footerColor
@@ -94,16 +97,14 @@ Rectangle {
         id: opacityTimer
         interval: 112
         repeat: false
-        onTriggered: devicesList.opacity = 1
+        onTriggered: root.contentOpacity = 1
     }
 
     onExpandedChanged: {
         if (expanded) {
-            Layout.preferredHeight = devicesList.contentHeight + 20
             opacityTimer.start()
         } else {
-            Layout.preferredHeight = 0
-            devicesList.opacity = 0
+            root.contentOpacity = 0
         }
     }
 }
