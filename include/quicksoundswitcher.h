@@ -7,6 +7,8 @@
 #include <QQmlApplicationEngine>
 #include <QWindow>
 #include <Windows.h>
+#include <QLocalServer>
+#include <QLocalSocket>
 
 class QuickSoundSwitcher : public QWidget
 {
@@ -26,6 +28,8 @@ private slots:
     void onLanguageChanged();
     void openLegacySoundSettings();
     void openModernSoundSettings();
+    void onNewConnection();
+    void onClientDisconnected();
 
 private:
     QSystemTrayIcon *trayIcon;
@@ -64,6 +68,10 @@ private:
     void toggleChatMix();
     bool isModifierPressed(int qtModifier);
     int qtKeyToVirtualKey(int qtKey);
+
+    QLocalServer* localServer;
+    void setupLocalServer();
+    void cleanupLocalServer();
 };
 
 #endif // QUICKSOUNDSWITCHER_H

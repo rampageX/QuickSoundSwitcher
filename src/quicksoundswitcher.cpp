@@ -30,11 +30,13 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , inputDeviceAction(nullptr)
     , currentOutputDevice("")
     , currentInputDevice("")
+    , localServer(nullptr)
 {
     AudioManager::initialize();
     MediaSessionManager::initialize();
     instance = this;
 
+    setupLocalServer();
     // Initialize QML engine once
     initializeQMLEngine();
 
@@ -98,6 +100,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
     destroyQMLEngine();
+    cleanupLocalServer();
     instance = nullptr;
 }
 
@@ -656,4 +659,65 @@ void QuickSoundSwitcher::openLegacySoundSettings() {
 
 void QuickSoundSwitcher::openModernSoundSettings() {
     QProcess::startDetached("explorer", QStringList() << "ms-settings:sound");
+}
+
+void QuickSoundSwitcher::setupLocalServer()
+{
+    localServer = new QLocalServer(this);
+
+    // Remove any existing server (in case of unclean shutdown)
+    QLocalServer::removeServer("QuickSoundSwitcher");
+
+    if (!localServer->listen("QuickSoundSwitcher")) {
+        qWarning() << "Failed to create local server:" << localServer->errorString();
+        return;
+    }
+
+    connect(localServer, &QLocalServer::newConnection,
+            this, &QuickSoundSwitcher::onNewConnection);
+
+    qDebug() << "Local server started successfully";
+}
+
+void QuickSoundSwitcher::cleanupLocalServer()
+{
+    if (localServer) {
+        localServer->close();
+        QLocalServer::removeServer("QuickSoundSwitcher");
+        delete localServer;
+        localServer = nullptr;
+    }
+}
+
+void QuickSoundSwitcher::onNewConnection()
+{
+    QLocalSocket* clientSocket = localServer->nextPendingConnection();
+    if (!clientSocket) {
+        return;
+    }
+
+    connect(clientSocket, &QLocalSocket::readyRead, this, [this, clientSocket]() {
+        QByteArray data = clientSocket->readAll();
+        QString message = QString::fromUtf8(data);
+
+        qDebug() << "Received message from new instance:" << message;
+
+        if (message == "show_panel") {
+            // Show the panel
+            showPanel();
+        }
+
+        clientSocket->disconnectFromServer();
+    });
+
+    connect(clientSocket, &QLocalSocket::disconnected,
+            this, &QuickSoundSwitcher::onClientDisconnected);
+}
+
+void QuickSoundSwitcher::onClientDisconnected()
+{
+    QLocalSocket* clientSocket = qobject_cast<QLocalSocket*>(sender());
+    if (clientSocket) {
+        clientSocket->deleteLater();
+    }
 }

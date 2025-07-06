@@ -1,16 +1,22 @@
 #include "quicksoundswitcher.h"
 #include <QApplication>
 #include <QProcess>
+#include <QLocalSocket>
+#include <QLocalServer>
 
-bool isAnotherInstanceRunning(const QString& processName)
+bool tryConnectToExistingInstance()
 {
-    QProcess process;
-    process.start("tasklist", QStringList() << "/FI" << QString("IMAGENAME eq %1").arg(processName));
-    process.waitForFinished();
-    QString output = process.readAllStandardOutput();
-    int count = output.count(processName, Qt::CaseInsensitive);
+    QLocalSocket socket;
+    socket.connectToServer("QuickSoundSwitcher");
 
-    return count > 1;
+    if (socket.waitForConnected(1000)) {
+        socket.write("show_panel");
+        socket.waitForBytesWritten(1000);
+        socket.disconnectFromServer();
+        return true;
+    }
+
+    return false;
 }
 
 int main(int argc, char *argv[])
@@ -20,9 +26,8 @@ int main(int argc, char *argv[])
     a.setOrganizationName("Odizinne");
     a.setApplicationName("QuickSoundSwitcher");
 
-    const QString processName = "QuickSoundSwitcher.exe";
-    if (isAnotherInstanceRunning(processName)) {
-        qDebug() << "Another instance is already running. Exiting...";
+    if (tryConnectToExistingInstance()) {
+        qDebug() << "Sent show panel request to existing instance";
         return 0;
     }
 
