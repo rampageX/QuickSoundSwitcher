@@ -6,9 +6,10 @@ Please follow qt installation in build guide to install Qt linguist.
 
 ### Testing your changes
 
-You can override the qm files in your QSS install (default: `%localappdata%\programs\QuickSoundSwitcher\bin\i18n`)
+You can override the qm files in your QSS install (default: `%localappdata%\programs\QuickSoundSwitcher\bin\i18n`) with `file` -> `release as...`
 
 ### Validating your changes
 
 Once satisfied with your changes, select `file` -> `release as...` in Qt linguist.  
-For your udpated translation to be available for users to download, you need to override `%PROJECTROOT%/i18n/compiled/your_compiled_translation.qm`
+For your udpated translation to be available for users to download, you need to override `%PROJECTROOT%/i18n/compiled/your_compiled_translation.qm`.  
+Make sure to also commit your changes on the `.ts` file.
