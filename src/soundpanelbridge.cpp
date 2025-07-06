@@ -22,6 +22,10 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     , translator(new QTranslator(this))
     , m_chatMixValue(50)
     , m_chatMixCheckTimer(new QTimer(this))
+    , m_networkManager(new QNetworkAccessManager(this))
+    , m_totalDownloads(0)
+    , m_completedDownloads(0)
+    , m_failedDownloads(0)
 {
     m_instance = this;
 
@@ -1128,4 +1132,173 @@ bool SoundPanelBridge::areGlobalShortcutsSuspended() const
 
 void SoundPanelBridge::requestChatMixNotification(QString message) {
     emit chatMixNotificationRequested(message);
+}
+
+void SoundPanelBridge::downloadLatestTranslations()
+{
+    // Cancel any existing downloads
+    cancelTranslationDownload();
+
+    // Reset counters
+    m_totalDownloads = 0;
+    m_completedDownloads = 0;
+    m_failedDownloads = 0;
+
+    // List of language codes and their corresponding GitHub URLs
+    QStringList languageCodes = {"en", "fr", "de", "it", "ko", "zh_CN"};
+    QString baseUrl = "https://github.com/Odizinne/QuickSoundSwitcher/raw/refs/heads/main/i18n/compiled/QuickSoundSwitcher_%1.qm";
+
+    m_totalDownloads = languageCodes.size();
+
+    emit translationDownloadStarted();
+
+    // Start downloading each translation file
+    for (const QString& langCode : languageCodes) {
+        QString url = baseUrl.arg(langCode);
+        downloadTranslationFile(langCode, url);
+    }
+
+    // If no downloads were started, emit finished signal
+    if (m_totalDownloads == 0) {
+        emit translationDownloadFinished(false, tr("No translation files to download"));
+    }
+}
+
+void SoundPanelBridge::cancelTranslationDownload()
+{
+    // Cancel all active downloads
+    for (QNetworkReply* reply : m_activeDownloads) {
+        if (reply && reply->isRunning()) {
+            reply->abort();
+        }
+    }
+
+    // Clear the list (replies will be deleted by their finished signal)
+    m_activeDownloads.clear();
+}
+
+void SoundPanelBridge::downloadTranslationFile(const QString& languageCode, const QString& githubUrl)
+{
+    // Create the request explicitly
+    QUrl url(githubUrl);
+    QNetworkRequest request;
+    request.setUrl(url);
+
+    // Use version from CMake instead of hardcoded version
+    QString userAgent = QString("QuickSoundSwitcher/%1").arg(APP_VERSION_STRING);
+    request.setRawHeader("User-Agent", userAgent.toUtf8());
+
+    // Force HTTP/1.1 to avoid HTTP/2 connection issues
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+
+    // Add additional headers for better compatibility
+    request.setRawHeader("Accept", "*/*");
+    request.setRawHeader("Connection", "keep-alive");
+
+    // Set a reasonable timeout
+    request.setTransferTimeout(30000); // 30 seconds
+
+    QNetworkReply* reply = m_networkManager->get(request);
+
+    // Store language code in the reply for later use
+    reply->setProperty("languageCode", languageCode);
+
+    m_activeDownloads.append(reply);
+
+    // Connect progress signal
+    connect(reply, &QNetworkReply::downloadProgress, this,
+            [this, languageCode](qint64 bytesReceived, qint64 bytesTotal) {
+                emit translationDownloadProgress(languageCode,
+                                                 static_cast<int>(bytesReceived),
+                                                 static_cast<int>(bytesTotal));
+            });
+
+    // Connect finished signal
+    connect(reply, &QNetworkReply::finished, this, &SoundPanelBridge::onTranslationFileDownloaded);
+
+    // Connect error signal for better debugging
+    connect(reply, &QNetworkReply::errorOccurred, this,
+            [this, languageCode](QNetworkReply::NetworkError error) {
+                qWarning() << "Network error for" << languageCode << ":" << error;
+            });
+}
+
+void SoundPanelBridge::onTranslationFileDownloaded()
+{
+    QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+
+    QString languageCode = reply->property("languageCode").toString();
+
+    // Remove from active downloads
+    m_activeDownloads.removeAll(reply);
+
+    if (reply->error() == QNetworkReply::NoError) {
+        // Save the file
+        QString downloadPath = getTranslationDownloadPath();
+        QString fileName = QString("QuickSoundSwitcher_%1.qm").arg(languageCode);
+        QString filePath = downloadPath + "/" + fileName;
+
+        // Ensure directory exists
+        QDir().mkpath(downloadPath);
+
+        QFile file(filePath);
+        if (file.open(QIODevice::WriteOnly)) {
+            QByteArray data = reply->readAll();
+            if (!data.isEmpty()) {
+                file.write(data);
+                file.close();
+                qDebug() << "Downloaded translation file:" << fileName << "(" << data.size() << "bytes)";
+            } else {
+                qWarning() << "Downloaded empty file for:" << languageCode;
+                m_failedDownloads++;
+            }
+        } else {
+            qWarning() << "Failed to save translation file:" << filePath;
+            m_failedDownloads++;
+        }
+    } else {
+        qWarning() << "Failed to download translation for" << languageCode
+                   << "Error:" << reply->error()
+                   << "HTTP Status:" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()
+                   << "Message:" << reply->errorString();
+        m_failedDownloads++;
+    }
+
+    m_completedDownloads++;
+
+    // Emit individual file completion
+    emit translationFileCompleted(languageCode, m_completedDownloads, m_totalDownloads);
+
+    // Check if all downloads are complete
+    if (m_completedDownloads >= m_totalDownloads) {
+        bool success = (m_failedDownloads == 0);
+        QString message;
+
+        if (success) {
+            message = tr("All translations downloaded successfully");
+        } else {
+            message = tr("Downloaded %1 of %2 translation files")
+            .arg(m_totalDownloads - m_failedDownloads)
+                .arg(m_totalDownloads);
+        }
+
+        emit translationDownloadFinished(success, message);
+
+        // If successful, we might want to reload the current language
+        if (success) {
+            int currentLangIndex = settings.value("languageIndex", 0).toInt();
+            changeApplicationLanguage(currentLangIndex);
+        }
+    }
+
+    // Clean up
+    reply->deleteLater();
+}
+
+QString SoundPanelBridge::getTranslationDownloadPath() const
+{
+    // Get the directory where the executable is located
+    QString appDir = QCoreApplication::applicationDirPath();
+    return appDir + "/i18n";
 }

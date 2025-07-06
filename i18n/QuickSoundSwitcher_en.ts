@@ -322,6 +322,30 @@
         <source>Unknow date</source>
         <translation>02.07.2025</translation>
     </message>
+    <message>
+        <source>Update Translations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download the latest translation files from GitHub</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download completed successfully!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QuickSoundSwitcher</name>
@@ -461,6 +485,21 @@
     <message>
         <source>ChatMix</source>
         <translation></translation>
+    </message>
+</context>
+<context>
+    <name>SoundPanelBridge</name>
+    <message>
+        <source>No translation files to download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All translations downloaded successfully</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloaded %1 of %2 translation files</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

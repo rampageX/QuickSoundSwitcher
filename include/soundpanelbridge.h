@@ -17,6 +17,10 @@
 #include <QDir>
 #include <QFile>
 #include <QVariant>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QUrl>
 
 class SoundPanelBridge : public QObject
 {
@@ -120,6 +124,9 @@ public:
     bool areGlobalShortcutsSuspended() const;
     void requestChatMixNotification(QString message);
 
+    Q_INVOKABLE void downloadLatestTranslations();
+    Q_INVOKABLE void cancelTranslationDownload();
+
 public slots:
     void onPlaybackVolumeChanged(int volume);
     void onRecordingVolumeChanged(int volume);
@@ -157,6 +164,11 @@ signals:
     void recordingAudioLevelChanged();
     void chatMixEnabledChanged(bool enabled);
     void chatMixNotificationRequested(QString mesasge);
+    void translationDownloadStarted();
+    void translationDownloadProgress(const QString& language, int bytesReceived, int bytesTotal);
+    void translationDownloadFinished(bool success, const QString& message);
+    void translationDownloadError(const QString& errorMessage);
+    void translationFileCompleted(const QString& language, int completed, int total);
 
 private:
     static SoundPanelBridge* m_instance;
@@ -215,6 +227,16 @@ private:
     int m_playbackAudioLevel = 0;
     int m_recordingAudioLevel = 0;
     bool m_globalShortcutsSuspended = false;
+
+    QNetworkAccessManager* m_networkManager;
+    QList<QNetworkReply*> m_activeDownloads;
+    int m_totalDownloads;
+    int m_completedDownloads;
+    int m_failedDownloads;
+
+    void downloadTranslationFile(const QString& languageCode, const QString& githubUrl);
+    void onTranslationFileDownloaded();
+    QString getTranslationDownloadPath() const;
 };
 
 #endif // SOUNDPANELBRIDGE_H
