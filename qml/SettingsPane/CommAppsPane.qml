@@ -71,7 +71,7 @@ ColumnLayout {
                 show: UserSettings.activateChatmix
                 width: parent.width
                 title: qsTr("ChatMix volume")
-                description: qsTr("The volume to set for applications when ChatMix is disabled")
+                description: qsTr("The volume to set for non communication applications when ChatMix is enabled")
                 enabled: UserSettings.chatMixEnabled
 
                 additionalControl: Slider {

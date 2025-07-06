@@ -159,8 +159,29 @@ qt_add_translations(${CMAKE_PROJECT_NAME}
         i18n/QuickSoundSwitcher_ko.ts
         i18n/QuickSoundSwitcher_it.ts
         i18n/QuickSoundSwitcher_zh_CN.ts
-    RESOURCE_PREFIX "/i18n"
-    LUPDATE_OPTIONS "-no-ui-lines"
+    #RESOURCE_PREFIX "/i18n"
+    LUPDATE_OPTIONS "-locations none"
+)
+
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/i18n
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/i18n/compiled
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_en.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_fr.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_de.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_ko.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_it.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_zh_CN.qm
+        ${CMAKE_BINARY_DIR}/i18n/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_en.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_fr.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_de.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_ko.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_it.qm
+        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_zh_CN.qm
+        ${PROJECT_SOURCE_DIR}/i18n/compiled/
 )
 
 add_dependencies(${CMAKE_PROJECT_NAME} update_translations)
@@ -177,3 +198,13 @@ qt_generate_deploy_qml_app_script(
     DEPLOY_TOOL_OPTIONS --no-compiler-runtime --no-opengl-sw --no-system-dxc-compiler --no-system-d3d-compiler --skip-plugin-types designer,iconengines,qmllint,generic,networkinformation,help,qmltooling,sqldrivers,tls,qmlls
 )
 install(SCRIPT ${deploy_script})
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_en.qm
+    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_fr.qm
+    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_de.qm
+    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_ko.qm
+    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_it.qm
+    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_zh_CN.qm
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/i18n
+)

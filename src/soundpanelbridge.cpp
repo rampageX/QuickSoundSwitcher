@@ -843,7 +843,7 @@ void SoundPanelBridge::changeApplicationLanguage(int languageIndex)
         languageCode = getLanguageCodeFromIndex(languageIndex);
     }
 
-    QString translationFile = QString(":/i18n/QuickSoundSwitcher_%1.qm").arg(languageCode);
+    QString translationFile = QString("./i18n/QuickSoundSwitcher_%1.qm").arg(languageCode);
     if (translator->load(translationFile)) {
         qGuiApp->installTranslator(translator);
     } else {
