@@ -354,6 +354,14 @@
         <source>Error: %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Auto update translations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fetch for translations update at startup and every 4 hours</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QuickSoundSwitcher</name>

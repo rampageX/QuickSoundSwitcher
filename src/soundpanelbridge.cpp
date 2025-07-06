@@ -26,6 +26,7 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     , m_totalDownloads(0)
     , m_completedDownloads(0)
     , m_failedDownloads(0)
+    , m_autoUpdateTimer(new QTimer(this))
 {
     m_instance = this;
 
@@ -146,6 +147,15 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
                     }
                 });
     }
+
+    m_autoUpdateTimer->setInterval(4 * 60 * 60 * 1000);
+    m_autoUpdateTimer->setSingleShot(false);
+    connect(m_autoUpdateTimer, &QTimer::timeout, this, &SoundPanelBridge::checkForTranslationUpdates);
+    m_autoUpdateTimer->start();
+
+    if (settings.value("autoUpdateTranslations", false).toBool()) {
+        QTimer::singleShot(5000, this, &SoundPanelBridge::checkForTranslationUpdates);
+    }
 }
 
 SoundPanelBridge::~SoundPanelBridge()
@@ -169,6 +179,18 @@ SoundPanelBridge* SoundPanelBridge::create(QQmlEngine* qmlEngine, QJSEngine* jsE
 SoundPanelBridge* SoundPanelBridge::instance()
 {
     return m_instance;
+}
+
+void SoundPanelBridge::checkForTranslationUpdates()
+{
+    if (!settings.value("autoUpdateTranslations", false).toBool()) {
+        m_autoUpdateTimer->stop();
+            return;
+    }
+
+    if (m_activeDownloads.isEmpty()) {
+        downloadLatestTranslations();
+    }
 }
 
 bool SoundPanelBridge::getShortcutState()
@@ -1277,6 +1299,8 @@ void SoundPanelBridge::onTranslationFileDownloaded()
 
         if (success) {
             message = tr("All translations downloaded successfully");
+            changeApplicationLanguage(settings.value("languageIndex", 0).toInt());
+
         } else {
             message = tr("Downloaded %1 of %2 translation files")
             .arg(m_totalDownloads - m_failedDownloads)

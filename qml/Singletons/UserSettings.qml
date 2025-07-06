@@ -31,4 +31,5 @@ Settings {
     property int chatMixShortcutKey: 77      // Qt.Key_M
     property int chatMixShortcutModifiers: 117440512  // Qt.ControlModifier | Qt.ShiftModifier
     property bool chatMixShortcutNotification: true
+    property bool autoUpdateTranslations: false
 }

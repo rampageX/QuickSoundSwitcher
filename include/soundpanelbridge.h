@@ -142,6 +142,9 @@ public slots:
     void updateMuteStateFromTray(bool muted);
     void refreshPanelModeState();
 
+private slots:
+    void checkForTranslationUpdates();
+
 signals:
     void playbackVolumeChanged();
     void recordingVolumeChanged();
@@ -237,6 +240,8 @@ private:
     void downloadTranslationFile(const QString& languageCode, const QString& githubUrl);
     void onTranslationFileDownloaded();
     QString getTranslationDownloadPath() const;
+
+    QTimer* m_autoUpdateTimer;
 };
 
 #endif // SOUNDPANELBRIDGE_H

@@ -31,6 +31,13 @@ ColumnLayout {
                 additionalControl: RowLayout {
                     spacing: 10
 
+                    BusyIndicator {
+                        Layout.preferredWidth: 20
+                        Layout.preferredHeight: 20
+                        visible: dlCard.downloadInProgress
+                        running: visible
+                    }
+
                     Button {
                         text: qsTr("Download")
                         enabled: !dlCard.downloadInProgress
@@ -38,13 +45,6 @@ ColumnLayout {
                             dlCard.downloadInProgress = true
                             SoundPanelBridge.downloadLatestTranslations()
                         }
-                    }
-
-                    BusyIndicator {
-                        Layout.preferredWidth: 20
-                        Layout.preferredHeight: 20
-                        visible: dlCard.downloadInProgress
-                        running: visible
                     }
                 }
 
@@ -70,6 +70,17 @@ ColumnLayout {
 
             Card {
                 Layout.fillWidth: true
+                title: qsTr("Auto update translations")
+                description: qsTr("Fetch for translations update at startup and every 4 hours")
+
+                additionalControl: Switch {
+                    checked: UserSettings.autoUpdateTranslations
+                    onClicked: UserSettings.autoUpdateTranslations = checked
+                }
+            }
+
+            Card {
+                Layout.fillWidth: true
                 title: qsTr("Application language")
 
                 additionalControl: ComboBox {
@@ -78,7 +89,6 @@ ColumnLayout {
                     currentIndex: UserSettings.languageIndex
                     onActivated: {
                         UserSettings.languageIndex = currentIndex
-                        SoundPanelBridge.changeApplicationLanguage(currentIndex)
                         currentIndex = UserSettings.languageIndex
                     }
                 }
