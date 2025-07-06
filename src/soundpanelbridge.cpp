@@ -34,7 +34,6 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
 
     m_chatMixValue = settings.value("chatMixValue", 50).toInt();
 
-
     changeApplicationLanguage(settings.value("languageIndex", 0).toInt());
     populateApplications();
     // Setup ChatMix monitoring timer

@@ -24,6 +24,14 @@ ApplicationWindow {
         return newHeight
     }
 
+    MouseArea {
+        height: panel.maxDeviceListSpace - panel.currentUsedListSpace
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: UserSettings.panelPosition === 0 ? parent.bottom : undefined
+        anchors.top: UserSettings.panelPosition === 0 ? undefined : parent.top
+        onClicked: panel.hidePanel()
+    }
 
     visible: false
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
