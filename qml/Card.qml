@@ -9,7 +9,7 @@ Rectangle {
 
     property string title: ""
     property string description: ""
-    property Item additionalControl
+    property Component additionalControl
     property string iconSource: ""
     property int iconWidth: 24
     property int iconHeight: 24
@@ -70,12 +70,6 @@ Rectangle {
         }
     }
 
-    onAdditionalControlChanged: {
-        if (additionalControl) {
-            additionalControl.parent = rowLayout
-        }
-    }
-
     Rectangle {
         anchors.fill: parent
         border.width: 1
@@ -102,25 +96,39 @@ Rectangle {
         }
 
         ColumnLayout {
-            Layout.fillWidth: true
             spacing: 0
+            Layout.minimumWidth: 100
+            Layout.preferredWidth: Layout.maximumWidth
+            Layout.maximumWidth: card.width - (card.iconSource ? card.iconWidth + 15 : 0) - (additionalControlLoader.item ? additionalControlLoader.item.width : 0) - 45
 
             Label {
                 text: card.title
                 font.pixelSize: 14
                 visible: text
+                elide: Text.ElideRight
+                Layout.fillWidth: true
             }
 
             Label {
                 text: card.description
                 opacity: 0.6
                 visible: text
-                font.pixelSize: 12
+                font.pixelSize: lineCount > 1 ? 11 : 12
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                maximumLineCount: 2
             }
         }
 
         Item {
             Layout.fillWidth: true
+            Layout.minimumWidth: 10
+        }
+
+        Loader {
+            id: additionalControlLoader
+            sourceComponent: card.additionalControl
+            visible: card.additionalControl !== null
         }
     }
 }
