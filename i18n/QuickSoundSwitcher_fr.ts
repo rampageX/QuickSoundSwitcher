@@ -368,11 +368,11 @@
     </message>
     <message>
         <source>Auto update translations</source>
-        <translation type="unfinished"></translation>
+        <translation>Mise à jour automatique des traductions</translation>
     </message>
     <message>
         <source>Fetch for translations update at startup and every 4 hours</source>
-        <translation type="unfinished"></translation>
+        <translation>Rechercher des mises à jour de traductions au démarrage et toutes les 4 heures</translation>
     </message>
 </context>
 <context>
@@ -453,31 +453,31 @@
     <name>ShortcutsPane</name>
     <message>
         <source>Global Shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Raccourcis globaux</translation>
     </message>
     <message>
         <source>Enable global shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Activer les raccourcis globaux</translation>
     </message>
     <message>
         <source>Allow QuickSoundSwitcher to respond to keyboard shortcuts globally</source>
-        <translation type="unfinished"></translation>
+        <translation>Autorise QuickSoundSwitcher a répondre aux raccourcis clavier globaux</translation>
     </message>
     <message>
         <source>Notification on ChatMix toggle</source>
-        <translation type="unfinished"></translation>
+        <translation>Notification au raccourci de ChatMix</translation>
     </message>
     <message>
         <source>Show/Hide Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>Afficher/Masquer le panneau</translation>
     </message>
     <message>
         <source>Shortcut to toggle the main panel visibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Raccourci pour faire apparaitre ou masquer le panneau</translation>
     </message>
     <message>
         <source>Change</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifier</translation>
     </message>
     <message>
         <source>Toggle ChatMix</source>
