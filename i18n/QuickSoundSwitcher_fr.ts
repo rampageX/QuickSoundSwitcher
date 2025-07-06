@@ -340,15 +340,15 @@
     </message>
     <message>
         <source>Update Translations</source>
-        <translation type="unfinished"></translation>
+        <translation>Mettre à jour les traductions</translation>
     </message>
     <message>
         <source>Download the latest translation files from GitHub</source>
-        <translation type="unfinished"></translation>
+        <translation>Télécharger les dernieres traductions sur GitHub</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>Télécharger</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -356,14 +356,18 @@
     </message>
     <message>
         <source>Download completed successfully!</source>
-        <translation type="unfinished"></translation>
+        <translation>Téléchargement complété avec succès!</translation>
     </message>
     <message>
         <source>Download failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Echec du téléchargement: %1</translation>
     </message>
     <message>
         <source>Error: %1</source>
+        <translation>Erreur: %1</translation>
+    </message>
+    <message>
+        <source>test string</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
