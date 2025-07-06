@@ -20,6 +20,10 @@ If you like my work, please consider supporting me:
 Left click on the tray icon to reveal the panel.  
 Click anywhere to close the panel.
 
+## Translations
+
+Translators should have a look [here](.github/TRANSLATIONS.md).
+
 ## Installation
 
 Download latest version [here](https://github.com/Odizinne/QuickSoundSwitcher/releases/latest).  
