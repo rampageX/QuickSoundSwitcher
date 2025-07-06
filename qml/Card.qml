@@ -113,7 +113,7 @@ Rectangle {
                 text: card.description
                 opacity: 0.6
                 visible: text
-                font.pixelSize: lineCount > 1 ? 11 : 12
+                font.pixelSize: 12
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
                 maximumLineCount: 2

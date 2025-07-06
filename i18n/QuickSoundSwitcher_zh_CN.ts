@@ -316,7 +316,7 @@
     </message>
     <message>
         <source>Translation Progress</source>
-        <translation>翻译进度</translation>
+        <translation type="vanished">翻译进度</translation>
     </message>
     <message>
         <source>Translation author</source>

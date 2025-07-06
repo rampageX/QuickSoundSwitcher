@@ -22,8 +22,8 @@ find_package(Qt6 REQUIRED COMPONENTS
 
 qt_standard_project_setup(REQUIRES 6.9)
 
-# Include the translation progress script
-include(cmake/translation_progress.cmake)
+# Include language definitions
+include(cmake/languages.cmake)
 
 set(SOURCES
     src/audiomanager.cpp
@@ -67,8 +67,25 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/version.h"
 )
 
-# Generate translation progress header
-generate_translation_progress()
+# Generate languages header
+set(LANGUAGE_DATA "")
+foreach(LANG_INFO ${SUPPORTED_LANGUAGES})
+    string(REPLACE "|" ";" LANG_LIST "${LANG_INFO}")
+    list(GET LANG_LIST 0 CODE)
+    list(GET LANG_LIST 1 ENGLISH_NAME)
+    list(GET LANG_LIST 2 NATIVE_NAME)
+
+    string(APPEND LANGUAGE_DATA "        {\"${CODE}\", \"${ENGLISH_NAME}\", \"${NATIVE_NAME}\"},\n")
+endforeach()
+
+# Remove trailing comma and newline
+string(REGEX REPLACE ",\n$" "\n" LANGUAGE_DATA "${LANGUAGE_DATA}")
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/languages.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/languages.h"
+    @ONLY
+)
 
 # Configure Windows metadata
 set(APP_ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/icon.ico")
@@ -153,37 +170,20 @@ if(WIN32 AND MSVC)
     target_compile_options(QuickSoundSwitcher PRIVATE "/await")
 endif()
 
+# Get TS and QM files from centralized language configuration
+get_ts_files(TS_FILES ${CMAKE_PROJECT_NAME})
+get_qm_files(QM_FILES ${CMAKE_PROJECT_NAME})
+
 qt_add_translations(${CMAKE_PROJECT_NAME}
-    TS_FILES
-        i18n/QuickSoundSwitcher_en.ts
-        i18n/QuickSoundSwitcher_fr.ts
-        i18n/QuickSoundSwitcher_de.ts
-        i18n/QuickSoundSwitcher_ko.ts
-        i18n/QuickSoundSwitcher_it.ts
-        i18n/QuickSoundSwitcher_zh_CN.ts
-    #RESOURCE_PREFIX "/i18n"
+    TS_FILES ${TS_FILES}
     LUPDATE_OPTIONS "-locations none"
 )
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/i18n
     COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/i18n/compiled
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_en.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_fr.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_de.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_ko.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_it.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_zh_CN.qm
-        ${CMAKE_BINARY_DIR}/i18n/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_en.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_fr.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_de.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_ko.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_it.qm
-        ${CMAKE_BINARY_DIR}/QuickSoundSwitcher_zh_CN.qm
-        ${PROJECT_SOURCE_DIR}/i18n/compiled/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QM_FILES} ${CMAKE_BINARY_DIR}/i18n/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QM_FILES} ${PROJECT_SOURCE_DIR}/i18n/compiled/
 )
 
 add_dependencies(${CMAKE_PROJECT_NAME} update_translations)
@@ -201,12 +201,4 @@ qt_generate_deploy_qml_app_script(
 )
 install(SCRIPT ${deploy_script})
 
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_en.qm
-    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_fr.qm
-    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_de.qm
-    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_ko.qm
-    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_it.qm
-    ${CMAKE_CURRENT_BINARY_DIR}/i18n/QuickSoundSwitcher_zh_CN.qm
-    DESTINATION ${CMAKE_INSTALL_BINDIR}/i18n
-)
+install(FILES ${QM_FILES} DESTINATION ${CMAKE_INSTALL_BINDIR}/i18n)

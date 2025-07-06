@@ -303,10 +303,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Translation Progress</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Translation author</source>
         <translation type="unfinished"></translation>
     </message>

@@ -95,9 +95,7 @@ public:
     Q_INVOKABLE void startMediaMonitoring();
     Q_INVOKABLE void stopMediaMonitoring();
 
-    Q_INVOKABLE int getTotalTranslatableStrings() const;
     Q_INVOKABLE QString getCurrentLanguageCode() const;
-    Q_INVOKABLE int getCurrentLanguageFinishedStrings(int languageIndex) const;
     Q_INVOKABLE void changeApplicationLanguage(int languageIndex);
     Q_INVOKABLE QString getLanguageCodeFromIndex(int index) const;
 
@@ -126,6 +124,8 @@ public:
 
     Q_INVOKABLE void downloadLatestTranslations();
     Q_INVOKABLE void cancelTranslationDownload();
+    Q_INVOKABLE QStringList getLanguageNativeNames() const;
+    Q_INVOKABLE QStringList getLanguageCodes() const;
 
 public slots:
     void onPlaybackVolumeChanged(int volume);

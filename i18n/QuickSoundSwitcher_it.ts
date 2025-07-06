@@ -308,7 +308,7 @@
     </message>
     <message>
         <source>Translation Progress</source>
-        <translation>Stato traduzione</translation>
+        <translation type="vanished">Stato traduzione</translation>
     </message>
     <message>
         <source>Translation author</source>

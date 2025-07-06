@@ -320,7 +320,7 @@
     </message>
     <message>
         <source>Translation Progress</source>
-        <translation>Complétion de la traduction</translation>
+        <translation type="vanished">Complétion de la traduction</translation>
     </message>
     <message>
         <source>Translation author</source>

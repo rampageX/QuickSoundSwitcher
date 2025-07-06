@@ -5,8 +5,8 @@
 #include <QPixmap>
 #include <algorithm>
 #include "version.h"
-#include "translation_progress.h"
 #include "mediasessionmanager.h"
+#include "languages.h"
 
 SoundPanelBridge* SoundPanelBridge::m_instance = nullptr;
 
@@ -832,30 +832,6 @@ QString SoundPanelBridge::getCurrentLanguageCode() const {
     return languageCode;
 }
 
-int SoundPanelBridge::getTotalTranslatableStrings() const {
-    auto allProgress = getTranslationProgressMap();
-
-    // Just get the total from any language (they should all be the same)
-    for (auto it = allProgress.begin(); it != allProgress.end(); ++it) {
-        QVariantMap langData = it.value().toMap();
-        return langData["total"].toInt();
-    }
-
-    return 0; // Fallback
-}
-
-int SoundPanelBridge::getCurrentLanguageFinishedStrings(int languageIndex) const {
-    QString currentLang = getLanguageCodeFromIndex(languageIndex);
-    auto allProgress = getTranslationProgressMap();
-
-    if (allProgress.contains(currentLang)) {
-        QVariantMap langData = allProgress[currentLang].toMap();
-        return langData["finished"].toInt();
-    }
-
-    return 0; // Fallback
-}
-
 void SoundPanelBridge::changeApplicationLanguage(int languageIndex)
 {
     qApp->removeTranslator(translator);
@@ -883,18 +859,27 @@ QString SoundPanelBridge::getLanguageCodeFromIndex(int index) const
 {
     if (index == 0) {
         QLocale systemLocale;
-        return systemLocale.name().left(2);
+        QString langCode = systemLocale.name().section('_', 0, 0);
+
+        // Handle Chinese variants specifically
+        if (langCode == "zh") {
+            QString fullLocale = systemLocale.name();
+            if (fullLocale.startsWith("zh_CN")) {
+                return "zh_CN";
+            }
+            return "zh_CN"; // Default to simplified Chinese
+        }
+
+        return langCode;
     }
 
-    switch (index) {
-    case 1: return "en";
-    case 2: return "fr";
-    case 3: return "de";
-    case 4: return "it";
-    case 5: return "ko";
-    case 6: return "zh_CN";
-    default: return "en";
+    // Use centralized language data
+    auto languages = getSupportedLanguages();
+    if (index > 0 && index <= languages.size()) {
+        return languages[index - 1].code;
     }
+
+    return "en"; // fallback
 }
 
 QString SoundPanelBridge::getCommitHash() const
@@ -1166,21 +1151,18 @@ void SoundPanelBridge::downloadLatestTranslations()
     m_completedDownloads = 0;
     m_failedDownloads = 0;
 
-    // List of language codes and their corresponding GitHub URLs
-    QStringList languageCodes = {"en", "fr", "de", "it", "ko", "zh_CN"};
+    // Use centralized language codes
+    QStringList languageCodes = getLanguageCodes();
     QString baseUrl = "https://github.com/Odizinne/QuickSoundSwitcher/raw/refs/heads/main/i18n/compiled/QuickSoundSwitcher_%1.qm";
 
     m_totalDownloads = languageCodes.size();
-
     emit translationDownloadStarted();
 
-    // Start downloading each translation file
     for (const QString& langCode : languageCodes) {
         QString url = baseUrl.arg(langCode);
         downloadTranslationFile(langCode, url);
     }
 
-    // If no downloads were started, emit finished signal
     if (m_totalDownloads == 0) {
         emit translationDownloadFinished(false, tr("No translation files to download"));
     }
@@ -1325,4 +1307,16 @@ QString SoundPanelBridge::getTranslationDownloadPath() const
     // Get the directory where the executable is located
     QString appDir = QCoreApplication::applicationDirPath();
     return appDir + "/i18n";
+}
+
+QStringList SoundPanelBridge::getLanguageNativeNames() const
+{
+    auto names = ::getLanguageNativeNames();
+    qDebug() << "getLanguageNativeNames() returning:" << names;
+    return names;
+}
+
+QStringList SoundPanelBridge::getLanguageCodes() const
+{
+    return ::getLanguageCodes();
 }

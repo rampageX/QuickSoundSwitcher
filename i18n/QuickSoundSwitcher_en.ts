@@ -303,10 +303,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>Translation Progress</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Translation author</source>
         <translation></translation>
     </message>

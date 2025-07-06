@@ -85,27 +85,18 @@ ColumnLayout {
 
                 additionalControl: ComboBox {
                     Layout.preferredHeight: 35
-                    model: [qsTr("System"), "english", "français", "deutsch", "italiano", "한글", "简体中文"]
+                    Layout.preferredWidth: 160
+                    model: {
+                        let names = [qsTr("System")]
+                        names = names.concat(SoundPanelBridge.getLanguageNativeNames())
+                        return names
+                    }
                     currentIndex: UserSettings.languageIndex
                     onActivated: {
                         UserSettings.languageIndex = currentIndex
+                        SoundPanelBridge.changeApplicationLanguage(currentIndex)
                         currentIndex = UserSettings.languageIndex
                     }
-                }
-            }
-
-            Card {
-                id: trProgressCard
-                Layout.fillWidth: true
-                title: qsTr("Translation Progress")
-
-                additionalControl: ProgressBar {
-                    id: trProgressBar
-                    Layout.preferredWidth: 160
-                    Layout.preferredHeight: 6
-                    from: 0
-                    to: SoundPanelBridge.getTotalTranslatableStrings()
-                    value: SoundPanelBridge.getCurrentLanguageFinishedStrings(UserSettings.languageIndex)
                 }
             }
 
