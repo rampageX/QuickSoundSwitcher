@@ -1251,7 +1251,6 @@ void SoundPanelBridge::onTranslationFileDownloaded()
             if (!data.isEmpty()) {
                 file.write(data);
                 file.close();
-                qDebug() << "Downloaded translation file:" << fileName << "(" << data.size() << "bytes)";
             } else {
                 qWarning() << "Downloaded empty file for:" << languageCode;
                 m_failedDownloads++;
@@ -1311,7 +1310,6 @@ QString SoundPanelBridge::getTranslationDownloadPath() const
 QStringList SoundPanelBridge::getLanguageNativeNames() const
 {
     auto names = ::getLanguageNativeNames();
-    qDebug() << "getLanguageNativeNames() returning:" << names;
     return names;
 }
 

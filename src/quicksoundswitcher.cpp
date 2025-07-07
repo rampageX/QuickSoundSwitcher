@@ -446,7 +446,6 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
 
-// In src/quicksoundswitcher.cpp - update handleCustomShortcut:
 void QuickSoundSwitcher::handleCustomShortcut(DWORD vkCode)
 {
     // Check if global shortcuts are enabled in settings
@@ -493,13 +492,6 @@ void QuickSoundSwitcher::toggleChatMix()
         SoundPanelBridge::instance()->toggleChatMixFromShortcut(!currentState);
 
         if (settings.value("chatMixShortcutNotification", true).toBool()) {
-            //trayIcon->showMessage(
-            //    message,
-            //    QString(),
-            //    QSystemTrayIcon::Information,
-            //    1000
-            //    );
-
             SoundPanelBridge::instance()->requestChatMixNotification(message);
         }
     }
@@ -601,7 +593,6 @@ void QuickSoundSwitcher::onPanelHideAnimationFinished()
 {
     isPanelVisible = false;
     uninstallGlobalMouseHook();
-    // No need to destroy engine anymore - just keep it hidden
 }
 
 void QuickSoundSwitcher::onLanguageChanged()
@@ -703,7 +694,6 @@ void QuickSoundSwitcher::onNewConnection()
         qDebug() << "Received message from new instance:" << message;
 
         if (message == "show_panel") {
-            // Show the panel
             showPanel();
         }
 

@@ -33,6 +33,15 @@ ApplicationWindow {
         onClicked: panel.hidePanel()
     }
 
+    Shortcut {
+        sequence: StandardKey.Cancel
+        onActivated: {
+            if (!panel.isAnimatingIn && !panel.isAnimatingOut && panel.visible) {
+                panel.hidePanel()
+            }
+        }
+    }
+
     visible: false
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "#00000000"
