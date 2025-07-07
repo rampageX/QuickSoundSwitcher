@@ -159,7 +159,7 @@ ApplicationWindow {
     PropertyAnimation {
         id: showAnimation
         target: contentTransform
-        duration: 210
+        duration: 180
         easing.type: Easing.OutCubic
         onStarted: {
             contentOpacityTimer.start()
@@ -174,7 +174,7 @@ ApplicationWindow {
     PropertyAnimation {
         id: hideAnimation
         target: contentTransform
-        duration: 210
+        duration: 180
         easing.type: Easing.InCubic
         onFinished: {
             panel.visible = false
