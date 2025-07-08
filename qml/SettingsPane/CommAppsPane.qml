@@ -1,10 +1,15 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.FluentWinUI3
 import Odizinne.QuickSoundSwitcher
 
 ColumnLayout {
+    id: lyt
     spacing: 3
+
+    signal cancelChatMixActivation()
 
     Label {
         text: qsTr("Communication Apps")
@@ -42,6 +47,12 @@ ColumnLayout {
                             UserSettings.activateChatmix = checked
                             UserSettings.chatMixEnabled = checked
                             SoundPanelBridge.restoreOriginalVolumes()
+                        }
+                    }
+                    Connections {
+                        target: lyt
+                        function onCancelChatMixActivation() {
+                            activateChatMixSwitch.checked = false
                         }
                     }
                 }
@@ -183,7 +194,7 @@ ColumnLayout {
                 Button {
                     text: qsTr("Cancel")
                     onClicked: {
-                        activateChatMixSwitch.checked = false
+                        lyt.cancelChatMixActivation()
                         chatMixWarningDialog.close()
                     }
                     Layout.fillWidth: true
