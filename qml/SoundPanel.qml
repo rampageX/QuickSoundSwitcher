@@ -79,9 +79,8 @@ ApplicationWindow {
         if (!visible) {
             outputDevicesRect.expanded = false
             inputDevicesRect.expanded = false
-            contentOpacityTimer.stop()
-            outputListOpacityTimer.stop()
-            inputListOpacityTimer.stop()
+            mediaLayout.opacity = 0
+            mainLayout.opacity = 0
             if (UserSettings.showAudioLevel) {
                 SoundPanelBridge.stopAudioLevelMonitoring()
             }
@@ -90,56 +89,20 @@ ApplicationWindow {
                 SoundPanelBridge.startAudioLevelMonitoring()
             }
         }
-
-            let newHeight = mainLayout.implicitHeight + 30 + 15
-
-            if (mediaLayout.visible) {
-                newHeight += mediaLayout.implicitHeight
-            } else {
-                newHeight -= 5
-            }
-
-            if (spacer.visible) {
-                newHeight += spacer.height
-            }
-
-            newHeight += panel.maxDeviceListSpace
-
-            if (panel.visible && !panel.isAnimatingIn && !panel.isAnimatingOut) {
-                panel.height = newHeight
-                panel.positionPanelAtTarget()
-            } else {
-                panel.height = newHeight
-        }
-
     }
 
     Timer {
         id: contentOpacityTimer
-        interval: 200
+        interval: 160
         repeat: false
         onTriggered: mainLayout.opacity = 1
     }
 
     Timer {
         id: flyoutOpacityTimer
-        interval: 200
+        interval: 160
         repeat: false
         onTriggered: mediaLayout.opacity = 1
-    }
-
-    Timer {
-        id: outputListOpacityTimer
-        interval: 112
-        repeat: false
-        onTriggered: outputDevicesRect.contentOpacity = 1
-    }
-
-    Timer {
-        id: inputListOpacityTimer
-        interval: 112
-        repeat: false
-        onTriggered: inputDevicesRect.contentOpacity = 1
     }
 
     onHeightChanged: {
@@ -503,7 +466,7 @@ ApplicationWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.margins: 15
-            opacity: 1
+            opacity: 0
             visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
 
             Behavior on opacity {
@@ -531,7 +494,7 @@ ApplicationWindow {
             anchors.right: parent.right
             anchors.margins: 15
             spacing: 10
-            opacity: 1
+            opacity: 0
 
             Behavior on opacity {
                 NumberAnimation {
@@ -637,7 +600,7 @@ ApplicationWindow {
                         Behavior on rotation {
                             NumberAnimation {
                                 duration: 150
-                                easing.type: Easing.OutQuad
+                                easing.type: Easing.Linear
                             }
                         }
 
@@ -756,7 +719,7 @@ ApplicationWindow {
                         Behavior on rotation {
                             NumberAnimation {
                                 duration: 150
-                                easing.type: Easing.OutQuad
+                                easing.type: Easing.Linear
                             }
                         }
 
