@@ -102,8 +102,12 @@ Rectangle {
 
     onExpandedChanged: {
         if (expanded) {
-            opacityTimer.start()
+            if (UserSettings.opacityAnimations) {
+                opacityTimer.start()
+            }
+            root.contentOpacity = 1
         } else {
+            if (UserSettings.opacityAnimations) return
             root.contentOpacity = 0
         }
     }

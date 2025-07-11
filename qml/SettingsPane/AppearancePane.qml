@@ -141,6 +141,16 @@ ColumnLayout {
                     onClicked: UserSettings.showAudioLevel = checked
                 }
             }
+
+            Card {
+                Layout.fillWidth: true
+                title: qsTr("Opacity animations")
+
+                additionalControl: Switch {
+                    checked: UserSettings.opacityAnimations
+                    onClicked: UserSettings.opacityAnimations = checked
+                }
+            }
         }
     }
 }

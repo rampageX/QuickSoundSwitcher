@@ -107,6 +107,10 @@
         <source>Windows taskbar size</source>
         <translation>Размер панели задач</translation>
     </message>
+    <message>
+        <source>Opacity animations</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ChatMixNotification</name>

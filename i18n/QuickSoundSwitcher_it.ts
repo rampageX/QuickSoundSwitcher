@@ -111,6 +111,10 @@
         <source>Windows taskbar size</source>
         <translation>Dimensione barra attività Windows</translation>
     </message>
+    <message>
+        <source>Opacity animations</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ChatMixNotification</name>

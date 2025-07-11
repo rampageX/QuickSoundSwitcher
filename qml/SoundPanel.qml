@@ -79,8 +79,11 @@ ApplicationWindow {
         if (!visible) {
             outputDevicesRect.expanded = false
             inputDevicesRect.expanded = false
-            mediaLayout.opacity = 0
-            mainLayout.opacity = 0
+            if (UserSettings.opacityAnimations) {
+                mediaLayout.opacity = 0
+                mainLayout.opacity = 0
+            }
+
             if (UserSettings.showAudioLevel) {
                 SoundPanelBridge.stopAudioLevelMonitoring()
             }
@@ -145,12 +148,12 @@ ApplicationWindow {
             panel.dataLoaded = false
             panel.hideAnimationFinished()
         }
-        onStarted: {
-            mainLayout.opacity = 0
-            mediaLayout.opacity = 0
-            outputDevicesRect.contentOpacity = 0
-            inputDevicesRect.contentOpacity = 0
-        }
+        //onStarted: {
+        //    mainLayout.opacity = 0
+        //    mediaLayout.opacity = 0
+        //    outputDevicesRect.contentOpacity = 0
+        //    inputDevicesRect.contentOpacity = 0
+        //}
     }
 
     Translate {
