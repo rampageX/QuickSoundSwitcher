@@ -10,8 +10,7 @@ You can override the qm files in your QSS install (default: `%localappdata%\prog
 
 ### Validating your changes
 
-Once satisfied with your changes, select `file` -> `release as...` in Qt linguist.  
-For your udpated translation to be available for users to download, you need to override `%PROJECTROOT%/i18n/compiled/your_compiled_translation.qm`.  
-Make sure to also commit your changes on the `.ts` file.
+Once satisfied with your changes, only commit the `.ts` file.  
+On changes merged, a workflow will handle the compiled translation generation.
 
-see [13d50ec](https://github.com/Odizinne/QuickSoundSwitcher/commit/13d50ec91bc786d0da9aa2f32080f9f29576bb84) for reference.
+Users will be able to update translation within the program with those newly generated ones.
