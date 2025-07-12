@@ -117,7 +117,7 @@
     </message>
     <message>
         <source>Opacity animations</source>
-        <translation type="unfinished"></translation>
+        <translation>Animations d&apos;opacité</translation>
     </message>
 </context>
 <context>
