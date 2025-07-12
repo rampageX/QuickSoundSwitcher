@@ -23,7 +23,7 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          tools: 'tools_linguist'
+          #tools: 'tools_linguist'
           add-tools-to-path: true
           cache: true
 

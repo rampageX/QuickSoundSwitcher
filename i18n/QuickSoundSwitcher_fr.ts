@@ -527,7 +527,7 @@
     <name>SoundPanelBridge</name>
     <message>
         <source>No translation files to download</source>
-        <translation type="unfinished"></translation>
+        <translation>Pas de mise à jour disponnible</translation>
     </message>
     <message>
         <source>All translations downloaded successfully</source>
