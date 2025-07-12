@@ -1,0 +1,51 @@
+name: Update Compiled Translations
+on:
+  push:
+    paths:
+      - 'i18n/*.ts'
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  QT_VERSION: '6.9.1'
+
+jobs:
+  update-translations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          tools: 'tools_linguist'
+          add-tools-to-path: true
+          cache: true
+
+      - name: Compile changed translation files
+        run: |
+          echo "Compiling .ts files to .qm files..."
+          mkdir -p i18n/compiled
+          for ts_file in i18n/*.ts; do
+            if [ -f "$ts_file" ]; then
+              filename=$(basename "$ts_file" .ts)
+              qm_file="i18n/compiled/${filename}.qm"
+              echo "Compiling $ts_file -> $qm_file"
+              lrelease "$ts_file" -qm "$qm_file"
+            fi
+          done
+
+      - name: Commit compiled translations
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add i18n/compiled/
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto-update compiled translations [skip ci]"
+            git push
+          fi
