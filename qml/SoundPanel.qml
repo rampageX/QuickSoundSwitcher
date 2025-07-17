@@ -47,7 +47,6 @@ ApplicationWindow {
     color: "#00000000"
     property bool isAnimatingIn: false
     property bool isAnimatingOut: false
-    property bool dataLoaded: false
     property string taskbarPos: SoundPanelBridge.taskbarPosition
 
     property real maxDeviceListSpace: {
@@ -145,15 +144,8 @@ ApplicationWindow {
         onFinished: {
             panel.visible = false
             panel.isAnimatingOut = false
-            panel.dataLoaded = false
             panel.hideAnimationFinished()
         }
-        //onStarted: {
-        //    mainLayout.opacity = 0
-        //    mediaLayout.opacity = 0
-        //    outputDevicesRect.contentOpacity = 0
-        //    inputDevicesRect.contentOpacity = 0
-        //}
     }
 
     Translate {
@@ -188,6 +180,8 @@ ApplicationWindow {
 
         positionPanelAtTarget()
         setInitialTransform()
+        // Start animation immediately since models are always ready
+        Qt.callLater(panel.startAnimation)
     }
 
     function positionPanelAtTarget() {
@@ -291,104 +285,9 @@ ApplicationWindow {
         hideAnimation.start()
     }
 
-    ListModel {
-        id: playbackDeviceModel
-    }
-
-    ListModel {
-        id: recordingDeviceModel
-    }
-
-    ListModel {
-        id: appModel
-    }
-
+    // ChatMix connections
     Connections {
         target: SoundPanelBridge
-
-        function onPlaybackDevicesChanged(devices) {
-            playbackDeviceModel.clear()
-            for (let i = 0; i < devices.length; i++) {
-                playbackDeviceModel.append({
-                                               id: devices[i].id,
-                                               name: devices[i].name,
-                                               shortName: devices[i].shortName,
-                                               isDefault: devices[i].isDefault
-                                           })
-            }
-        }
-
-        function onRecordingDevicesChanged(devices) {
-            recordingDeviceModel.clear()
-            for (let i = 0; i < devices.length; i++) {
-                recordingDeviceModel.append({
-                                                id: devices[i].id,
-                                                name: devices[i].name,
-                                                shortName: devices[i].shortName,
-                                                isDefault: devices[i].isDefault
-                                            })
-            }
-        }
-
-        function onApplicationsChanged(apps) {
-            appModel.clear()
-            for (let i = 0; i < apps.length; i++) {
-                appModel.append(apps[i])
-            }
-        }
-
-        function onDataInitializationComplete() {
-            panel.dataLoaded = true
-            Qt.callLater(function() {
-                Qt.callLater(function() {
-                    let newHeight = mainLayout.implicitHeight + 30 + 15
-
-                    if (mediaLayout.visible) {
-                        newHeight += mediaLayout.implicitHeight
-                    }
-
-                    if (spacer.visible) {
-                        newHeight += spacer.height
-                    }
-
-                    newHeight += panel.maxDeviceListSpace
-
-                    panel.height = newHeight
-                    Qt.callLater(panel.startAnimation)
-                })
-            })
-        }
-
-        function onApplicationAudioLevelsChanged() {
-            const audioLevels = SoundPanelBridge.applicationAudioLevels
-
-            const levelMap = {}
-            for (let i = 0; i < audioLevels.length; i++) {
-                const levelData = audioLevels[i]
-                levelMap[levelData.appId] = levelData.level
-            }
-
-            for (let j = 0; j < appModel.count; j++) {
-                const appID = appModel.get(j).appID
-
-                if (appID.includes(";")) {
-                    const individualIDs = appID.split(";")
-                    let maxLevel = 0
-                    for (let k = 0; k < individualIDs.length; k++) {
-                        const id = individualIDs[k]
-                        if (levelMap[id] !== undefined) {
-                            maxLevel = Math.max(maxLevel, levelMap[id])
-                        }
-                    }
-                    appModel.setProperty(j, "audioLevel", maxLevel)
-                } else {
-                    if (levelMap[appID] !== undefined) {
-                        appModel.setProperty(j, "audioLevel", levelMap[appID])
-                    }
-                }
-            }
-        }
-
         function onChatMixEnabledChanged(enabled) {
             if (enabled) {
                 UserSettings.chatMixEnabled = true
@@ -520,11 +419,11 @@ ApplicationWindow {
                         Layout.preferredWidth: 40
                         flat: true
                         property string volumeIcon: {
-                            if (SoundPanelBridge.playbackMuted || SoundPanelBridge.playbackVolume === 0) {
+                            if (AudioBridge.outputMuted || AudioBridge.outputVolume === 0) {
                                 return "qrc:/icons/panel_volume_0.png"
-                            } else if (SoundPanelBridge.playbackVolume <= 33) {
+                            } else if (AudioBridge.outputVolume <= 33) {
                                 return "qrc:/icons/panel_volume_33.png"
-                            } else if (SoundPanelBridge.playbackVolume <= 66) {
+                            } else if (AudioBridge.outputVolume <= 66) {
                                 return "qrc:/icons/panel_volume_66.png"
                             } else {
                                 return "qrc:/icons/panel_volume_100.png"
@@ -533,7 +432,7 @@ ApplicationWindow {
 
                         icon.source: volumeIcon
                         onClicked: {
-                            SoundPanelBridge.onOutputMuteButtonClicked()
+                            AudioBridge.setOutputMute(!AudioBridge.outputMuted)
                         }
                     }
 
@@ -547,12 +446,12 @@ ApplicationWindow {
                             Layout.leftMargin: 18
                             Layout.rightMargin: 25
                             text: {
-                                for (let i = 0; i < playbackDeviceModel.count; i++) {
-                                    if (playbackDeviceModel.get(i).isDefault) {
-                                        return UserSettings.deviceShortName ?
-                                            playbackDeviceModel.get(i).shortName :
-                                            playbackDeviceModel.get(i).name
-                                    }
+                                let defaultIndex = AudioBridge.outputDevices.currentDefaultIndex
+                                if (defaultIndex >= 0) {
+                                    return AudioBridge.outputDevices.data(
+                                        AudioBridge.outputDevices.index(defaultIndex, 0),
+                                        AudioBridge.outputDevices.NameRole
+                                    )
                                 }
                                 return ""
                             }
@@ -560,11 +459,11 @@ ApplicationWindow {
 
                         ProgressSlider {
                             id: outputSlider
-                            value: pressed ? value : SoundPanelBridge.playbackVolume
+                            value: pressed ? value : AudioBridge.outputVolume
                             from: 0
                             to: 100
                             Layout.fillWidth: true
-                            audioLevel: SoundPanelBridge.playbackAudioLevel
+                            //audioLevel: SoundPanelBridge.playbackAudioLevel
 
                             ToolTip {
                                 parent: outputSlider.handle
@@ -574,13 +473,13 @@ ApplicationWindow {
 
                             onValueChanged: {
                                 if (pressed) {
-                                    SoundPanelBridge.onPlaybackVolumeChanged(value)
+                                    AudioBridge.setOutputVolume(value)
                                 }
                             }
 
                             onPressedChanged: {
                                 if (!pressed) {
-                                    SoundPanelBridge.onPlaybackVolumeChanged(value)
+                                    AudioBridge.setOutputVolume(value)
                                     SoundPanelBridge.onOutputSliderReleased()
                                 }
                             }
@@ -597,7 +496,7 @@ ApplicationWindow {
                     ToolButton {
                         icon.source: "qrc:/icons/arrow.svg"
                         rotation: outputDevicesRect.expanded ? 90 : 0
-                        visible: playbackDeviceModel.count > 1
+                        visible: AudioBridge.outputDevices.rowCount() > 1
                         Layout.preferredHeight: 35
                         Layout.preferredWidth: 35
                         Behavior on rotation {
@@ -615,25 +514,19 @@ ApplicationWindow {
 
                 DevicesListView {
                     id: outputDevicesRect
-                    model: playbackDeviceModel
+                    model: AudioBridge.outputDevices
                     onDeviceClicked: function(name, shortName, index) {
-                        SoundPanelBridge.onPlaybackDeviceChanged(name)
+                        AudioBridge.setOutputDevice(index)
 
                         if (UserSettings.linkIO) {
-                            const selectedDeviceName = shortName
-                            let linkedInputIndex = -1
-                            for (let i = 0; i < recordingDeviceModel.count; i++) {
-                                const inputName = recordingDeviceModel.get(i).shortName
-                                if (inputName === selectedDeviceName) {
-                                    linkedInputIndex = i
+                            // Try to find matching input device
+                            let inputModel = AudioBridge.inputDevices
+                            for (let i = 0; i < inputModel.rowCount(); ++i) {
+                                let inputDeviceName = inputModel.data(inputModel.index(i, 0), inputModel.NameRole)
+                                if (inputDeviceName === name) {
+                                    AudioBridge.setInputDevice(i)
                                     break
                                 }
-                            }
-                            if (linkedInputIndex !== -1) {
-                                for (let i = 0; i < recordingDeviceModel.count; i++) {
-                                    recordingDeviceModel.setProperty(i, "isDefault", i === linkedInputIndex)
-                                }
-                                SoundPanelBridge.onRecordingDeviceChanged(recordingDeviceModel.get(linkedInputIndex).name)
                             }
                         }
 
@@ -651,9 +544,9 @@ ApplicationWindow {
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         flat: true
-                        icon.source: SoundPanelBridge.recordingMuted ? "qrc:/icons/mic_muted.png" : "qrc:/icons/mic.png"
+                        icon.source: AudioBridge.inputMuted ? "qrc:/icons/mic_muted.png" : "qrc:/icons/mic.png"
                         onClicked: {
-                            SoundPanelBridge.onInputMuteButtonClicked()
+                            AudioBridge.setInputMute(!AudioBridge.inputMuted)
                         }
                     }
 
@@ -667,12 +560,12 @@ ApplicationWindow {
                             Layout.leftMargin: 18
                             Layout.rightMargin: 25
                             text: {
-                                for (let i = 0; i < recordingDeviceModel.count; i++) {
-                                    if (recordingDeviceModel.get(i).isDefault) {
-                                        return UserSettings.deviceShortName ?
-                                            recordingDeviceModel.get(i).shortName :
-                                            recordingDeviceModel.get(i).name
-                                    }
+                                let defaultIndex = AudioBridge.inputDevices.currentDefaultIndex
+                                if (defaultIndex >= 0) {
+                                    return AudioBridge.inputDevices.data(
+                                        AudioBridge.inputDevices.index(defaultIndex, 0),
+                                        AudioBridge.inputDevices.NameRole
+                                    )
                                 }
                                 return ""
                             }
@@ -680,10 +573,10 @@ ApplicationWindow {
 
                         ProgressSlider {
                             id: inputSlider
-                            value: pressed ? value : SoundPanelBridge.recordingVolume
+                            value: pressed ? value : AudioBridge.inputVolume
                             from: 0
                             to: 100
-                            audioLevel: SoundPanelBridge.recordingAudioLevel
+                            //audioLevel: SoundPanelBridge.recordingAudioLevel
                             Layout.fillWidth: true
 
                             ToolTip {
@@ -694,13 +587,13 @@ ApplicationWindow {
 
                             onValueChanged: {
                                 if (pressed) {
-                                    SoundPanelBridge.onRecordingVolumeChanged(value)
+                                    AudioBridge.setInputVolume(value)
                                 }
                             }
 
                             onPressedChanged: {
                                 if (!pressed) {
-                                    SoundPanelBridge.onRecordingVolumeChanged(value)
+                                    AudioBridge.setInputVolume(value)
                                 }
                             }
                         }
@@ -718,7 +611,7 @@ ApplicationWindow {
                         rotation: inputDevicesRect.expanded ? 90 : 0
                         Layout.preferredHeight: 35
                         Layout.preferredWidth: 35
-                        visible: recordingDeviceModel.count > 1
+                        visible: AudioBridge.inputDevices.rowCount() > 1
                         Behavior on rotation {
                             NumberAnimation {
                                 duration: 150
@@ -734,24 +627,18 @@ ApplicationWindow {
 
                 DevicesListView {
                     id: inputDevicesRect
-                    model: recordingDeviceModel
+                    model: AudioBridge.inputDevices
                     onDeviceClicked: function(name, shortName, index) {
-                        SoundPanelBridge.onRecordingDeviceChanged(name)
+                        AudioBridge.setInputDevice(index)
                         if (UserSettings.linkIO) {
-                            const selectedDeviceName = shortName
-                            let linkedOutputIndex = -1
-                            for (let i = 0; i < playbackDeviceModel.count; i++) {
-                                const outputName = playbackDeviceModel.get(i).shortName
-                                if (outputName === selectedDeviceName) {
-                                    linkedOutputIndex = i
+                            // Try to find matching output device
+                            let outputModel = AudioBridge.outputDevices
+                            for (let i = 0; i < outputModel.rowCount(); ++i) {
+                                let outputDeviceName = outputModel.data(outputModel.index(i, 0), outputModel.NameRole)
+                                if (outputDeviceName === name) {
+                                    AudioBridge.setOutputDevice(i)
                                     break
                                 }
-                            }
-                            if (linkedOutputIndex !== -1) {
-                                for (let i = 0; i < playbackDeviceModel.count; i++) {
-                                    playbackDeviceModel.setProperty(i, "isDefault", i === linkedOutputIndex)
-                                }
-                                SoundPanelBridge.onPlaybackDeviceChanged(playbackDeviceModel.get(linkedOutputIndex).name)
                             }
                         }
                         if (UserSettings.closeDeviceListOnClick) {
@@ -777,8 +664,7 @@ ApplicationWindow {
                 visible: UserSettings.panelMode === 0 || UserSettings.panelMode === 1
 
                 Repeater {
-                    id: appRepeater
-                    model: appModel
+                    model: AudioBridge.applications
                     delegate: RowLayout {
                         id: applicationUnitLayout
                         Layout.preferredHeight: 40
@@ -800,19 +686,11 @@ ApplicationWindow {
                             ToolTip.delay: 1000
                             opacity: highlighted ? 0.3 : (enabled ? 1 : 0.5)
 
-                            icon.source: {
-                                if (applicationUnitLayout.model.name === "System sounds") {
-                                    return "qrc:/icons/system_light.png"
-                                }
-                                return applicationUnitLayout.model.icon || ""
-                            }
-
-                            icon.color: applicationUnitLayout.model.name === "System sounds" ? (Constants.darkMode ? "white" : "black") : "transparent"
+                            icon.source: applicationUnitLayout.model.iconPath || ""
 
                             onClicked: {
                                 let newMutedState = !applicationUnitLayout.model.isMuted
-                                appModel.setProperty(applicationUnitLayout.index, "isMuted", newMutedState)
-                                SoundPanelBridge.onApplicationMuteButtonClicked(applicationUnitLayout.model.appID, newMutedState)
+                                AudioBridge.setApplicationMute(applicationUnitLayout.model.appId, newMutedState)
                             }
 
                             Component.onCompleted: {
@@ -871,8 +749,7 @@ ApplicationWindow {
 
                                 onValueChanged: {
                                     if (!UserSettings.chatMixEnabled && pressed) {
-                                        appModel.setProperty(applicationUnitLayout.index, "volume", value)
-                                        SoundPanelBridge.onApplicationVolumeSliderValueChanged(applicationUnitLayout.model.appID, value)
+                                        AudioBridge.setApplicationVolume(applicationUnitLayout.model.appId, value)
                                     }
                                 }
                             }

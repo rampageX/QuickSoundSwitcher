@@ -73,9 +73,9 @@ Rectangle {
             height: 40
             required property var model
             required property string name
-            required property string shortName
+            //required property string shortName
             required property bool isDefault
-            required property string id
+            required property string deviceId
             required property int index
 
             highlighted: model.isDefault

@@ -1,107 +1,348 @@
 #ifndef AUDIOMANAGER_H
 #define AUDIOMANAGER_H
 
-#include <QString>
-#include <QList>
-#include <QIcon>
 #include <QObject>
 #include <QThread>
 #include <QMutex>
-#include <QTimer>
+#include <QIcon>
+#include <QMap>
+#include <QAbstractListModel>
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
+#include <audiopolicy.h>
+#include "policyconfig.h"
 
-struct AudioDevice
-{
-    QString id;
-    QString name;
-    QString shortName;
-    QString type;
-    bool isDefault;
+// Forward declarations
+class AudioWorker;
+
+struct AudioApplication {
+    QString id;              // Process ID as string
+    QString name;            // Display name
+    QString executableName;  // Executable name
+    QString iconPath;        // Base64 encoded icon
+    int volume;              // 0-100
+    bool isMuted;           // Mute state
+    int audioLevel;         // Current audio level 0-100
+
+    AudioApplication() : volume(0), isMuted(false), audioLevel(0) {}
+
+    bool operator==(const AudioApplication& other) const {
+        return id == other.id;
+    }
 };
 
-struct Application {
-    QString id;
-    QString name;
-    QString executableName;
-    bool isMuted;
-    int volume;
-    QIcon icon;
-    int audioLevel;
+struct AudioDevice {
+    QString id;              // Device ID
+    QString name;            // Friendly name
+    QString description;     // Device description
+    bool isDefault;         // Is default device
+    bool isDefaultCommunication; // Is default communication device
+    bool isInput;           // true for input, false for output
+    QString state;          // Active, Disabled, etc.
+
+    AudioDevice() : isDefault(false), isDefaultCommunication(false), isInput(false) {}
+
+    bool operator==(const AudioDevice& other) const {
+        return id == other.id;
+    }
+};
+
+Q_DECLARE_METATYPE(AudioApplication)
+Q_DECLARE_METATYPE(AudioDevice)
+
+class AudioDeviceModel : public QAbstractListModel
+{
+    Q_OBJECT
+
+public:
+    enum DeviceRoles {
+        IdRole = Qt::UserRole + 1,
+        NameRole,
+        DescriptionRole,
+        IsDefaultRole,
+        IsDefaultCommunicationRole,
+        IsInputRole,
+        StateRole
+    };
+    Q_ENUM(DeviceRoles)
+
+    explicit AudioDeviceModel(QObject *parent = nullptr);
+
+    // QAbstractListModel interface
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
+
+    // Model management
+    void setDevices(const QList<AudioDevice>& devices);
+    void updateDevice(const AudioDevice& device);
+    void removeDevice(const QString& deviceId);
+
+private:
+    QList<AudioDevice> m_devices;
+    int findDeviceIndex(const QString& deviceId) const;
 };
 
 class AudioWorker : public QObject
 {
     Q_OBJECT
 
+public:
+    enum DataFlow {
+        Output = 0,  // eRender
+        Input = 1    // eCapture
+    };
+    Q_ENUM(DataFlow)
+
+    AudioWorker();
+    ~AudioWorker();
+
+    // Helper to convert Windows enum to our enum
+    static DataFlow fromWindowsDataFlow(EDataFlow flow) {
+        return (flow == eRender) ? Output : Input;
+    }
+
+    static EDataFlow toWindowsDataFlow(DataFlow flow) {
+        return (flow == Output) ? eRender : eCapture;
+    }
+
 public slots:
-    void enumeratePlaybackDevices();
-    void enumerateRecordingDevices();
-    void enumerateApplications();
-    void setPlaybackVolume(int volume);
-    void setRecordingVolume(int volume);
-    void setPlaybackMute(bool mute);
-    void setRecordingMute(bool mute);
-    void setDefaultEndpoint(const QString &deviceId);
+    void initialize();
+    void cleanup();
+    void setOutputVolume(int volume);
+    void setInputVolume(int volume);
+    void setOutputMute(bool mute);
+    void setInputMute(bool mute);
     void setApplicationVolume(const QString& appId, int volume);
     void setApplicationMute(const QString& appId, bool mute);
-    void startAudioLevelMonitoring();
-    void stopAudioLevelMonitoring();
-    void initializeCache();
-    void updateDeviceProperties();
-    void queryCurrentProperties();
+    void setDefaultDevice(const QString& deviceId, bool isInput, bool forCommunications = false);
+    void onVolumeChanged(AudioWorker::DataFlow dataFlow, float volume, bool muted);
+    void onSessionCreated();
+    void onSessionDisconnected();
+    void onApplicationSessionVolumeChanged(const QString& appId, float volume, bool muted);
+    void onDeviceAdded(const QString& deviceId);
+    void onDeviceRemoved(const QString& deviceId);
+    void onDefaultDeviceChanged(DataFlow dataFlow, const QString& deviceId);
 
 signals:
-    void playbackDevicesReady(const QList<AudioDevice>& devices);
-    void recordingDevicesReady(const QList<AudioDevice>& devices);
-    void applicationsReady(const QList<Application>& applications);
-    void playbackVolumeChanged(int volume);
-    void recordingVolumeChanged(int volume);
-    void playbackMuteChanged(bool muted);
-    void recordingMuteChanged(bool muted);
-    void playbackAudioLevel(int level);
-    void recordingAudioLevel(int level);
-    void defaultEndpointChanged(bool success);
-    void applicationVolumeChanged(const QString& appId, bool success);
-    void applicationMuteChanged(const QString& appId, bool success);
-    void currentPropertiesReady(int playbackVol, int recordingVol, bool playbackMute, bool recordingMute);
-    void applicationAudioLevelsChanged(const QList<QPair<QString, int>>& levels);
+    void outputVolumeChanged(int volume);
+    void inputVolumeChanged(int volume);
+    void outputMuteChanged(bool muted);
+    void inputMuteChanged(bool muted);
+    void applicationsChanged(const QList<AudioApplication>& applications);
+    void applicationVolumeChanged(const QString& appId, int volume);
+    void applicationMuteChanged(const QString& appId, bool muted);
+    void devicesChanged(const QList<AudioDevice>& devices);
+    void deviceAdded(const AudioDevice& device);
+    void deviceRemoved(const QString& deviceId);
+    void defaultDeviceChanged(const QString& deviceId, bool isInput);
+    void initializationComplete();
 
 private:
-    QTimer* m_audioLevelTimer = nullptr;
-    QList<Application> m_cachedApplications;  // Add this
-    void initializeTimer();
+    // COM objects
+    IMMDeviceEnumerator* m_deviceEnumerator;
+    class VolumeNotificationClient* m_outputVolumeClient;
+    class VolumeNotificationClient* m_inputVolumeClient;
+    class SessionNotificationClient* m_sessionNotificationClient;
+    class DeviceNotificationClient* m_deviceNotificationClient;
+    IAudioSessionManager2* m_sessionManager;
+    IPolicyConfig* m_policyConfig;
 
+    // Volume controls for monitoring
+    IAudioEndpointVolume* m_outputVolumeControl;
+    IAudioEndpointVolume* m_inputVolumeControl;
+
+    // Session event clients for tracking individual app volume changes
+    QMap<QString, class SessionEventsClient*> m_sessionEventClients;
+
+    // Cache
+    int m_outputVolume;
+    int m_inputVolume;
+    bool m_outputMuted;
+    bool m_inputMuted;
+    QList<AudioApplication> m_applications;
+    QList<AudioDevice> m_devices;
+
+    HRESULT initializeCOM();
+    void setupVolumeNotifications();
+    void setupSessionNotifications();
+    void setupDeviceNotifications();
+    void updateCurrentVolumes();
+    void setVolumeForDevice(EDataFlow dataFlow, int volume);
+    void setMuteForDevice(EDataFlow dataFlow, bool mute);
+    void enumerateApplications();
+    void enumerateDevices();
+    AudioDevice createAudioDeviceFromInterface(IMMDevice* device, EDataFlow dataFlow);
+    QString getDeviceProperty(IMMDevice* device, const PROPERTYKEY& key);
+
+    QIcon getApplicationIcon(const QString& executablePath);
+    QString getApplicationDisplayName(const QString& executablePath);
+    QString getExecutablePath(DWORD processId);
+
+    struct SessionInfo {
+        IAudioSessionControl* sessionControl;
+        SessionEventsClient* eventsClient;
+        QString appId;
+
+        SessionInfo() : sessionControl(nullptr), eventsClient(nullptr) {}
+    };
+    QList<SessionInfo> m_activeSessions;
 };
 
-namespace AudioManager
+// Device change notification callback
+class DeviceNotificationClient : public IMMNotificationClient
 {
-void initialize();
-void cleanup();
+private:
+    LONG m_cRef;
+    AudioWorker* m_worker;
 
-// Async methods
-void enumeratePlaybackDevicesAsync();
-void enumerateRecordingDevicesAsync();
-void enumerateApplicationsAsync();
-void setPlaybackVolumeAsync(int volume);
-void setRecordingVolumeAsync(int volume);
-void setPlaybackMuteAsync(bool mute);
-void setRecordingMuteAsync(bool mute);
-void setDefaultEndpointAsync(const QString &deviceId);
-void setApplicationVolumeAsync(const QString& appId, int volume);
-void setApplicationMuteAsync(const QString& appId, bool mute);
-void startAudioLevelMonitoring();
-void stopAudioLevelMonitoring();
-void queryCurrentPropertiesAsync();
+public:
+    DeviceNotificationClient(AudioWorker* worker);
+    ~DeviceNotificationClient();
 
-// Cached values (non-blocking, always current)
-int getPlaybackVolume();
-int getRecordingVolume();
-bool getPlaybackMute();
-bool getRecordingMute();
+    // IUnknown methods
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface);
+    ULONG STDMETHODCALLTYPE AddRef();
+    ULONG STDMETHODCALLTYPE Release();
 
-AudioWorker* getWorker();
-}
+    // IMMNotificationClient methods
+    HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState);
+    HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR pwstrDeviceId);
+    HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR pwstrDeviceId);
+    HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId);
+    HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key);
+};
+
+// Volume change notification callback
+class VolumeNotificationClient : public IAudioEndpointVolumeCallback
+{
+private:
+    LONG m_cRef;
+    AudioWorker* m_worker;
+    EDataFlow m_dataFlow;
+
+public:
+    VolumeNotificationClient(AudioWorker* worker, EDataFlow dataFlow);
+    ~VolumeNotificationClient();
+
+    // IUnknown methods
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface);
+    ULONG STDMETHODCALLTYPE AddRef();
+    ULONG STDMETHODCALLTYPE Release();
+
+    // IAudioEndpointVolumeCallback methods
+    HRESULT STDMETHODCALLTYPE OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify);
+};
+
+// Session notification for application changes
+class SessionNotificationClient : public IAudioSessionNotification
+{
+private:
+    LONG m_cRef;
+    AudioWorker* m_worker;
+
+public:
+    SessionNotificationClient(AudioWorker* worker);
+    ~SessionNotificationClient();
+
+    // IUnknown methods
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface);
+    ULONG STDMETHODCALLTYPE AddRef();
+    ULONG STDMETHODCALLTYPE Release();
+
+    // IAudioSessionNotification methods
+    HRESULT STDMETHODCALLTYPE OnSessionCreated(IAudioSessionControl *NewSession);
+};
+
+// Session events for individual application volume/mute changes
+class SessionEventsClient : public IAudioSessionEvents
+{
+private:
+    LONG m_cRef;
+    AudioWorker* m_worker;
+    QString m_appId;
+
+public:
+    SessionEventsClient(AudioWorker* worker, const QString& appId);
+    ~SessionEventsClient();
+
+    // IUnknown methods
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface);
+    ULONG STDMETHODCALLTYPE AddRef();
+    ULONG STDMETHODCALLTYPE Release();
+
+    // IAudioSessionEvents methods
+    HRESULT STDMETHODCALLTYPE OnDisplayNameChanged(LPCWSTR NewDisplayName, LPCGUID EventContext);
+    HRESULT STDMETHODCALLTYPE OnIconPathChanged(LPCWSTR NewIconPath, LPCGUID EventContext);
+    HRESULT STDMETHODCALLTYPE OnSimpleVolumeChanged(float NewVolume, BOOL NewMute, LPCGUID EventContext);
+    HRESULT STDMETHODCALLTYPE OnChannelVolumeChanged(DWORD ChannelCount, float NewChannelVolumeArray[], DWORD ChangedChannel, LPCGUID EventContext);
+    HRESULT STDMETHODCALLTYPE OnGroupingParamChanged(LPCGUID NewGroupingParam, LPCGUID EventContext);
+    HRESULT STDMETHODCALLTYPE OnStateChanged(AudioSessionState NewState);
+    HRESULT STDMETHODCALLTYPE OnSessionDisconnected(AudioSessionDisconnectReason DisconnectReason);
+};
+
+class AudioManager : public QObject
+{
+    Q_OBJECT
+
+public:
+    static AudioManager* instance();
+
+    void initialize();
+    void cleanup();
+
+    // Async methods
+    void setOutputVolumeAsync(int volume);
+    void setInputVolumeAsync(int volume);
+    void setOutputMuteAsync(bool mute);
+    void setInputMuteAsync(bool mute);
+    void setApplicationVolumeAsync(const QString& appId, int volume);
+    void setApplicationMuteAsync(const QString& appId, bool mute);
+    void setDefaultDeviceAsync(const QString& deviceId, bool isInput, bool forCommunications = false);
+
+    // Cached values (thread-safe)
+    int getOutputVolume() const;
+    int getInputVolume() const;
+    bool getOutputMute() const;
+    bool getInputMute() const;
+    QList<AudioApplication> getApplications() const;
+    QList<AudioDevice> getDevices() const;
+
+    AudioWorker* getWorker();
+
+signals:
+    void outputVolumeChanged(int volume);
+    void inputVolumeChanged(int volume);
+    void outputMuteChanged(bool muted);
+    void inputMuteChanged(bool muted);
+    void applicationsChanged(const QList<AudioApplication>& applications);
+    void applicationVolumeChanged(const QString& appId, int volume);
+    void applicationMuteChanged(const QString& appId, bool muted);
+    void devicesChanged(const QList<AudioDevice>& devices);
+    void deviceAdded(const AudioDevice& device);
+    void deviceRemoved(const QString& deviceId);
+    void defaultDeviceChanged(const QString& deviceId, bool isInput);
+    void initializationComplete();
+
+private:
+    AudioManager(QObject* parent = nullptr);
+    ~AudioManager();
+
+    static AudioManager* m_instance;
+    static QMutex m_mutex;
+
+    QThread* m_workerThread;
+    AudioWorker* m_worker;
+
+    // Thread-safe cache
+    mutable QMutex m_cacheMutex;
+    int m_cachedOutputVolume;
+    int m_cachedInputVolume;
+    bool m_cachedOutputMute;
+    bool m_cachedInputMute;
+    QList<AudioApplication> m_cachedApplications;
+    QList<AudioDevice> m_cachedDevices;
+};
 
 #endif // AUDIOMANAGER_H
