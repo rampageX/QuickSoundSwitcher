@@ -169,6 +169,15 @@ QHash<int, QByteArray> FilteredDeviceModel::roleNames() const
     return roles;
 }
 
+QString FilteredDeviceModel::getDeviceName(int index) const
+{
+    if (index >= 0 && index < m_devices.count()) {
+        return m_devices[index].name;
+    }
+    return QString();
+}
+
+
 void FilteredDeviceModel::setDevices(const QList<AudioDevice>& devices)
 {
     beginResetModel();
@@ -441,3 +450,4 @@ void AudioBridge::onInitializationComplete()
 
     qDebug() << "AudioBridge initialization complete";
 }
+

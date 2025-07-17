@@ -465,12 +465,11 @@ ApplicationWindow {
                             Layout.leftMargin: 18
                             Layout.rightMargin: 25
                             text: {
+                                if (!AudioBridge.isReady) return ""
+
                                 let defaultIndex = AudioBridge.outputDevices.currentDefaultIndex
                                 if (defaultIndex >= 0) {
-                                    return AudioBridge.outputDevices.data(
-                                        AudioBridge.outputDevices.index(defaultIndex, 0),
-                                        AudioBridge.outputDevices.NameRole
-                                    )
+                                    return AudioBridge.outputDevices.getDeviceName(defaultIndex)
                                 }
                                 return ""
                             }
@@ -579,12 +578,11 @@ ApplicationWindow {
                             Layout.leftMargin: 18
                             Layout.rightMargin: 25
                             text: {
+                                if (!AudioBridge.isReady) return ""
+
                                 let defaultIndex = AudioBridge.inputDevices.currentDefaultIndex
                                 if (defaultIndex >= 0) {
-                                    return AudioBridge.inputDevices.data(
-                                        AudioBridge.inputDevices.index(defaultIndex, 0),
-                                        AudioBridge.inputDevices.NameRole
-                                    )
+                                    return AudioBridge.inputDevices.getDeviceName(defaultIndex)
                                 }
                                 return ""
                             }

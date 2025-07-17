@@ -35,6 +35,7 @@ public:
     void updateApplicationVolume(const QString& appId, int volume);
     void updateApplicationMute(const QString& appId, bool muted);
 
+
 private:
     QList<AudioApplication> m_applications;
     int findApplicationIndex(const QString& appId) const;
@@ -66,6 +67,8 @@ public:
     // Model management
     void setDevices(const QList<AudioDevice>& devices);
     Q_INVOKABLE int getCurrentDefaultIndex() const;
+    Q_INVOKABLE QString getDeviceName(int index) const;
+
 
 signals:
     void currentDefaultIndexChanged();
