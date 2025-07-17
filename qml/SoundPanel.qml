@@ -835,6 +835,10 @@ ApplicationWindow {
                                     if (UserSettings.chatMixEnabled && SoundPanelBridge.isCommApp(name)) {
                                         name += " (Comm)"
                                     }
+
+                                    if (name === "System sounds") {
+                                        return qsTr("System sounds")
+                                    }
                                     return name
                                 }
                             }

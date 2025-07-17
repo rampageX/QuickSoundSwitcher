@@ -510,6 +510,10 @@
         <source>ChatMix</source>
         <translation>ChatMix</translation>
     </message>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SoundPanelBridge</name>

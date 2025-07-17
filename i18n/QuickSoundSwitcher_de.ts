@@ -498,6 +498,10 @@
         <source>ChatMix</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SoundPanelBridge</name>
