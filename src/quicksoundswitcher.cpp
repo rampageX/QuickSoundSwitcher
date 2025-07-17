@@ -32,33 +32,34 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     , currentInputDevice("")
     , localServer(nullptr)
 {
-    AudioManager::initialize();
     MediaSessionManager::initialize();
     instance = this;
+    initializeQMLEngine();
+
+    // Get AudioManager instance once and reuse it
+    //auto* audioManager = AudioManager::instance();
+    //audioManager->initialize();
 
     setupLocalServer();
     // Initialize QML engine once
-    initializeQMLEngine();
 
-    // Connect to audio worker for tray icon updates
-    if (AudioManager::getWorker()) {
-        connect(AudioManager::getWorker(), &AudioWorker::playbackVolumeChanged,
-                this, &QuickSoundSwitcher::onOutputMuteChanged);
-        connect(AudioManager::getWorker(), &AudioWorker::playbackMuteChanged,
-                this, &QuickSoundSwitcher::onOutputMuteChanged);
-
-        // Connect for tray menu updates
-        connect(AudioManager::getWorker(), &AudioWorker::playbackVolumeChanged,
-                this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
-        connect(AudioManager::getWorker(), &AudioWorker::playbackMuteChanged,
-                this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
-        connect(AudioManager::getWorker(), &AudioWorker::recordingVolumeChanged,
-                this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
-        connect(AudioManager::getWorker(), &AudioWorker::recordingMuteChanged,
-                this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
-        connect(AudioManager::getWorker(), &AudioWorker::defaultEndpointChanged,
-                this, &QuickSoundSwitcher::initializeTrayMenuDeviceInfo);
-    }
+    // Connect to AudioManager for tray icon updates - reuse the same instance
+    //    connect(audioManager, &AudioManager::outputVolumeChanged,
+    //            this, &QuickSoundSwitcher::onOutputMuteChanged);
+    //    connect(audioManager, &AudioManager::outputMuteChanged,
+    //            this, &QuickSoundSwitcher::onOutputMuteChanged);
+    //
+    //    // Connect for tray menu updates
+    //    connect(audioManager, &AudioManager::outputVolumeChanged,
+    //            this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
+    //    connect(audioManager, &AudioManager::outputMuteChanged,
+    //            this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
+    //    connect(audioManager, &AudioManager::inputVolumeChanged,
+    //            this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
+    //    connect(audioManager, &AudioManager::inputMuteChanged,
+    //            this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
+    //    connect(audioManager, &AudioManager::defaultDeviceChanged,
+    //            this, &QuickSoundSwitcher::initializeTrayMenuDeviceInfo);
 
     if (SoundPanelBridge::instance()) {
         connect(SoundPanelBridge::instance(), &SoundPanelBridge::languageChanged,
@@ -95,7 +96,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
         }
     }
 
-    AudioManager::cleanup();
+    AudioManager::instance()->cleanup();
     MediaSessionManager::cleanup();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
@@ -121,15 +122,6 @@ void QuickSoundSwitcher::initializeQMLEngine()
             connect(panelWindow, SIGNAL(hideAnimationFinished()),
                     this, SLOT(onPanelHideAnimationFinished()));
         }
-    }
-
-    if (SoundPanelBridge::instance()) {
-        connect(SoundPanelBridge::instance(), &SoundPanelBridge::shouldUpdateTray,
-                this, &QuickSoundSwitcher::onOutputMuteChanged);
-
-        // Connect to data initialization complete signal
-        connect(SoundPanelBridge::instance(), &SoundPanelBridge::dataInitializationComplete,
-                this, &QuickSoundSwitcher::onDataInitializationComplete);
     }
 }
 
@@ -180,8 +172,6 @@ void QuickSoundSwitcher::createTrayIcon()
     connect(lSoundSettingsAction, &QAction::triggered, this, &QuickSoundSwitcher::openLegacySoundSettings);
     connect(mSoundSettingsAction, &QAction::triggered, this, &QuickSoundSwitcher::openModernSoundSettings);
 
-
-
     trayIcon->setContextMenu(trayMenu);
     trayIcon->setToolTip("Quick Sound Switcher");
     trayIcon->show();
@@ -190,44 +180,39 @@ void QuickSoundSwitcher::createTrayIcon()
 
 void QuickSoundSwitcher::initializeTrayMenuDeviceInfo()
 {
-    if (!AudioManager::getWorker()) return;
+    auto* audioManager = AudioManager::instance();
 
-    // Get device names
-    connect(AudioManager::getWorker(), &AudioWorker::playbackDevicesReady,
-            this, [this](const QList<AudioDevice>& devices) {
-                for (const AudioDevice& device : devices) {
-                    if (device.isDefault) {
-                        currentOutputDevice = device.shortName.isEmpty() ? device.name : device.shortName;
-                        updateTrayMenuDeviceInfo();
-                        break;
-                    }
-                }
-            }, Qt::SingleShotConnection);
+    // Get device names from the cached devices
+    auto devices = audioManager->getDevices();
 
-    connect(AudioManager::getWorker(), &AudioWorker::recordingDevicesReady,
-            this, [this](const QList<AudioDevice>& devices) {
-                for (const AudioDevice& device : devices) {
-                    if (device.isDefault) {
-                        currentInputDevice = device.shortName.isEmpty() ? device.name : device.shortName;
-                        updateTrayMenuDeviceInfo();
-                        break;
-                    }
-                }
-            }, Qt::SingleShotConnection);
+    for (const AudioDevice& device : devices) {
+        if (device.isDefault && !device.isInput) {
+            currentOutputDevice = device.name;
+            break;
+        }
+    }
 
-    AudioManager::enumeratePlaybackDevicesAsync();
-    AudioManager::enumerateRecordingDevicesAsync();
+    for (const AudioDevice& device : devices) {
+        if (device.isDefault && device.isInput) {
+            currentInputDevice = device.name;
+            break;
+        }
+    }
+
+    updateTrayMenuDeviceInfo();
 }
 
 void QuickSoundSwitcher::updateTrayMenuDeviceInfo()
 {
     if (!outputDeviceAction || !inputDeviceAction) return;
 
+    auto* audioManager = AudioManager::instance();
+
     // Get current volumes and mute states (from cache, non-blocking)
-    int outputVolume = AudioManager::getPlaybackVolume();
-    int inputVolume = AudioManager::getRecordingVolume();
-    bool outputMuted = AudioManager::getPlaybackMute();
-    bool inputMuted = AudioManager::getRecordingMute();
+    int outputVolume = audioManager->getOutputVolume();
+    int inputVolume = audioManager->getInputVolume();
+    bool outputMuted = audioManager->getOutputMute();
+    bool inputMuted = audioManager->getInputMute();
 
     // Update output device info
     QString outputText;
@@ -272,12 +257,14 @@ void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason rea
 
 void QuickSoundSwitcher::onOutputMuteChanged()
 {
+    auto* audioManager = AudioManager::instance();
+
     // Use the cached getters (now non-blocking)
     int volumeIcon;
-    if (AudioManager::getPlaybackMute()) {
+    if (audioManager->getOutputMute()) {
         volumeIcon = 0;
     } else {
-        volumeIcon = AudioManager::getPlaybackVolume();
+        volumeIcon = audioManager->getOutputVolume();
     }
 
     trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
@@ -422,23 +409,9 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
         PKBDLLHOOKSTRUCT pKeyboard = reinterpret_cast<PKBDLLHOOKSTRUCT>(lParam);
 
         if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-            // Handle volume keys first
-            switch (pKeyboard->vkCode) {
-            case VK_VOLUME_UP:
-                instance->adjustOutputVolume(true);
-                break;
-            case VK_VOLUME_DOWN:
-                instance->adjustOutputVolume(false);
-                break;
-            case VK_VOLUME_MUTE:
-                instance->toggleMuteWithKey();
-                break;
-            default:
-                // Check for custom shortcuts
-                if (instance->settings.value("globalShortcutsEnabled", true).toBool()) {
-                    instance->handleCustomShortcut(pKeyboard->vkCode);
-                }
-                break;
+            // Check for custom shortcuts
+            if (instance->settings.value("globalShortcutsEnabled", true).toBool()) {
+                instance->handleCustomShortcut(pKeyboard->vkCode);
             }
         }
     }
@@ -499,8 +472,10 @@ void QuickSoundSwitcher::toggleChatMix()
 
 void QuickSoundSwitcher::adjustOutputVolume(bool up)
 {
+    auto* audioManager = AudioManager::instance();
+
     // Use cached getter (non-blocking)
-    int originalVolume = AudioManager::getPlaybackVolume();
+    int originalVolume = audioManager->getOutputVolume();
     int newVolume;
     if (up) {
         newVolume = originalVolume + 2;
@@ -511,30 +486,28 @@ void QuickSoundSwitcher::adjustOutputVolume(bool up)
     newVolume = qMax(0, qMin(100, newVolume));
 
     // Use async for setting volume
-    AudioManager::setPlaybackVolumeAsync(newVolume);
+    audioManager->setOutputVolumeAsync(newVolume);
 
     // Use cached getter (non-blocking)
-    if (AudioManager::getPlaybackMute()) {
-        AudioManager::setPlaybackMuteAsync(false);
+    if (audioManager->getOutputMute()) {
+        audioManager->setOutputMuteAsync(false);
     }
 
     // Update tray icon immediately with new volume for responsiveness
     trayIcon->setIcon(QIcon(Utils::getIcon(1, newVolume, NULL)));
-
-    if (SoundPanelBridge::instance()) {
-        SoundPanelBridge::instance()->updateVolumeFromTray(newVolume);
-    }
 }
 
 void QuickSoundSwitcher::toggleMuteWithKey()
 {
+    auto* audioManager = AudioManager::instance();
+
     // Use cached getters (non-blocking)
-    bool currentMuted = AudioManager::getPlaybackMute();
+    bool currentMuted = audioManager->getOutputMute();
     bool newMuted = !currentMuted;
-    int volume = AudioManager::getPlaybackVolume();
+    int volume = audioManager->getOutputVolume();
 
     // Use async for setting mute
-    AudioManager::setPlaybackMuteAsync(newMuted);
+    audioManager->setOutputMuteAsync(newMuted);
 
     int volumeIcon;
     if (volume == 0 || newMuted) {
@@ -545,10 +518,6 @@ void QuickSoundSwitcher::toggleMuteWithKey()
 
     // Update tray icon immediately for responsiveness
     trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
-
-    if (SoundPanelBridge::instance()) {
-        SoundPanelBridge::instance()->updateMuteStateFromTray(newMuted);
-    }
 }
 
 void QuickSoundSwitcher::togglePanel()
@@ -562,15 +531,15 @@ void QuickSoundSwitcher::togglePanel()
 
 void QuickSoundSwitcher::showPanel()
 {
+    qDebug() << "showPanel triggered";
     if (!isPanelVisible && panelWindow) {
         if (SoundPanelBridge::instance()) {
-            // Start loading data but don't show panel yet
-            SoundPanelBridge::instance()->initializeData();
-
             isPanelVisible = true;
             installGlobalMouseHook();
+            qDebug() << "showPanel triggered2";
 
-            // Panel will animate in when data is ready (handled by onDataInitializationComplete)
+
+            QMetaObject::invokeMethod(panelWindow, "showPanel");
         }
     }
 }

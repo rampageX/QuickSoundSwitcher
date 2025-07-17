@@ -12,4 +12,5 @@ QtObject {
     property color cardColor: darkMode ? "#2b2b2b" : "#fbfbfb"
     property color cardBorderColor: darkMode ? "#0F0F0F" : "#D0D0D0"
     property color separatorColor: darkMode ? "#E3E3E3" : "#A0A0A0"
+    property string systemIcon: darkMode ? "qrc:/icons/system_light.png" : "qrc:/icons/system_dark.png"
 }

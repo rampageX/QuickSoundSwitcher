@@ -1,46 +1,1144 @@
 #include "audiomanager.h"
-#include "policyconfig.h"
-#include <Audiopolicy.h>
-#include <atlbase.h>
-#include <Functiondiscoverykeys_devpkey.h>
 #include <QDebug>
-#include <psapi.h>
-#include <Shlobj.h>
-#include <QIcon>
-#include <QPixmap>
-#include <QFileInfo>
-#include <QMutex>
 #include <QMutexLocker>
 #include <QMetaObject>
+#include <QBuffer>
+#include <QPixmap>
+#include <QFileInfo>
+#include <QPainter>
+#include <atlbase.h>
+#include <psapi.h>
+#include <Shlobj.h>
 #include <winver.h>
+#include <Functiondiscoverykeys_devpkey.h>
 #pragma comment(lib, "version.lib")
+#pragma comment(lib, "psapi.lib")
+#pragma comment(lib, "shell32.lib")
 
-static QThread* g_workerThread = nullptr;
-static AudioWorker* g_worker = nullptr;
-static QMutex g_initMutex;
+AudioManager* AudioManager::m_instance = nullptr;
+QMutex AudioManager::m_mutex;
 
-static int g_cachedPlaybackVolume = 0;
-static int g_cachedRecordingVolume = 0;
-static bool g_cachedPlaybackMute = false;
-static bool g_cachedRecordingMute = false;
-
-// Helper functions (keep these as they are fast)
-QString extractShortName(const QString& fullName) {
-    int firstOpenParenIndex = fullName.indexOf('(');
-    int lastCloseParenIndex = fullName.lastIndexOf(')');
-
-    if (firstOpenParenIndex != -1 && lastCloseParenIndex != -1 && firstOpenParenIndex < lastCloseParenIndex) {
-        return fullName.mid(firstOpenParenIndex + 1, lastCloseParenIndex - firstOpenParenIndex - 1).trimmed();
-    }
-
-    return fullName;
+// AudioDeviceModel implementation
+AudioDeviceModel::AudioDeviceModel(QObject *parent)
+    : QAbstractListModel(parent)
+{
 }
 
-QIcon getAppIcon(const QString &executablePath) {
+int AudioDeviceModel::rowCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent)
+    return m_devices.count();
+}
+
+QVariant AudioDeviceModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid() || index.row() >= m_devices.count())
+        return QVariant();
+
+    const AudioDevice& device = m_devices.at(index.row());
+
+    switch (role) {
+    case IdRole:
+        return device.id;
+    case NameRole:
+        return device.name;
+    case DescriptionRole:
+        return device.description;
+    case IsDefaultRole:
+        return device.isDefault;
+    case IsDefaultCommunicationRole:
+        return device.isDefaultCommunication;
+    case IsInputRole:
+        return device.isInput;
+    case StateRole:
+        return device.state;
+    default:
+        return QVariant();
+    }
+}
+
+QHash<int, QByteArray> AudioDeviceModel::roleNames() const
+{
+    QHash<int, QByteArray> roles;
+    roles[IdRole] = "deviceId";
+    roles[NameRole] = "name";
+    roles[DescriptionRole] = "description";
+    roles[IsDefaultRole] = "isDefault";
+    roles[IsDefaultCommunicationRole] = "isDefaultCommunication";
+    roles[IsInputRole] = "isInput";
+    roles[StateRole] = "state";
+    return roles;
+}
+
+void AudioDeviceModel::setDevices(const QList<AudioDevice>& devices)
+{
+    beginResetModel();
+    m_devices = devices;
+    endResetModel();
+    qDebug() << "AudioDeviceModel updated with" << devices.count() << "devices";
+}
+
+void AudioDeviceModel::updateDevice(const AudioDevice& device)
+{
+    int index = findDeviceIndex(device.id);
+    if (index >= 0) {
+        m_devices[index] = device;
+        QModelIndex modelIndex = createIndex(index, 0);
+        emit dataChanged(modelIndex, modelIndex);
+    }
+}
+
+void AudioDeviceModel::removeDevice(const QString& deviceId)
+{
+    int index = findDeviceIndex(deviceId);
+    if (index >= 0) {
+        beginRemoveRows(QModelIndex(), index, index);
+        m_devices.removeAt(index);
+        endRemoveRows();
+    }
+}
+
+int AudioDeviceModel::findDeviceIndex(const QString& deviceId) const
+{
+    for (int i = 0; i < m_devices.count(); ++i) {
+        if (m_devices[i].id == deviceId) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// DeviceNotificationClient implementation
+DeviceNotificationClient::DeviceNotificationClient(AudioWorker* worker)
+    : m_cRef(1), m_worker(worker)
+{
+    qDebug() << "DeviceNotificationClient created";
+}
+
+DeviceNotificationClient::~DeviceNotificationClient()
+{
+    qDebug() << "DeviceNotificationClient destroyed";
+}
+
+HRESULT STDMETHODCALLTYPE DeviceNotificationClient::QueryInterface(REFIID riid, VOID **ppvInterface)
+{
+    if (IID_IUnknown == riid) {
+        AddRef();
+        *ppvInterface = (IUnknown*)this;
+    } else if (__uuidof(IMMNotificationClient) == riid) {
+        AddRef();
+        *ppvInterface = (IMMNotificationClient*)this;
+    } else {
+        *ppvInterface = NULL;
+        return E_NOINTERFACE;
+    }
+    return S_OK;
+}
+
+ULONG STDMETHODCALLTYPE DeviceNotificationClient::AddRef()
+{
+    return InterlockedIncrement(&m_cRef);
+}
+
+ULONG STDMETHODCALLTYPE DeviceNotificationClient::Release()
+{
+    ULONG ulRef = InterlockedDecrement(&m_cRef);
+    if (0 == ulRef) {
+        delete this;
+    }
+    return ulRef;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
+{
+    QString deviceId = QString::fromWCharArray(pwstrDeviceId);
+    qDebug() << "Device state changed:" << deviceId << "new state:" << dwNewState;
+
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "enumerateDevices", Qt::QueuedConnection);
+    }
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
+{
+    QString deviceId = QString::fromWCharArray(pwstrDeviceId);
+    qDebug() << "Device added:" << deviceId;
+
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "onDeviceAdded", Qt::QueuedConnection,
+                                  Q_ARG(QString, deviceId));
+    }
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
+{
+    QString deviceId = QString::fromWCharArray(pwstrDeviceId);
+    qDebug() << "Device removed:" << deviceId;
+
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "onDeviceRemoved", Qt::QueuedConnection,
+                                  Q_ARG(QString, deviceId));
+    }
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId)
+{
+    QString deviceId = pwstrDefaultDeviceId ? QString::fromWCharArray(pwstrDefaultDeviceId) : QString();
+    AudioWorker::DataFlow dataFlow = AudioWorker::fromWindowsDataFlow(flow);
+
+    qDebug() << "Default device changed:" << deviceId << "flow:" << flow << "role:" << role;
+
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "onDefaultDeviceChanged", Qt::QueuedConnection,
+                                  Q_ARG(AudioWorker::DataFlow, dataFlow),
+                                  Q_ARG(QString, deviceId));
+    }
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key)
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "enumerateDevices", Qt::QueuedConnection);
+    }
+    return S_OK;
+}
+
+// VolumeNotificationClient implementation
+VolumeNotificationClient::VolumeNotificationClient(AudioWorker* worker, EDataFlow dataFlow)
+    : m_cRef(1), m_worker(worker), m_dataFlow(dataFlow)
+{
+    qDebug() << "VolumeNotificationClient created for dataFlow:" << dataFlow;
+}
+
+VolumeNotificationClient::~VolumeNotificationClient()
+{
+    qDebug() << "VolumeNotificationClient destroyed";
+}
+
+HRESULT STDMETHODCALLTYPE VolumeNotificationClient::QueryInterface(REFIID riid, VOID **ppvInterface)
+{
+    if (IID_IUnknown == riid) {
+        AddRef();
+        *ppvInterface = (IUnknown*)this;
+    } else if (__uuidof(IAudioEndpointVolumeCallback) == riid) {
+        AddRef();
+        *ppvInterface = (IAudioEndpointVolumeCallback*)this;
+    } else {
+        *ppvInterface = NULL;
+        return E_NOINTERFACE;
+    }
+    return S_OK;
+}
+
+ULONG STDMETHODCALLTYPE VolumeNotificationClient::AddRef()
+{
+    return InterlockedIncrement(&m_cRef);
+}
+
+ULONG STDMETHODCALLTYPE VolumeNotificationClient::Release()
+{
+    ULONG ulRef = InterlockedDecrement(&m_cRef);
+    if (0 == ulRef) {
+        delete this;
+    }
+    return ulRef;
+}
+
+HRESULT STDMETHODCALLTYPE VolumeNotificationClient::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify)
+{
+    if (m_worker && pNotify) {
+        float volume = pNotify->fMasterVolume;
+        bool muted = pNotify->bMuted;
+
+        AudioWorker::DataFlow dataFlow = AudioWorker::fromWindowsDataFlow(m_dataFlow);
+
+        QMetaObject::invokeMethod(m_worker, "onVolumeChanged", Qt::QueuedConnection,
+                                  Q_ARG(AudioWorker::DataFlow, dataFlow),
+                                  Q_ARG(float, volume),
+                                  Q_ARG(bool, muted));
+    }
+    return S_OK;
+}
+
+// SessionNotificationClient implementation
+SessionNotificationClient::SessionNotificationClient(AudioWorker* worker)
+    : m_cRef(1), m_worker(worker)
+{
+    qDebug() << "SessionNotificationClient created, worker:" << (worker ? "valid" : "null");
+}
+
+SessionNotificationClient::~SessionNotificationClient()
+{
+    qDebug() << "SessionNotificationClient destroyed";
+}
+
+HRESULT STDMETHODCALLTYPE SessionNotificationClient::QueryInterface(REFIID riid, VOID **ppvInterface)
+{
+    if (IID_IUnknown == riid) {
+        AddRef();
+        *ppvInterface = (IUnknown*)this;
+    } else if (__uuidof(IAudioSessionNotification) == riid) {
+        AddRef();
+        *ppvInterface = (IAudioSessionNotification*)this;
+    } else {
+        *ppvInterface = NULL;
+        return E_NOINTERFACE;
+    }
+    return S_OK;
+}
+
+ULONG STDMETHODCALLTYPE SessionNotificationClient::AddRef()
+{
+    return InterlockedIncrement(&m_cRef);
+}
+
+ULONG STDMETHODCALLTYPE SessionNotificationClient::Release()
+{
+    ULONG ulRef = InterlockedDecrement(&m_cRef);
+    if (0 == ulRef) {
+        delete this;
+    }
+    return ulRef;
+}
+
+HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSessionControl *NewSession)
+{
+    qDebug() << "*** NEW SESSION CREATED *** Thread ID:" << GetCurrentThreadId();
+    qDebug() << "Worker pointer:" << m_worker;
+
+    if (m_worker) {
+        qDebug() << "Invoking enumerateApplications on worker thread";
+        bool success = QMetaObject::invokeMethod(m_worker, "enumerateApplications", Qt::QueuedConnection);
+        qDebug() << "QMetaObject::invokeMethod result:" << success;
+    } else {
+        qDebug() << "ERROR: No worker available!";
+    }
+    return S_OK;
+}
+
+// SessionEventsClient implementation
+SessionEventsClient::SessionEventsClient(AudioWorker* worker, const QString& appId)
+    : m_cRef(1), m_worker(worker), m_appId(appId)
+{
+    qDebug() << "SessionEventsClient created for app:" << appId;
+}
+
+SessionEventsClient::~SessionEventsClient()
+{
+    qDebug() << "SessionEventsClient destroyed for app:" << m_appId;
+}
+
+HRESULT STDMETHODCALLTYPE SessionEventsClient::QueryInterface(REFIID riid, VOID **ppvInterface)
+{
+    if (IID_IUnknown == riid) {
+        AddRef();
+        *ppvInterface = (IUnknown*)this;
+    } else if (__uuidof(IAudioSessionEvents) == riid) {
+        AddRef();
+        *ppvInterface = (IAudioSessionEvents*)this;
+    } else {
+        *ppvInterface = NULL;
+        return E_NOINTERFACE;
+    }
+    return S_OK;
+}
+
+ULONG STDMETHODCALLTYPE SessionEventsClient::AddRef()
+{
+    return InterlockedIncrement(&m_cRef);
+}
+
+ULONG STDMETHODCALLTYPE SessionEventsClient::Release()
+{
+    ULONG ulRef = InterlockedDecrement(&m_cRef);
+    if (0 == ulRef) {
+        delete this;
+    }
+    return ulRef;
+}
+
+HRESULT STDMETHODCALLTYPE SessionEventsClient::OnSimpleVolumeChanged(float NewVolume, BOOL NewMute, LPCGUID EventContext)
+{
+    qDebug() << "*** SessionEventsClient::OnSimpleVolumeChanged ***";
+    qDebug() << "App ID:" << m_appId;
+    qDebug() << "New Volume:" << (NewVolume * 100.0f) << "%";
+    qDebug() << "New Mute:" << (NewMute ? "true" : "false");
+
+    if (m_worker) {
+        bool success = QMetaObject::invokeMethod(m_worker, "onApplicationSessionVolumeChanged", Qt::QueuedConnection,
+                                                 Q_ARG(QString, m_appId),
+                                                 Q_ARG(float, NewVolume),
+                                                 Q_ARG(bool, NewMute));
+        qDebug() << "QMetaObject::invokeMethod success:" << success;
+    } else {
+        qDebug() << "ERROR: No worker available!";
+    }
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE SessionEventsClient::OnStateChanged(AudioSessionState NewState)
+{
+    qDebug() << "*** Session State Changed *** App ID:" << m_appId << "New State:" << NewState;
+
+    if (NewState == AudioSessionStateExpired) {
+        qDebug() << "Session expired for app:" << m_appId;
+        if (m_worker) {
+            QMetaObject::invokeMethod(m_worker, "onSessionDisconnected", Qt::QueuedConnection);
+        }
+    }
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE SessionEventsClient::OnSessionDisconnected(AudioSessionDisconnectReason DisconnectReason)
+{
+    qDebug() << "*** Session Disconnected *** App ID:" << m_appId << "Reason:" << DisconnectReason;
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "onSessionDisconnected", Qt::QueuedConnection);
+    }
+    return S_OK;
+}
+
+// Stub implementations for other required methods
+HRESULT STDMETHODCALLTYPE SessionEventsClient::OnDisplayNameChanged(LPCWSTR NewDisplayName, LPCGUID EventContext) { return S_OK; }
+HRESULT STDMETHODCALLTYPE SessionEventsClient::OnIconPathChanged(LPCWSTR NewIconPath, LPCGUID EventContext) { return S_OK; }
+HRESULT STDMETHODCALLTYPE SessionEventsClient::OnChannelVolumeChanged(DWORD ChannelCount, float NewChannelVolumeArray[], DWORD ChangedChannel, LPCGUID EventContext) { return S_OK; }
+HRESULT STDMETHODCALLTYPE SessionEventsClient::OnGroupingParamChanged(LPCGUID NewGroupingParam, LPCGUID EventContext) { return S_OK; }
+
+// AudioWorker implementation
+AudioWorker::AudioWorker()
+    : m_deviceEnumerator(nullptr)
+    , m_outputVolumeClient(nullptr)
+    , m_inputVolumeClient(nullptr)
+    , m_sessionNotificationClient(nullptr)
+    , m_deviceNotificationClient(nullptr)
+    , m_sessionManager(nullptr)
+    , m_policyConfig(nullptr)
+    , m_outputVolumeControl(nullptr)
+    , m_inputVolumeControl(nullptr)
+    , m_outputVolume(0)
+    , m_inputVolume(0)
+    , m_outputMuted(false)
+    , m_inputMuted(false)
+{
+    qDebug() << "AudioWorker created on thread:" << QThread::currentThread();
+
+    // Register the metatypes
+    qRegisterMetaType<AudioApplication>("AudioApplication");
+    qRegisterMetaType<QList<AudioApplication>>("QList<AudioApplication>");
+    qRegisterMetaType<AudioDevice>("AudioDevice");
+    qRegisterMetaType<QList<AudioDevice>>("QList<AudioDevice>");
+}
+
+AudioWorker::~AudioWorker()
+{
+    qDebug() << "AudioWorker destructor";
+    cleanup();
+}
+
+void AudioWorker::initialize()
+{
+    qDebug() << "AudioWorker::initialize on thread:" << QThread::currentThread();
+
+    HRESULT hr = initializeCOM();
+    if (FAILED(hr)) {
+        qDebug() << "Failed to initialize COM, HRESULT:" << QString::number(hr, 16);
+        return;
+    }
+    qDebug() << "COM initialized successfully";
+
+    // Create device enumerator
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                          __uuidof(IMMDeviceEnumerator), (void**)&m_deviceEnumerator);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to create device enumerator, HRESULT:" << QString::number(hr, 16);
+        return;
+    }
+    qDebug() << "Device enumerator created successfully";
+
+    // Create policy config for setting default devices
+    hr = CoCreateInstance(__uuidof(CPolicyConfigClient), nullptr, CLSCTX_ALL,
+                          __uuidof(IPolicyConfig), (void**)&m_policyConfig);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to create policy config, trying Vista version. HRESULT:" << QString::number(hr, 16);
+        hr = CoCreateInstance(__uuidof(CPolicyConfigVistaClient), nullptr, CLSCTX_ALL,
+                              __uuidof(IPolicyConfigVista), (void**)&m_policyConfig);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to create Vista policy config, HRESULT:" << QString::number(hr, 16);
+            m_policyConfig = nullptr;
+        }
+    }
+
+    // Set up notifications
+    setupVolumeNotifications();
+    setupSessionNotifications();
+    setupDeviceNotifications();
+
+    // Get initial state
+    updateCurrentVolumes();
+    enumerateDevices();
+    enumerateApplications();
+
+    qDebug() << "AudioWorker initialized successfully";
+    emit initializationComplete();
+}
+
+void AudioWorker::cleanup()
+{
+    qDebug() << "AudioWorker::cleanup starting";
+
+    // Clean up session notifications FIRST
+    if (m_sessionManager && m_sessionNotificationClient) {
+        qDebug() << "Unregistering session notifications";
+        m_sessionManager->UnregisterSessionNotification(m_sessionNotificationClient);
+        m_sessionNotificationClient->Release();
+        m_sessionNotificationClient = nullptr;
+        m_sessionManager->Release();
+        m_sessionManager = nullptr;
+    }
+
+    // Clean up device notifications
+    if (m_deviceEnumerator && m_deviceNotificationClient) {
+        m_deviceEnumerator->UnregisterEndpointNotificationCallback(m_deviceNotificationClient);
+    }
+    if (m_deviceNotificationClient) {
+        m_deviceNotificationClient->Release();
+        m_deviceNotificationClient = nullptr;
+    }
+
+    // Clean up active sessions
+    qDebug() << "Cleaning up" << m_activeSessions.count() << "active sessions";
+    for (auto& sessionInfo : m_activeSessions) {
+        if (sessionInfo.sessionControl && sessionInfo.eventsClient) {
+            sessionInfo.sessionControl->UnregisterAudioSessionNotification(sessionInfo.eventsClient);
+        }
+        if (sessionInfo.eventsClient) {
+            sessionInfo.eventsClient->Release();
+        }
+        if (sessionInfo.sessionControl) {
+            sessionInfo.sessionControl->Release();
+        }
+    }
+    m_activeSessions.clear();
+
+    // Clean up session event clients (legacy)
+    for (auto it = m_sessionEventClients.begin(); it != m_sessionEventClients.end(); ++it) {
+        it.value()->Release();
+    }
+    m_sessionEventClients.clear();
+
+    // Cleanup volume notifications
+    if (m_outputVolumeControl && m_outputVolumeClient) {
+        m_outputVolumeControl->UnregisterControlChangeNotify(m_outputVolumeClient);
+        m_outputVolumeControl->Release();
+        m_outputVolumeControl = nullptr;
+    }
+
+    if (m_inputVolumeControl && m_inputVolumeClient) {
+        m_inputVolumeControl->UnregisterControlChangeNotify(m_inputVolumeClient);
+        m_inputVolumeControl->Release();
+        m_inputVolumeControl = nullptr;
+    }
+
+    if (m_outputVolumeClient) {
+        m_outputVolumeClient->Release();
+        m_outputVolumeClient = nullptr;
+    }
+
+    if (m_inputVolumeClient) {
+        m_inputVolumeClient->Release();
+        m_inputVolumeClient = nullptr;
+    }
+
+    if (m_policyConfig) {
+        m_policyConfig->Release();
+        m_policyConfig = nullptr;
+    }
+
+    if (m_deviceEnumerator) {
+        m_deviceEnumerator->Release();
+        m_deviceEnumerator = nullptr;
+    }
+
+    CoUninitialize();
+    qDebug() << "AudioWorker::cleanup completed";
+}
+
+HRESULT AudioWorker::initializeCOM()
+{
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    if (hr == RPC_E_CHANGED_MODE) {
+        CoUninitialize();
+        hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    }
+    return hr;
+}
+
+void AudioWorker::setupVolumeNotifications()
+{
+    if (!m_deviceEnumerator) return;
+
+    // Setup output volume notifications
+    CComPtr<IMMDevice> outputDevice;
+    HRESULT hr = m_deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &outputDevice);
+    if (SUCCEEDED(hr)) {
+        hr = outputDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL,
+                                    nullptr, (void**)&m_outputVolumeControl);
+        if (SUCCEEDED(hr)) {
+            m_outputVolumeClient = new VolumeNotificationClient(this, eRender);
+            m_outputVolumeControl->RegisterControlChangeNotify(m_outputVolumeClient);
+        }
+    }
+
+    // Setup input volume notifications
+    CComPtr<IMMDevice> inputDevice;
+    hr = m_deviceEnumerator->GetDefaultAudioEndpoint(eCapture, eConsole, &inputDevice);
+    if (SUCCEEDED(hr)) {
+        hr = inputDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL,
+                                   nullptr, (void**)&m_inputVolumeControl);
+        if (SUCCEEDED(hr)) {
+            m_inputVolumeClient = new VolumeNotificationClient(this, eCapture);
+            m_inputVolumeControl->RegisterControlChangeNotify(m_inputVolumeClient);
+        }
+    }
+}
+
+void AudioWorker::setupSessionNotifications()
+{
+    qDebug() << "=== SETTING UP SESSION NOTIFICATIONS ===";
+
+    if (!m_deviceEnumerator) {
+        qDebug() << "ERROR: No device enumerator available";
+        return;
+    }
+
+    CComPtr<IMMDevice> device;
+    HRESULT hr = m_deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device);
+    if (FAILED(hr)) {
+        qDebug() << "ERROR: Failed to get default audio endpoint, HRESULT:" << QString::number(hr, 16);
+        return;
+    }
+    qDebug() << "✓ Got default audio endpoint";
+
+    hr = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL,
+                          nullptr, (void**)&m_sessionManager);
+    if (FAILED(hr)) {
+        qDebug() << "ERROR: Failed to activate session manager, HRESULT:" << QString::number(hr, 16);
+        return;
+    }
+    qDebug() << "✓ Activated session manager";
+
+    m_sessionNotificationClient = new SessionNotificationClient(this);
+    qDebug() << "✓ Created session notification client";
+
+    hr = m_sessionManager->RegisterSessionNotification(m_sessionNotificationClient);
+    if (SUCCEEDED(hr)) {
+        qDebug() << "✓ Session notifications registered successfully";
+    } else {
+        qDebug() << "ERROR: Failed to register session notifications, HRESULT:" << QString::number(hr, 16);
+        m_sessionNotificationClient->Release();
+        m_sessionNotificationClient = nullptr;
+    }
+
+    qDebug() << "=== SESSION NOTIFICATION SETUP COMPLETE ===";
+}
+
+void AudioWorker::setupDeviceNotifications()
+{
+    if (!m_deviceEnumerator) return;
+
+    m_deviceNotificationClient = new DeviceNotificationClient(this);
+    HRESULT hr = m_deviceEnumerator->RegisterEndpointNotificationCallback(m_deviceNotificationClient);
+    if (SUCCEEDED(hr)) {
+        qDebug() << "Device notifications registered successfully";
+    } else {
+        qDebug() << "Failed to register device notifications, HRESULT:" << QString::number(hr, 16);
+        m_deviceNotificationClient->Release();
+        m_deviceNotificationClient = nullptr;
+    }
+}
+
+void AudioWorker::updateCurrentVolumes()
+{
+    // Get current output volume and mute state
+    if (m_outputVolumeControl) {
+        float volume = 0.0f;
+        BOOL muted = FALSE;
+
+        if (SUCCEEDED(m_outputVolumeControl->GetMasterVolumeLevelScalar(&volume))) {
+            m_outputVolume = static_cast<int>(std::round(volume * 100.0f));
+            emit outputVolumeChanged(m_outputVolume);
+        }
+
+        if (SUCCEEDED(m_outputVolumeControl->GetMute(&muted))) {
+            m_outputMuted = muted;
+            emit outputMuteChanged(m_outputMuted);
+        }
+    }
+
+    // Get current input volume and mute state
+    if (m_inputVolumeControl) {
+        float volume = 0.0f;
+        BOOL muted = FALSE;
+
+        if (SUCCEEDED(m_inputVolumeControl->GetMasterVolumeLevelScalar(&volume))) {
+            m_inputVolume = static_cast<int>(std::round(volume * 100.0f));
+            emit inputVolumeChanged(m_inputVolume);
+        }
+
+        if (SUCCEEDED(m_inputVolumeControl->GetMute(&muted))) {
+            m_inputMuted = muted;
+            emit inputMuteChanged(m_inputMuted);
+        }
+    }
+}
+
+void AudioWorker::enumerateDevices()
+{
+    if (!m_deviceEnumerator) {
+        qDebug() << "No device enumerator available";
+        return;
+    }
+
+    qDebug() << "=== ENUMERATING AUDIO DEVICES ===";
+
+    QList<AudioDevice> newDevices;
+
+    // Enumerate both input and output devices
+    for (int dataFlowIndex = 0; dataFlowIndex < 2; ++dataFlowIndex) {
+        EDataFlow dataFlow = (dataFlowIndex == 0) ? eRender : eCapture;
+        QString flowName = (dataFlow == eRender) ? "Output" : "Input";
+
+        qDebug() << "Enumerating" << flowName << "devices";
+
+        CComPtr<IMMDeviceCollection> deviceCollection;
+        HRESULT hr = m_deviceEnumerator->EnumAudioEndpoints(dataFlow, DEVICE_STATE_ACTIVE, &deviceCollection);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to enumerate" << flowName << "devices, HRESULT:" << QString::number(hr, 16);
+            continue;
+        }
+
+        UINT deviceCount = 0;
+        deviceCollection->GetCount(&deviceCount);
+        qDebug() << "Found" << deviceCount << flowName << "devices";
+
+        // Get default devices for comparison
+        CComPtr<IMMDevice> defaultDevice;
+        CComPtr<IMMDevice> defaultCommDevice;
+        m_deviceEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &defaultDevice);
+        m_deviceEnumerator->GetDefaultAudioEndpoint(dataFlow, eCommunications, &defaultCommDevice);
+
+        LPWSTR defaultDeviceId = nullptr;
+        LPWSTR defaultCommDeviceId = nullptr;
+        if (defaultDevice) {
+            defaultDevice->GetId(&defaultDeviceId);
+        }
+        if (defaultCommDevice) {
+            defaultCommDevice->GetId(&defaultCommDeviceId);
+        }
+
+        for (UINT i = 0; i < deviceCount; ++i) {
+            CComPtr<IMMDevice> device;
+            hr = deviceCollection->Item(i, &device);
+            if (FAILED(hr)) continue;
+
+            AudioDevice audioDevice = createAudioDeviceFromInterface(device, dataFlow);
+            if (!audioDevice.id.isEmpty()) {
+                // Check if this is the default device
+                if (defaultDeviceId && audioDevice.id == QString::fromWCharArray(defaultDeviceId)) {
+                    audioDevice.isDefault = true;
+                }
+                if (defaultCommDeviceId && audioDevice.id == QString::fromWCharArray(defaultCommDeviceId)) {
+                    audioDevice.isDefaultCommunication = true;
+                }
+
+                newDevices.append(audioDevice);
+                qDebug() << "  Device:" << audioDevice.name << "Default:" << audioDevice.isDefault << "DefaultComm:" << audioDevice.isDefaultCommunication;
+            }
+        }
+
+        if (defaultDeviceId) {
+            CoTaskMemFree(defaultDeviceId);
+        }
+        if (defaultCommDeviceId) {
+            CoTaskMemFree(defaultCommDeviceId);
+        }
+    }
+
+    // Update cached devices
+    m_devices = newDevices;
+
+    qDebug() << "=== DEVICE ENUMERATION COMPLETE ===";
+    qDebug() << "Total devices found:" << newDevices.count();
+
+    emit devicesChanged(newDevices);
+}
+
+AudioDevice AudioWorker::createAudioDeviceFromInterface(IMMDevice* device, EDataFlow dataFlow)
+{
+    AudioDevice audioDevice;
+
+    if (!device) return audioDevice;
+
+    // Get device ID
+    LPWSTR deviceId = nullptr;
+    HRESULT hr = device->GetId(&deviceId);
+    if (SUCCEEDED(hr) && deviceId) {
+        audioDevice.id = QString::fromWCharArray(deviceId);
+        CoTaskMemFree(deviceId);
+    }
+
+    // Get device state
+    DWORD state = 0;
+    hr = device->GetState(&state);
+    if (SUCCEEDED(hr)) {
+        switch (state) {
+        case DEVICE_STATE_ACTIVE:
+            audioDevice.state = "Active";
+            break;
+        case DEVICE_STATE_DISABLED:
+            audioDevice.state = "Disabled";
+            break;
+        case DEVICE_STATE_NOTPRESENT:
+            audioDevice.state = "Not Present";
+            break;
+        case DEVICE_STATE_UNPLUGGED:
+            audioDevice.state = "Unplugged";
+            break;
+        default:
+            audioDevice.state = "Unknown";
+            break;
+        }
+    }
+
+    // Get device properties
+    audioDevice.name = getDeviceProperty(device, PKEY_Device_FriendlyName);
+    audioDevice.description = getDeviceProperty(device, PKEY_Device_DeviceDesc);
+    audioDevice.isInput = (dataFlow == eCapture);
+
+    if (audioDevice.name.isEmpty()) {
+        audioDevice.name = audioDevice.description;
+    }
+    if (audioDevice.name.isEmpty()) {
+        audioDevice.name = "Unknown Device";
+    }
+
+    return audioDevice;
+}
+
+QString AudioWorker::getDeviceProperty(IMMDevice* device, const PROPERTYKEY& key)
+{
+    if (!device) return QString();
+
+    CComPtr<IPropertyStore> propertyStore;
+    HRESULT hr = device->OpenPropertyStore(STGM_READ, &propertyStore);
+    if (FAILED(hr)) return QString();
+
+    PROPVARIANT propVariant;
+    PropVariantInit(&propVariant);
+
+    hr = propertyStore->GetValue(key, &propVariant);
+    if (SUCCEEDED(hr) && propVariant.vt == VT_LPWSTR) {
+        QString result = QString::fromWCharArray(propVariant.pwszVal);
+        PropVariantClear(&propVariant);
+        return result;
+    }
+
+    PropVariantClear(&propVariant);
+    return QString();
+}
+
+void AudioWorker::enumerateApplications()
+{
+    qDebug() << "=== ENUMERATING APPLICATIONS (triggered by notification) ===";
+
+    // Clean up existing sessions
+    for (auto& sessionInfo : m_activeSessions) {
+        if (sessionInfo.sessionControl && sessionInfo.eventsClient) {
+            sessionInfo.sessionControl->UnregisterAudioSessionNotification(sessionInfo.eventsClient);
+        }
+        if (sessionInfo.eventsClient) {
+            sessionInfo.eventsClient->Release();
+        }
+        if (sessionInfo.sessionControl) {
+            sessionInfo.sessionControl->Release();
+        }
+    }
+    m_activeSessions.clear();
+
+    QList<AudioApplication> newApplications;
+    bool foundSystemSounds = false;
+
+    // Use the existing session manager if available, otherwise create a new one
+    IAudioSessionManager2* sessionManager = m_sessionManager;
+    CComPtr<IAudioSessionManager2> tempSessionManager;
+
+    if (!sessionManager) {
+        // If we don't have the main session manager, create a temporary one
+        CComPtr<IMMDeviceEnumerator> pEnumerator;
+        HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                                      __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to create device enumerator";
+            return;
+        }
+
+        CComPtr<IMMDevice> pDevice;
+        hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to get default audio endpoint";
+            return;
+        }
+
+        hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&tempSessionManager);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to get audio session manager";
+            return;
+        }
+        sessionManager = tempSessionManager;
+    }
+
+    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
+    HRESULT hr = sessionManager->GetSessionEnumerator(&pSessionEnumerator);
+    if (FAILED(hr)) {
+        qDebug() << "Failed to get session enumerator";
+        return;
+    }
+
+    int sessionCount = 0;
+    pSessionEnumerator->GetCount(&sessionCount);
+    qDebug() << "Found" << sessionCount << "total sessions";
+
+    for (int i = 0; i < sessionCount; ++i) {
+        IAudioSessionControl* sessionControl = nullptr;
+        hr = pSessionEnumerator->GetSession(i, &sessionControl);
+        if (FAILED(hr) || !sessionControl) {
+            continue;
+        }
+
+        CComPtr<IAudioSessionControl2> sessionControl2;
+        hr = sessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sessionControl2);
+        if (FAILED(hr)) {
+            sessionControl->Release();
+            continue;
+        }
+
+        DWORD processId = 0;
+        hr = sessionControl2->GetProcessId(&processId);
+        if (FAILED(hr)) {
+            sessionControl->Release();
+            continue;
+        }
+
+        // Get session display name first to check for system sounds
+        LPWSTR pwszDisplayName = nullptr;
+        hr = sessionControl->GetDisplayName(&pwszDisplayName);
+        QString sessionDisplayName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "Unknown Application";
+        CoTaskMemFree(pwszDisplayName);
+
+        // Check if session is active - but make exception for system sounds
+        bool isSystemSounds = (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202" ||
+                               processId == 0);
+
+        if (!isSystemSounds) {
+            // Skip our own process
+            if (processId == GetCurrentProcessId()) {
+                sessionControl->Release();
+                continue;
+            }
+
+            // For non-system sounds, check if session is active
+            AudioSessionState state;
+            hr = sessionControl->GetState(&state);
+            if (FAILED(hr) || state != AudioSessionStateActive) {
+                qDebug() << "Session" << i << "for process" << processId << "is not active (state:" << state << ")";
+                sessionControl->Release();
+                continue;
+            }
+        } else {
+            foundSystemSounds = true;
+            qDebug() << "Found system sounds session (always included)";
+        }
+
+        QString appId = isSystemSounds ? "system_sounds" : QString::number(processId);
+
+        // Get volume info
+        CComPtr<ISimpleAudioVolume> pSimpleAudioVolume;
+        hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pSimpleAudioVolume);
+        if (FAILED(hr)) {
+            sessionControl->Release();
+            continue;
+        }
+
+        BOOL isMuted = FALSE;
+        pSimpleAudioVolume->GetMute(&isMuted);
+
+        float volumeLevel = 0.0f;
+        pSimpleAudioVolume->GetMasterVolume(&volumeLevel);
+
+        // Process application info
+        AudioApplication app;
+        app.id = appId;
+        app.volume = static_cast<int>(volumeLevel * 100);
+        app.isMuted = isMuted;
+        app.audioLevel = 0;
+
+        QString executablePath;
+        QString executableName;
+        QString finalAppName = sessionDisplayName;
+
+        // Handle special case for Windows system sounds first
+        if (isSystemSounds) {
+            finalAppName = "System sounds";
+            executableName = "System sounds";
+            app.name = finalAppName;
+            app.executableName = executableName;
+
+            // Create a simple icon for system sounds
+            QPixmap systemPixmap(32, 32);
+            systemPixmap.fill(Qt::transparent);
+            QPainter painter(&systemPixmap);
+            painter.setBrush(QBrush(QColor(100, 150, 200)));
+            painter.setPen(Qt::NoPen);
+            painter.drawEllipse(0, 0, 32, 32);
+            painter.setPen(QPen(Qt::white, 2));
+            painter.drawText(systemPixmap.rect(), Qt::AlignCenter, "S");
+            painter.end();
+
+            QByteArray byteArray;
+            QBuffer buffer(&byteArray);
+            buffer.open(QIODevice::WriteOnly);
+            systemPixmap.save(&buffer, "PNG");
+            app.iconPath = "data:image/png;base64," + byteArray.toBase64();
+        }
+        else {
+            // Handle regular applications
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+            if (hProcess) {
+                WCHAR exePath[MAX_PATH];
+                if (GetModuleFileNameEx(hProcess, NULL, exePath, MAX_PATH)) {
+                    executablePath = QString::fromWCharArray(exePath);
+                    QFileInfo fileInfo(executablePath);
+                    executableName = fileInfo.baseName();
+
+                    if (!executableName.isEmpty()) {
+                        executableName[0] = executableName[0].toUpper();
+                    }
+
+                    // Try to get better display name from version info
+                    QString betterDisplayName = getApplicationDisplayName(executablePath);
+                    if (!betterDisplayName.isEmpty()) {
+                        finalAppName = betterDisplayName;
+                    } else if (!executableName.isEmpty()) {
+                        finalAppName = executableName;
+                    }
+
+                    // Get icon using the improved method
+                    QIcon appIcon = getApplicationIcon(executablePath);
+                    if (!appIcon.isNull()) {
+                        QPixmap pixmap = appIcon.pixmap(32, 32);
+                        QByteArray byteArray;
+                        QBuffer buffer(&byteArray);
+                        buffer.open(QIODevice::WriteOnly);
+                        pixmap.save(&buffer, "PNG");
+                        app.iconPath = "data:image/png;base64," + byteArray.toBase64();
+                    }
+                }
+                CloseHandle(hProcess);
+            }
+
+            app.name = finalAppName;
+            app.executableName = executableName;
+        }
+
+        // Register session events for real-time updates
+        SessionEventsClient* eventsClient = new SessionEventsClient(this, appId);
+        hr = sessionControl->RegisterAudioSessionNotification(eventsClient);
+        if (SUCCEEDED(hr)) {
+            SessionInfo sessionInfo;
+            sessionInfo.sessionControl = sessionControl; // Keep alive
+            sessionInfo.eventsClient = eventsClient;
+            sessionInfo.appId = appId;
+            m_activeSessions.append(sessionInfo);
+
+            qDebug() << "✓ Registered events for app:" << app.name << "PID:" << processId;
+        } else {
+            eventsClient->Release();
+            sessionControl->Release();
+            qDebug() << "✗ Failed to register events for app:" << app.name;
+        }
+
+        newApplications.append(app);
+    }
+
+    // If we didn't find system sounds in the sessions, create a default entry
+    if (!foundSystemSounds) {
+        qDebug() << "System sounds not found in sessions, creating default entry";
+
+        AudioApplication systemApp;
+        systemApp.id = "system_sounds";
+        systemApp.name = "System sounds";
+        systemApp.executableName = "System sounds";
+        systemApp.volume = 100; // Default volume
+        systemApp.isMuted = false;
+        systemApp.audioLevel = 0;
+
+        // Create a simple icon for system sounds
+        QPixmap systemPixmap(32, 32);
+        systemPixmap.fill(Qt::transparent);
+        QPainter painter(&systemPixmap);
+        painter.setBrush(QBrush(QColor(100, 150, 200)));
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(0, 0, 32, 32);
+        painter.setPen(QPen(Qt::white, 2));
+        painter.drawText(systemPixmap.rect(), Qt::AlignCenter, "S");
+        painter.end();
+
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+        systemPixmap.save(&buffer, "PNG");
+        systemApp.iconPath = "data:image/png;base64," + byteArray.toBase64();
+
+        newApplications.append(systemApp);
+    }
+
+    m_applications = newApplications;
+    qDebug() << "=== APPLICATION ENUMERATION COMPLETE ===";
+    qDebug() << "Total applications found:" << newApplications.count();
+    qDebug() << "Active sessions tracked:" << m_activeSessions.count();
+    qDebug() << "System sounds included:" << (foundSystemSounds ? "from session" : "as default");
+
+    emit applicationsChanged(newApplications);
+}
+
+QString AudioWorker::getExecutablePath(DWORD processId)
+{
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+    if (!hProcess) return QString();
+
+    WCHAR path[MAX_PATH];
+    DWORD pathSize = MAX_PATH;
+
+    QString result;
+    if (QueryFullProcessImageName(hProcess, 0, path, &pathSize)) {
+        result = QString::fromWCharArray(path);
+    }
+
+    CloseHandle(hProcess);
+    return result;
+}
+
+QIcon AudioWorker::getApplicationIcon(const QString& executablePath)
+{
     SHFILEINFO shFileInfo;
     if (SHGetFileInfo(executablePath.toStdWString().c_str(),
                       0, &shFileInfo, sizeof(shFileInfo),
                       SHGFI_ICON | SHGFI_LARGEICON)) {
+
         HICON hIcon = shFileInfo.hIcon;
 
         ICONINFO iconInfo;
@@ -52,1002 +1150,602 @@ QIcon getAppIcon(const QString &executablePath) {
             HDC hdcMem = CreateCompatibleDC(hdc);
             HBITMAP hbmColor = iconInfo.hbmColor;
 
-            HBITMAP hbmOld = (HBITMAP)SelectObject(hdcMem, hbmColor);
+            if (hbmColor) {
+                HBITMAP hbmOld = (HBITMAP)SelectObject(hdcMem, hbmColor);
 
-            BITMAPINFOHEADER biHeader = {0};
-            biHeader.biSize = sizeof(BITMAPINFOHEADER);
-            biHeader.biWidth = width;
-            biHeader.biHeight = -height;
-            biHeader.biPlanes = 1;
-            biHeader.biBitCount = 32;
-            biHeader.biCompression = BI_RGB;
+                BITMAPINFOHEADER biHeader = {0};
+                biHeader.biSize = sizeof(BITMAPINFOHEADER);
+                biHeader.biWidth = width;
+                biHeader.biHeight = -height;
+                biHeader.biPlanes = 1;
+                biHeader.biBitCount = 32;
+                biHeader.biCompression = BI_RGB;
 
-            int imageSize = width * height * 4;
-            unsigned char *pixels = new unsigned char[imageSize];
+                int imageSize = width * height * 4;
+                unsigned char *pixels = new unsigned char[imageSize];
 
-            GetDIBits(hdcMem, hbmColor, 0, height, pixels, (BITMAPINFO *)&biHeader, DIB_RGB_COLORS);
+                GetDIBits(hdcMem, hbmColor, 0, height, pixels, (BITMAPINFO *)&biHeader, DIB_RGB_COLORS);
 
-            QImage image(pixels, width, height, QImage::Format_ARGB32);
+                QImage image(pixels, width, height, QImage::Format_ARGB32);
 
-            SelectObject(hdcMem, hbmOld);
+                SelectObject(hdcMem, hbmOld);
+                DeleteDC(hdcMem);
+                ReleaseDC(NULL, hdc);
+
+                QPixmap pixmap = QPixmap::fromImage(image);
+                delete[] pixels;
+
+                // Clean up icon info
+                if (iconInfo.hbmMask) DeleteObject(iconInfo.hbmMask);
+                if (iconInfo.hbmColor) DeleteObject(iconInfo.hbmColor);
+
+                DestroyIcon(hIcon);
+                return QIcon(pixmap);
+            }
+
+            // Clean up icon info if color bitmap is null
+            if (iconInfo.hbmMask) DeleteObject(iconInfo.hbmMask);
+            if (iconInfo.hbmColor) DeleteObject(iconInfo.hbmColor);
+
             DeleteDC(hdcMem);
             ReleaseDC(NULL, hdc);
-
-            QPixmap pixmap = QPixmap::fromImage(image);
-            delete[] pixels;
-
-            return QIcon(pixmap);
         }
+        DestroyIcon(hIcon);
     }
     return QIcon();
 }
 
-int getApplicationAudioLevelImpl(const QString& appId) {
-    DWORD processId = appId.toULong();
-
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
-                                  __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (FAILED(hr)) {
-        return 0;
-    }
-
-    CComPtr<IMMDevice> pDevice;
-    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
-    if (FAILED(hr)) {
-        return 0;
-    }
-
-    CComPtr<IAudioSessionManager2> pSessionManager;
-    hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
-    if (FAILED(hr)) {
-        return 0;
-    }
-
-    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
-    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
-    if (FAILED(hr)) {
-        return 0;
-    }
-
-    int sessionCount;
-    pSessionEnumerator->GetCount(&sessionCount);
-
-    for (int i = 0; i < sessionCount; ++i) {
-        CComPtr<IAudioSessionControl> pSessionControl;
-        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
-        if (FAILED(hr)) continue;
-
-        CComPtr<IAudioSessionControl2> pSessionControl2;
-        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
-        if (FAILED(hr)) continue;
-
-        DWORD pid;
-        hr = pSessionControl2->GetProcessId(&pid);
-        if (FAILED(hr)) continue;
-
-        if (pid == processId) {
-            CComPtr<IAudioMeterInformation> pMeterInfo;
-            hr = pSessionControl->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&pMeterInfo);
-            if (SUCCEEDED(hr)) {
-                float peakLevel = 0.0f;
-                hr = pMeterInfo->GetPeakValue(&peakLevel);
-                if (SUCCEEDED(hr)) {
-                    return static_cast<int>(peakLevel * 100);
-                }
-            }
-        }
-    }
-
-    return 0;
-}
-
-// Implementation functions (these run on worker thread)
-void enumerateDevicesImpl(EDataFlow dataFlow, QList<AudioDevice>& devices) {
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-
-    if (FAILED(hr)) {
-        qDebug() << "Failed to create device enumerator";
-        return;
-    }
-
-    CComPtr<IMMDeviceCollection> pCollection;
-    hr = pEnumerator->EnumAudioEndpoints(dataFlow, DEVICE_STATE_ACTIVE, &pCollection);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to enumerate devices";
-        return;
-    }
-
-    CComPtr<IMMDevice> pDefaultDevice;
-    hr = pEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &pDefaultDevice);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get default audio endpoint";
-        return;
-    }
-
-    LPWSTR pwszDefaultID = nullptr;
-    hr = pDefaultDevice->GetId(&pwszDefaultID);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get default device ID";
-        return;
-    }
-
-    UINT count;
-    pCollection->GetCount(&count);
-
-    for (UINT i = 0; i < count; ++i) {
-        CComPtr<IMMDevice> pDevice;
-        pCollection->Item(i, &pDevice);
-
-        LPWSTR pwszID = nullptr;
-        pDevice->GetId(&pwszID);
-
-        CComPtr<IPropertyStore> pProps;
-        pDevice->OpenPropertyStore(STGM_READ, &pProps);
-
-        PROPVARIANT varName;
-        PropVariantInit(&varName);
-        pProps->GetValue(PKEY_Device_FriendlyName, &varName);
-
-        AudioDevice device;
-        device.id = QString::fromWCharArray(pwszID);
-        device.name = QString::fromWCharArray(varName.pwszVal);
-        device.shortName = extractShortName(device.name);
-        device.type = (dataFlow == eRender) ? "Playback" : "Recording";
-        device.isDefault = (wcscmp(pwszID, pwszDefaultID) == 0);
-
-        devices.append(device);
-
-        CoTaskMemFree(pwszID);
-        PropVariantClear(&varName);
-    }
-
-    CoTaskMemFree(pwszDefaultID);
-}
-
-void setVolumeImpl(EDataFlow dataFlow, int volume) {
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    CComPtr<IMMDevice> pDevice;
-    CComPtr<IAudioEndpointVolume> pVolumeControl;
-
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (SUCCEEDED(hr)) {
-        hr = pEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &pDevice);
-    }
-    if (SUCCEEDED(hr)) {
-        hr = pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, nullptr, (void**)&pVolumeControl);
-    }
-    if (SUCCEEDED(hr)) {
-        pVolumeControl->SetMasterVolumeLevelScalar(static_cast<float>(volume) / 100.0f, nullptr);
-    }
-}
-
-int getVolumeImpl(EDataFlow dataFlow) {
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    CComPtr<IMMDevice> pDevice;
-    CComPtr<IAudioEndpointVolume> pVolumeControl;
-    float volume = 0.0f;
-
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (SUCCEEDED(hr)) {
-        hr = pEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &pDevice);
-    }
-    if (SUCCEEDED(hr)) {
-        hr = pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, nullptr, (void**)&pVolumeControl);
-    }
-    if (SUCCEEDED(hr)) {
-        pVolumeControl->GetMasterVolumeLevelScalar(&volume);
-    }
-
-    return static_cast<int>(std::round(volume * 100.0f));
-}
-
-void setMuteImpl(EDataFlow dataFlow, bool mute) {
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    CComPtr<IMMDevice> pDevice;
-    CComPtr<IAudioEndpointVolume> pVolumeControl;
-
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (SUCCEEDED(hr)) {
-        hr = pEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &pDevice);
-    }
-    if (SUCCEEDED(hr)) {
-        hr = pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, nullptr, (void**)&pVolumeControl);
-    }
-    if (SUCCEEDED(hr)) {
-        pVolumeControl->SetMute(mute, nullptr);
-    }
-}
-
-bool getMuteImpl(EDataFlow dataFlow) {
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    CComPtr<IMMDevice> pDevice;
-    CComPtr<IAudioEndpointVolume> pVolumeControl;
-    BOOL mute = FALSE;
-
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (SUCCEEDED(hr)) {
-        hr = pEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &pDevice);
-    }
-    if (SUCCEEDED(hr)) {
-        hr = pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, nullptr, (void**)&pVolumeControl);
-    }
-    if (SUCCEEDED(hr)) {
-        pVolumeControl->GetMute(&mute);
-    }
-
-    return mute;
-}
-
-int getAudioLevelPercentageImpl(EDataFlow dataFlow) {
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    CComPtr<IMMDevice> pDevice;
-    CComPtr<IAudioMeterInformation> pMeterInfo;
-    float peakLevel = 0.0f;
-
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (SUCCEEDED(hr)) {
-        hr = pEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &pDevice);
-    }
-    if (SUCCEEDED(hr)) {
-        hr = pDevice->Activate(__uuidof(IAudioMeterInformation), CLSCTX_ALL, nullptr, (void**)&pMeterInfo);
-    }
-    if (SUCCEEDED(hr)) {
-        hr = pMeterInfo->GetPeakValue(&peakLevel);
-        if (FAILED(hr)) {
-            qDebug() << "Failed to get audio peak level";
-            return 0;
-        }
-    } else {
-        qDebug() << "Failed to activate IAudioMeterInformation";
-        return 0;
-    }
-
-    return static_cast<int>(peakLevel * 100);
-}
-
-bool setDefaultEndpointImpl(const QString &deviceId) {
-    HRESULT hr;
-    IMMDeviceEnumerator *deviceEnumerator = nullptr;
-    IMMDevice *defaultDevice = nullptr;
-    IPolicyConfig *policyConfig = nullptr;
-
-    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER,
-                          IID_PPV_ARGS(&deviceEnumerator));
-    if (FAILED(hr)) {
-        qDebug() << "Failed to create device enumerator";
-        return false;
-    }
-
-    hr = deviceEnumerator->GetDevice(reinterpret_cast<LPCWSTR>(deviceId.utf16()), &defaultDevice);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get device by ID";
-        deviceEnumerator->Release();
-        return false;
-    }
-
-    hr = CoCreateInstance(__uuidof(CPolicyConfigClient), nullptr, CLSCTX_ALL,
-                          IID_PPV_ARGS(&policyConfig));
-    if (FAILED(hr)) {
-        qDebug() << "Failed to create PolicyConfig interface";
-        defaultDevice->Release();
-        deviceEnumerator->Release();
-        return false;
-    }
-
-    hr = policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eConsole);
-    policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eMultimedia);
-    policyConfig->SetDefaultEndpoint(reinterpret_cast<LPCWSTR>(deviceId.utf16()), eCommunications);
-
-    policyConfig->Release();
-    defaultDevice->Release();
-    deviceEnumerator->Release();
-
-    if (FAILED(hr)) {
-        qDebug() << "Failed to set default audio output device";
-        return false;
-    }
-
-    return true;
-}
-
-QString getApplicationDisplayName(const QString& executablePath) {
+QString AudioWorker::getApplicationDisplayName(const QString& executablePath)
+{
     std::wstring wPath = executablePath.toStdWString();
 
-    // Get version info size
     DWORD dwSize = GetFileVersionInfoSize(wPath.c_str(), NULL);
     if (dwSize == 0) {
-        qDebug() << "No version info available for:" << executablePath;
         return QString();
     }
 
-    // Allocate buffer and get version info
     std::vector<BYTE> buffer(dwSize);
     if (!GetFileVersionInfo(wPath.c_str(), 0, dwSize, buffer.data())) {
-        qDebug() << "Failed to get version info for:" << executablePath;
         return QString();
     }
 
-
-    // Get available translations
     LPVOID lpBuffer = NULL;
     UINT uLen = 0;
 
-    // First, try to get the translation table
-    if (VerQueryValue(buffer.data(), L"\\VarFileInfo\\Translation", &lpBuffer, &uLen)) {
-        DWORD* pTranslations = static_cast<DWORD*>(lpBuffer);
-        UINT numTranslations = uLen / sizeof(DWORD);
+    // Try ProductName first
+    if (VerQueryValue(buffer.data(), L"\\StringFileInfo\\040904b0\\ProductName", &lpBuffer, &uLen) && uLen > 0) {
+        return QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
+    }
 
-
-        // Try each available translation
-        for (UINT i = 0; i < numTranslations; i++) {
-            DWORD translation = pTranslations[i];
-            WORD language = LOWORD(translation);
-            WORD codepage = HIWORD(translation);
-
-            QString langCode = QString("%1%2")
-                                   .arg(language, 4, 16, QChar('0'))
-                                   .arg(codepage, 4, 16, QChar('0'));
-
-
-            // Try ProductName first
-            QString queryPath = QString("\\StringFileInfo\\%1\\ProductName").arg(langCode);
-            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
-                QString productName = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
-                if (!productName.isEmpty()) {
-                    return productName;
-                }
-            }
-
-            // Try FileDescription
-            queryPath = QString("\\StringFileInfo\\%1\\FileDescription").arg(langCode);
-            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
-                QString fileDescription = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
-                if (!fileDescription.isEmpty()) {
-                    return fileDescription;
-                }
-            }
-
-            // Try CompanyName + executable name as last resort
-            queryPath = QString("\\StringFileInfo\\%1\\CompanyName").arg(langCode);
-            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
-                QString companyName = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
-                if (!companyName.isEmpty()) {
-                    QFileInfo fileInfo(executablePath);
-                    QString combined = QString("%1 %2").arg(companyName, fileInfo.baseName());
-                    return combined;
-                }
-            }
-        }
-    } else {
-        // Fallback: try common language/codepage combinations
-        QStringList commonCodes = {
-            "040904b0",  // English US + Unicode
-            "040904e4",  // English US + Windows-1252
-            "000004b0",  // Language neutral + Unicode
-            "000004e4",  // Language neutral + Windows-1252
-        };
-
-        for (const QString& langCode : commonCodes) {
-            // Try ProductName
-            QString queryPath = QString("\\StringFileInfo\\%1\\ProductName").arg(langCode);
-            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
-                QString productName = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
-                if (!productName.isEmpty()) {
-                    return productName;
-                }
-            }
-
-            // Try FileDescription
-            queryPath = QString("\\StringFileInfo\\%1\\FileDescription").arg(langCode);
-            if (VerQueryValue(buffer.data(), queryPath.toStdWString().c_str(), &lpBuffer, &uLen) && uLen > 0) {
-                QString fileDescription = QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
-                if (!fileDescription.isEmpty()) {
-                    return fileDescription;
-                }
-            }
-        }
+    // Try FileDescription
+    if (VerQueryValue(buffer.data(), L"\\StringFileInfo\\040904b0\\FileDescription", &lpBuffer, &uLen) && uLen > 0) {
+        return QString::fromWCharArray(static_cast<LPCWSTR>(lpBuffer));
     }
 
     return QString();
 }
 
-QList<Application> enumerateAudioApplicationsImpl() {
-    QList<Application> applications;
+// Event handlers
+void AudioWorker::onVolumeChanged(AudioWorker::DataFlow dataFlow, float volume, bool muted)
+{
+    int volumePercent = static_cast<int>(std::round(volume * 100.0f));
 
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
-                                  __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to create device enumerator";
-        return applications;
-    }
-
-    CComPtr<IMMDevice> pDevice;
-    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get default audio endpoint";
-        return applications;
-    }
-
-    CComPtr<IAudioSessionManager2> pSessionManager;
-    hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get audio session manager";
-        return applications;
-    }
-
-    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
-    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get session enumerator";
-        return applications;
-    }
-
-    int sessionCount;
-    pSessionEnumerator->GetCount(&sessionCount);
-
-    for (int i = 0; i < sessionCount; ++i) {
-        CComPtr<IAudioSessionControl> pSessionControl;
-        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
-        if (FAILED(hr)) {
-            qDebug() << "Failed to get session control";
-            continue;
+    if (dataFlow == Output) {
+        if (m_outputVolume != volumePercent) {
+            m_outputVolume = volumePercent;
+            emit outputVolumeChanged(volumePercent);
         }
-
-        CComPtr<IAudioSessionControl2> pSessionControl2;
-        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
-        if (FAILED(hr)) {
-            qDebug() << "Failed to query IAudioSessionControl2";
-            continue;
+        if (m_outputMuted != muted) {
+            m_outputMuted = muted;
+            emit outputMuteChanged(muted);
         }
-
-        DWORD processId;
-        pSessionControl2->GetProcessId(&processId);
-        QString appId = QString::number(processId);
-
-        LPWSTR pwszDisplayName = nullptr;
-        hr = pSessionControl->GetDisplayName(&pwszDisplayName);
-        QString sessionDisplayName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "Unknown Application";
-        CoTaskMemFree(pwszDisplayName);
-
-        CComPtr<ISimpleAudioVolume> pSimpleAudioVolume;
-        hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pSimpleAudioVolume);
-        if (FAILED(hr)) {
-            qDebug() << "Failed to get ISimpleAudioVolume";
-            continue;
+    } else if (dataFlow == Input) {
+        if (m_inputVolume != volumePercent) {
+            m_inputVolume = volumePercent;
+            emit inputVolumeChanged(volumePercent);
         }
+        if (m_inputMuted != muted) {
+            m_inputMuted = muted;
+            emit inputMuteChanged(muted);
+        }
+    }
+}
 
-        BOOL isMuted;
-        pSimpleAudioVolume->GetMute(&isMuted);
+void AudioWorker::onSessionCreated()
+{
+    qDebug() << "Session created, re-enumerating applications";
+    enumerateApplications();
+}
 
-        float volumeLevel;
-        pSimpleAudioVolume->GetMasterVolume(&volumeLevel);
+void AudioWorker::onSessionDisconnected()
+{
+    qDebug() << "Session disconnected, re-enumerating applications";
+    enumerateApplications();
+}
 
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
-        QString executablePath;
-        QString executableName;
-        QString finalAppName = sessionDisplayName; // Default to session display name
-        QIcon appIcon;
+void AudioWorker::onDeviceAdded(const QString& deviceId)
+{
+    qDebug() << "Device added, re-enumerating devices";
+    enumerateDevices();
+}
 
-        if (hProcess) {
-            WCHAR exePath[MAX_PATH];
-            if (GetModuleFileNameEx(hProcess, NULL, exePath, MAX_PATH)) {
-                executablePath = QString::fromWCharArray(exePath);
+void AudioWorker::onDeviceRemoved(const QString& deviceId)
+{
+    qDebug() << "Device removed, re-enumerating devices";
+    enumerateDevices();
+}
 
-                QFileInfo fileInfo(executablePath);
-                executableName = fileInfo.baseName();
+void AudioWorker::onDefaultDeviceChanged(DataFlow dataFlow, const QString& deviceId)
+{
+    qDebug() << "Default device changed, re-enumerating devices";
+    enumerateDevices();
 
-                if (!executableName.isEmpty()) {
-                    executableName[0] = executableName[0].toUpper();
+    // Also emit specific signal
+    emit defaultDeviceChanged(deviceId, dataFlow == Input);
+}
+
+void AudioWorker::onApplicationSessionVolumeChanged(const QString& appId, float volume, bool muted)
+{
+    int volumePercent = static_cast<int>(std::round(volume * 100.0f));
+
+    qDebug() << "=== APPLICATION SESSION VOLUME CHANGED ===";
+    qDebug() << "App ID:" << appId;
+    qDebug() << "Volume:" << volumePercent << "%";
+    qDebug() << "Muted:" << muted;
+
+    // Update our cached application list
+    bool foundApp = false;
+    for (int i = 0; i < m_applications.count(); ++i) {
+        if (m_applications[i].id == appId) {
+            foundApp = true;
+            bool volumeChanged = (m_applications[i].volume != volumePercent);
+            bool muteChanged = (m_applications[i].isMuted != muted);
+
+            if (volumeChanged || muteChanged) {
+                m_applications[i].volume = volumePercent;
+                m_applications[i].isMuted = muted;
+
+                qDebug() << "Updated app in cache - Volume changed:" << volumeChanged << "Mute changed:" << muteChanged;
+
+                // Emit individual change signals
+                if (volumeChanged) {
+                    emit applicationVolumeChanged(appId, volumePercent);
+                }
+                if (muteChanged) {
+                    emit applicationMuteChanged(appId, muted);
                 }
 
-                // Try to get better display name from version info
-                QString betterDisplayName = getApplicationDisplayName(executablePath);
-                if (!betterDisplayName.isEmpty()) {
-                    finalAppName = betterDisplayName;
-                } else if (!executableName.isEmpty()) {
-                    // Fallback to capitalized executable name if no version info
-                    finalAppName = executableName;
+                // Emit the full list to ensure model updates
+                emit applicationsChanged(m_applications);
+            }
+            break;
+        }
+    }
+
+    if (!foundApp) {
+        qDebug() << "Warning: Application" << appId << "not found in cached list";
+        // Re-enumerate to pick up any missed applications
+        QMetaObject::invokeMethod(this, "enumerateApplications", Qt::QueuedConnection);
+    }
+}
+
+// Control methods
+void AudioWorker::setOutputVolume(int volume)
+{
+    setVolumeForDevice(eRender, volume);
+}
+
+void AudioWorker::setInputVolume(int volume)
+{
+    setVolumeForDevice(eCapture, volume);
+}
+
+void AudioWorker::setOutputMute(bool mute)
+{
+    setMuteForDevice(eRender, mute);
+}
+
+void AudioWorker::setInputMute(bool mute)
+{
+    setMuteForDevice(eCapture, mute);
+}
+
+void AudioWorker::setApplicationVolume(const QString& appId, int volume)
+{
+    if (!m_sessionManager) return;
+
+    float volumeScalar = static_cast<float>(volume) / 100.0f;
+
+    // Special handling for system sounds
+    if (appId == "system_sounds") {
+        // Try to find system sounds session
+        CComPtr<IAudioSessionEnumerator> sessionEnumerator;
+        HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
+        if (FAILED(hr)) return;
+
+        int sessionCount = 0;
+        sessionEnumerator->GetCount(&sessionCount);
+
+        for (int i = 0; i < sessionCount; ++i) {
+            CComPtr<IAudioSessionControl> sessionControl;
+            hr = sessionEnumerator->GetSession(i, &sessionControl);
+            if (FAILED(hr)) continue;
+
+            LPWSTR pwszDisplayName = nullptr;
+            hr = sessionControl->GetDisplayName(&pwszDisplayName);
+            QString sessionDisplayName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "";
+            CoTaskMemFree(pwszDisplayName);
+
+            if (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+                CComPtr<ISimpleAudioVolume> simpleVolume;
+                hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&simpleVolume);
+                if (SUCCEEDED(hr)) {
+                    simpleVolume->SetMasterVolume(volumeScalar, nullptr);
+                    qDebug() << "Set system sounds volume to" << volume;
                 }
-
-                appIcon = getAppIcon(executablePath);
-            }
-            CloseHandle(hProcess);
-        }
-
-        // Handle special case for Windows system sounds
-        if (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
-            finalAppName = "System sounds";
-            executableName = "System sounds";
-            appIcon = QIcon(":/icons/system.png");
-        }
-
-        Application app;
-        app.id = appId;
-        app.name = finalAppName;
-        app.executableName = executableName;
-        app.isMuted = isMuted;
-        app.volume = static_cast<int>(volumeLevel * 100);
-        app.icon = appIcon;
-        app.audioLevel = 0;
-
-        applications.append(app);
-    }
-
-    return applications;
-}
-
-bool setApplicationMuteImpl(const QString& appId, bool mute) {
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    CComPtr<IMMDevice> pDevice;
-    CComPtr<IAudioSessionManager2> pSessionManager;
-
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (SUCCEEDED(hr)) {
-        hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
-    }
-    if (SUCCEEDED(hr)) {
-        hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
-    }
-    if (FAILED(hr)) {
-        qDebug() << "Failed to initialize audio session manager";
-        return false;
-    }
-
-    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
-    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get session enumerator";
-        return false;
-    }
-
-    int sessionCount;
-    pSessionEnumerator->GetCount(&sessionCount);
-
-    for (int i = 0; i < sessionCount; ++i) {
-        CComPtr<IAudioSessionControl> pSessionControl;
-        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
-        if (FAILED(hr)) continue;
-
-        CComPtr<IAudioSessionControl2> pSessionControl2;
-        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
-        if (FAILED(hr)) continue;
-
-        DWORD pid = 0;
-        hr = pSessionControl2->GetProcessId(&pid);
-        if (FAILED(hr)) continue;
-
-        if (QString::number(pid) == appId) {
-            CComPtr<ISimpleAudioVolume> pAudioVolume;
-            hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pAudioVolume);
-            if (SUCCEEDED(hr)) {
-                pAudioVolume->SetMute(mute, nullptr);
-                return true;
+                return;
             }
         }
+        qDebug() << "System sounds session not found for volume control";
+        return;
     }
 
-    return false;
-}
-
-bool setApplicationVolumeImpl(const QString& appId, int volume) {
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    CComPtr<IMMDevice> pDevice;
-    CComPtr<IAudioSessionManager2> pSessionManager;
-
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (SUCCEEDED(hr)) {
-        hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
-    }
-    if (SUCCEEDED(hr)) {
-        hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
-    }
-    if (FAILED(hr)) {
-        qDebug() << "Failed to initialize audio session manager";
-        return false;
-    }
-
-    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
-    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get session enumerator";
-        return false;
-    }
-
-    int sessionCount;
-    pSessionEnumerator->GetCount(&sessionCount);
-
-    for (int i = 0; i < sessionCount; ++i) {
-        CComPtr<IAudioSessionControl> pSessionControl;
-        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
-        if (FAILED(hr)) continue;
-
-        CComPtr<IAudioSessionControl2> pSessionControl2;
-        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
-        if (FAILED(hr)) continue;
-
-        DWORD pid = 0;
-        hr = pSessionControl2->GetProcessId(&pid);
-        if (FAILED(hr)) continue;
-
-        if (QString::number(pid) == appId) {
-            CComPtr<ISimpleAudioVolume> pAudioVolume;
-            hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pAudioVolume);
-            if (SUCCEEDED(hr)) {
-                float volumeScalar = static_cast<float>(volume) / 100.0f;
-                pAudioVolume->SetMasterVolume(volumeScalar, nullptr);
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool getApplicationMuteImpl(const QString &appId) {
+    // Handle regular applications
     DWORD processId = appId.toULong();
 
-    CComPtr<IMMDeviceEnumerator> pEnumerator;
-    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
-                                  __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to create device enumerator";
-        return false;
-    }
+    CComPtr<IAudioSessionEnumerator> sessionEnumerator;
+    HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
+    if (FAILED(hr)) return;
 
-    CComPtr<IMMDevice> pDevice;
-    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get default audio endpoint";
-        return false;
-    }
-
-    CComPtr<IAudioSessionManager2> pSessionManager;
-    hr = pDevice->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, (void**)&pSessionManager);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get audio session manager";
-        return false;
-    }
-
-    CComPtr<IAudioSessionEnumerator> pSessionEnumerator;
-    hr = pSessionManager->GetSessionEnumerator(&pSessionEnumerator);
-    if (FAILED(hr)) {
-        qDebug() << "Failed to get session enumerator";
-        return false;
-    }
-
-    int sessionCount;
-    pSessionEnumerator->GetCount(&sessionCount);
+    int sessionCount = 0;
+    sessionEnumerator->GetCount(&sessionCount);
 
     for (int i = 0; i < sessionCount; ++i) {
-        CComPtr<IAudioSessionControl> pSessionControl;
-        hr = pSessionEnumerator->GetSession(i, &pSessionControl);
+        CComPtr<IAudioSessionControl> sessionControl;
+        hr = sessionEnumerator->GetSession(i, &sessionControl);
         if (FAILED(hr)) continue;
 
-        CComPtr<IAudioSessionControl2> pSessionControl2;
-        hr = pSessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&pSessionControl2);
+        CComPtr<IAudioSessionControl2> sessionControl2;
+        hr = sessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sessionControl2);
         if (FAILED(hr)) continue;
 
-        DWORD pid;
-        hr = pSessionControl2->GetProcessId(&pid);
-        if (FAILED(hr)) continue;
+        DWORD pid = 0;
+        hr = sessionControl2->GetProcessId(&pid);
+        if (FAILED(hr) || pid != processId) continue;
 
-        if (pid == processId) {
-            CComPtr<ISimpleAudioVolume> pSimpleAudioVolume;
-            hr = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pSimpleAudioVolume);
-            if (FAILED(hr)) continue;
-
-            BOOL isMuted;
-            hr = pSimpleAudioVolume->GetMute(&isMuted);
-            if (FAILED(hr)) continue;
-
-            return isMuted == TRUE;
+        CComPtr<ISimpleAudioVolume> simpleVolume;
+        hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&simpleVolume);
+        if (SUCCEEDED(hr)) {
+            simpleVolume->SetMasterVolume(volumeScalar, nullptr);
+            qDebug() << "Set application" << appId << "volume to" << volume;
         }
+        break;
     }
-
-    return false;
 }
 
-void AudioWorker::initializeTimer() {
-    m_audioLevelTimer = new QTimer(this);
-    connect(m_audioLevelTimer, &QTimer::timeout, this, [this]() {
-        int playbackLevel = getAudioLevelPercentageImpl(eRender);
-        int recordingLevel = getAudioLevelPercentageImpl(eCapture);
-        emit playbackAudioLevel(playbackLevel);
-        emit recordingAudioLevel(recordingLevel);
+void AudioWorker::setApplicationMute(const QString& appId, bool mute)
+{
+    if (!m_sessionManager) return;
 
-        // Get application audio levels
-        QList<QPair<QString, int>> appLevels;
-        for (const Application& app : m_cachedApplications) {
-            // Handle grouped applications
-            QStringList appIDs = app.id.split(";");
-            int maxLevel = 0;
-            for (const QString& id : appIDs) {
-                int level = getApplicationAudioLevelImpl(id);
-                maxLevel = qMax(maxLevel, level);
+    // Special handling for system sounds
+    if (appId == "system_sounds") {
+        // Try to find system sounds session
+        CComPtr<IAudioSessionEnumerator> sessionEnumerator;
+        HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
+        if (FAILED(hr)) return;
+
+        int sessionCount = 0;
+        sessionEnumerator->GetCount(&sessionCount);
+
+        for (int i = 0; i < sessionCount; ++i) {
+            CComPtr<IAudioSessionControl> sessionControl;
+            hr = sessionEnumerator->GetSession(i, &sessionControl);
+            if (FAILED(hr)) continue;
+
+            LPWSTR pwszDisplayName = nullptr;
+            hr = sessionControl->GetDisplayName(&pwszDisplayName);
+            QString sessionDisplayName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "";
+            CoTaskMemFree(pwszDisplayName);
+
+            if (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
+                CComPtr<ISimpleAudioVolume> simpleVolume;
+                hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&simpleVolume);
+                if (SUCCEEDED(hr)) {
+                    simpleVolume->SetMute(mute, nullptr);
+                    qDebug() << "Set system sounds mute to" << mute;
+                }
+                return;
             }
-            appLevels.append({app.id, maxLevel});
         }
-        emit applicationAudioLevelsChanged(appLevels);
-    });
-}
+        qDebug() << "System sounds session not found for mute control";
+        return;
+    }
 
-void AudioWorker::enumeratePlaybackDevices() {
-    QList<AudioDevice> devices;
-    enumerateDevicesImpl(eRender, devices);
-    emit playbackDevicesReady(devices);
-}
+    // Handle regular applications
+    DWORD processId = appId.toULong();
 
-void AudioWorker::enumerateRecordingDevices() {
-    QList<AudioDevice> devices;
-    enumerateDevicesImpl(eCapture, devices);
-    emit recordingDevicesReady(devices);
-}
+    CComPtr<IAudioSessionEnumerator> sessionEnumerator;
+    HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
+    if (FAILED(hr)) return;
 
-void AudioWorker::enumerateApplications() {
-    QList<Application> apps = enumerateAudioApplicationsImpl();
+    int sessionCount = 0;
+    sessionEnumerator->GetCount(&sessionCount);
 
-    // Add initial audio levels and cache
-    for (Application& app : apps) {
-        QStringList appIDs = app.id.split(";");
-        int maxLevel = 0;
-        for (const QString& id : appIDs) {
-            int level = getApplicationAudioLevelImpl(id);
-            maxLevel = qMax(maxLevel, level);
+    for (int i = 0; i < sessionCount; ++i) {
+        CComPtr<IAudioSessionControl> sessionControl;
+        hr = sessionEnumerator->GetSession(i, &sessionControl);
+        if (FAILED(hr)) continue;
+
+        CComPtr<IAudioSessionControl2> sessionControl2;
+        hr = sessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sessionControl2);
+        if (FAILED(hr)) continue;
+
+        DWORD pid = 0;
+        hr = sessionControl2->GetProcessId(&pid);
+        if (FAILED(hr) || pid != processId) continue;
+
+        CComPtr<ISimpleAudioVolume> simpleVolume;
+        hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&simpleVolume);
+        if (SUCCEEDED(hr)) {
+            simpleVolume->SetMute(mute, nullptr);
+            qDebug() << "Set application" << appId << "mute to" << mute;
         }
-        app.audioLevel = maxLevel;
-    }
-
-    m_cachedApplications = apps;
-    emit applicationsReady(apps);
-}
-
-void AudioWorker::setPlaybackVolume(int volume) {
-    setVolumeImpl(eRender, volume);
-    emit playbackVolumeChanged(volume);
-}
-
-void AudioWorker::setRecordingVolume(int volume) {
-    setVolumeImpl(eCapture, volume);
-    emit recordingVolumeChanged(volume);
-}
-
-void AudioWorker::setPlaybackMute(bool mute) {
-    setMuteImpl(eRender, mute);
-    emit playbackMuteChanged(mute);
-}
-
-void AudioWorker::setRecordingMute(bool mute) {
-    setMuteImpl(eCapture, mute);
-    emit recordingMuteChanged(mute);
-}
-
-void AudioWorker::setDefaultEndpoint(const QString &deviceId) {
-    bool success = setDefaultEndpointImpl(deviceId);
-
-    if (success) {
-        // Queue the property queries for next event loop iteration (non-blocking)
-        QMetaObject::invokeMethod(this, "updateDeviceProperties", Qt::QueuedConnection);
-    }
-
-    emit defaultEndpointChanged(success);
-}
-
-void AudioWorker::queryCurrentProperties() {
-    // Query fresh values async
-    int playbackVol = getVolumeImpl(eRender);
-    int recordingVol = getVolumeImpl(eCapture);
-    bool playbackMute = getMuteImpl(eRender);
-    bool recordingMute = getMuteImpl(eCapture);
-
-    // Update cache
-    emit playbackVolumeChanged(playbackVol);
-    emit recordingVolumeChanged(recordingVol);
-    emit playbackMuteChanged(playbackMute);
-    emit recordingMuteChanged(recordingMute);
-
-    // Signal that fresh properties are ready
-    emit currentPropertiesReady(playbackVol, recordingVol, playbackMute, recordingMute);
-}
-
-void AudioWorker::setApplicationVolume(const QString& appId, int volume) {
-    bool success = setApplicationVolumeImpl(appId, volume);
-    emit applicationVolumeChanged(appId, success);
-}
-
-void AudioWorker::setApplicationMute(const QString& appId, bool mute) {
-    bool success = setApplicationMuteImpl(appId, mute);
-    emit applicationMuteChanged(appId, success);
-}
-
-void AudioWorker::startAudioLevelMonitoring() {
-    if (!m_audioLevelTimer) {
-        initializeTimer();
-    }
-    m_audioLevelTimer->start(100);
-}
-
-void AudioWorker::stopAudioLevelMonitoring() {
-    if (m_audioLevelTimer) {
-        m_audioLevelTimer->stop();
+        break;
     }
 }
 
-void AudioWorker::updateDeviceProperties() {
-    // Now these run async on next event loop - no UI blocking
-    int newPlaybackVolume = getVolumeImpl(eRender);
-    int newRecordingVolume = getVolumeImpl(eCapture);
-    bool newPlaybackMute = getMuteImpl(eRender);
-    bool newRecordingMute = getMuteImpl(eCapture);
-
-    emit playbackVolumeChanged(newPlaybackVolume);
-    emit recordingVolumeChanged(newRecordingVolume);
-    emit playbackMuteChanged(newPlaybackMute);
-    emit recordingMuteChanged(newRecordingMute);
-}
-
-void AudioManager::initialize() {
-    QMutexLocker locker(&g_initMutex);
-
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    if (FAILED(hr)) {
-        throw std::runtime_error("Failed to initialize COM library");
+void AudioWorker::setDefaultDevice(const QString& deviceId, bool isInput, bool forCommunications)
+{
+    if (!m_policyConfig) {
+        qDebug() << "No policy config available, cannot set default device";
+        return;
     }
 
-    if (!g_workerThread) {
-        g_workerThread = new QThread;
-        g_worker = new AudioWorker;
-        g_worker->moveToThread(g_workerThread);
-        g_workerThread->start();
+    ERole role = forCommunications ? eCommunications : eConsole;
+    std::wstring wDeviceId = deviceId.toStdWString();
 
-        // Connect to worker signals to update cache
-        QObject::connect(g_worker, &AudioWorker::playbackVolumeChanged,
-                         [](int volume) { g_cachedPlaybackVolume = volume; });
-        QObject::connect(g_worker, &AudioWorker::recordingVolumeChanged,
-                         [](int volume) { g_cachedRecordingVolume = volume; });
-        QObject::connect(g_worker, &AudioWorker::playbackMuteChanged,
-                         [](bool muted) { g_cachedPlaybackMute = muted; });
-        QObject::connect(g_worker, &AudioWorker::recordingMuteChanged,
-                         [](bool muted) { g_cachedRecordingMute = muted; });
-
-        // Initialize cache asynchronously on worker thread
-        QMetaObject::invokeMethod(g_worker, "initializeCache", Qt::QueuedConnection);
+    HRESULT hr = m_policyConfig->SetDefaultEndpoint(wDeviceId.c_str(), role);
+    if (SUCCEEDED(hr)) {
+        qDebug() << "Successfully set default device:" << deviceId << "isInput:" << isInput << "forCommunications:" << forCommunications;
+    } else {
+        qDebug() << "Failed to set default device, HRESULT:" << QString::number(hr, 16);
     }
 }
 
-void AudioWorker::initializeCache() {
-    // Initialize cache with current values (runs on worker thread)
-    int playbackVol = getVolumeImpl(eRender);
-    int recordingVol = getVolumeImpl(eCapture);
-    bool playbackMute = getMuteImpl(eRender);
-    bool recordingMute = getMuteImpl(eCapture);
-
-    // Emit signals to update cache
-    emit playbackVolumeChanged(playbackVol);
-    emit recordingVolumeChanged(recordingVol);
-    emit playbackMuteChanged(playbackMute);
-    emit recordingMuteChanged(recordingMute);
-}
-
-void AudioManager::cleanup() {
-    QMutexLocker locker(&g_initMutex);
-
-    if (g_workerThread) {
-        g_workerThread->quit();
-        g_workerThread->wait();
-        delete g_worker;
-        delete g_workerThread;
-        g_worker = nullptr;
-        g_workerThread = nullptr;
-    }
-
-    g_cachedPlaybackVolume = 0;
-    g_cachedRecordingVolume = 0;
-    g_cachedPlaybackMute = false;
-    g_cachedRecordingMute = false;
-
-    CoUninitialize();
-}
-
-AudioWorker* AudioManager::getWorker() {
-    return g_worker;
-}
-
-// Async wrapper functions
-void AudioManager::enumeratePlaybackDevicesAsync() {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "enumeratePlaybackDevices", Qt::QueuedConnection);
+void AudioWorker::setVolumeForDevice(EDataFlow dataFlow, int volume)
+{
+    IAudioEndpointVolume* volumeControl = (dataFlow == eRender) ? m_outputVolumeControl : m_inputVolumeControl;
+    if (volumeControl) {
+        float volumeScalar = static_cast<float>(volume) / 100.0f;
+        volumeControl->SetMasterVolumeLevelScalar(volumeScalar, nullptr);
     }
 }
 
-void AudioManager::enumerateRecordingDevicesAsync() {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "enumerateRecordingDevices", Qt::QueuedConnection);
+void AudioWorker::setMuteForDevice(EDataFlow dataFlow, bool mute)
+{
+    IAudioEndpointVolume* volumeControl = (dataFlow == eRender) ? m_outputVolumeControl : m_inputVolumeControl;
+    if (volumeControl) {
+        volumeControl->SetMute(mute, nullptr);
     }
 }
 
-void AudioManager::enumerateApplicationsAsync() {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "enumerateApplications", Qt::QueuedConnection);
+// AudioManager implementation
+AudioManager::AudioManager(QObject* parent)
+    : QObject(parent)
+    , m_workerThread(nullptr)
+    , m_worker(nullptr)
+    , m_cachedOutputVolume(0)
+    , m_cachedInputVolume(0)
+    , m_cachedOutputMute(false)
+    , m_cachedInputMute(false)
+{
+    qDebug() << "AudioManager created";
+}
+
+AudioManager::~AudioManager()
+{
+    qDebug() << "AudioManager destructor";
+    cleanup();
+}
+
+AudioManager* AudioManager::instance()
+{
+    QMutexLocker locker(&m_mutex);
+    if (!m_instance) {
+        m_instance = new AudioManager();
+    }
+    return m_instance;
+}
+
+void AudioManager::initialize()
+{
+    QMutexLocker locker(&m_mutex);
+
+    if (m_workerThread) {
+        qDebug() << "AudioManager already initialized";
+        return;
+    }
+
+    qDebug() << "AudioManager::initialize";
+
+    m_workerThread = new QThread(this);
+    m_worker = new AudioWorker();
+
+    // Connect signals
+    connect(m_worker, &AudioWorker::outputVolumeChanged, this, [this](int volume) {
+        QMutexLocker cacheLock(&m_cacheMutex);
+        m_cachedOutputVolume = volume;
+        emit outputVolumeChanged(volume);
+    }, Qt::QueuedConnection);
+
+    connect(m_worker, &AudioWorker::inputVolumeChanged, this, [this](int volume) {
+        QMutexLocker cacheLock(&m_cacheMutex);
+        m_cachedInputVolume = volume;
+        emit inputVolumeChanged(volume);
+    }, Qt::QueuedConnection);
+
+    connect(m_worker, &AudioWorker::outputMuteChanged, this, [this](bool muted) {
+        QMutexLocker cacheLock(&m_cacheMutex);
+        m_cachedOutputMute = muted;
+        emit outputMuteChanged(muted);
+    }, Qt::QueuedConnection);
+
+    connect(m_worker, &AudioWorker::inputMuteChanged, this, [this](bool muted) {
+        QMutexLocker cacheLock(&m_cacheMutex);
+        m_cachedInputMute = muted;
+        emit inputMuteChanged(muted);
+    }, Qt::QueuedConnection);
+
+    connect(m_worker, &AudioWorker::applicationsChanged, this, [this](const QList<AudioApplication>& apps) {
+        QMutexLocker cacheLock(&m_cacheMutex);
+        m_cachedApplications = apps;
+        emit applicationsChanged(apps);
+    }, Qt::QueuedConnection);
+
+    connect(m_worker, &AudioWorker::devicesChanged, this, [this](const QList<AudioDevice>& devices) {
+        QMutexLocker cacheLock(&m_cacheMutex);
+        m_cachedDevices = devices;
+        emit devicesChanged(devices);
+    }, Qt::QueuedConnection);
+
+    connect(m_worker, &AudioWorker::applicationVolumeChanged, this, &AudioManager::applicationVolumeChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::applicationMuteChanged, this, &AudioManager::applicationMuteChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::deviceAdded, this, &AudioManager::deviceAdded, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::deviceRemoved, this, &AudioManager::deviceRemoved, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::defaultDeviceChanged, this, &AudioManager::defaultDeviceChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::initializationComplete, this, &AudioManager::initializationComplete, Qt::QueuedConnection);
+
+    m_worker->moveToThread(m_workerThread);
+    connect(m_workerThread, &QThread::started, m_worker, &AudioWorker::initialize);
+    m_workerThread->start();
+
+    qDebug() << "AudioManager initialization started";
+}
+
+void AudioManager::cleanup()
+{
+    QMutexLocker locker(&m_mutex);
+
+    if (!m_workerThread) return;
+
+    qDebug() << "AudioManager::cleanup";
+
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "cleanup", Qt::QueuedConnection);
+    }
+
+    m_workerThread->quit();
+    if (!m_workerThread->wait(5000)) {
+        m_workerThread->terminate();
+        m_workerThread->wait();
+    }
+
+    delete m_worker;
+    m_worker = nullptr;
+
+    delete m_workerThread;
+    m_workerThread = nullptr;
+
+    QMutexLocker cacheLock(&m_cacheMutex);
+    m_cachedOutputVolume = 0;
+    m_cachedInputVolume = 0;
+    m_cachedOutputMute = false;
+    m_cachedInputMute = false;
+    m_cachedApplications.clear();
+    m_cachedDevices.clear();
+}
+
+// Async methods
+void AudioManager::setOutputVolumeAsync(int volume)
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "setOutputVolume", Qt::QueuedConnection, Q_ARG(int, volume));
     }
 }
 
-void AudioManager::setPlaybackVolumeAsync(int volume) {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "setPlaybackVolume", Qt::QueuedConnection, Q_ARG(int, volume));
+void AudioManager::setInputVolumeAsync(int volume)
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "setInputVolume", Qt::QueuedConnection, Q_ARG(int, volume));
     }
 }
 
-void AudioManager::setRecordingVolumeAsync(int volume) {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "setRecordingVolume", Qt::QueuedConnection, Q_ARG(int, volume));
+void AudioManager::setOutputMuteAsync(bool mute)
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "setOutputMute", Qt::QueuedConnection, Q_ARG(bool, mute));
     }
 }
 
-void AudioManager::setPlaybackMuteAsync(bool mute) {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "setPlaybackMute", Qt::QueuedConnection, Q_ARG(bool, mute));
+void AudioManager::setInputMuteAsync(bool mute)
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "setInputMute", Qt::QueuedConnection, Q_ARG(bool, mute));
     }
 }
 
-void AudioManager::setRecordingMuteAsync(bool mute) {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "setRecordingMute", Qt::QueuedConnection, Q_ARG(bool, mute));
-    }
-}
-
-void AudioManager::setDefaultEndpointAsync(const QString &deviceId) {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "setDefaultEndpoint", Qt::QueuedConnection, Q_ARG(QString, deviceId));
-    }
-}
-
-void AudioManager::setApplicationVolumeAsync(const QString& appId, int volume) {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "setApplicationVolume", Qt::QueuedConnection,
+void AudioManager::setApplicationVolumeAsync(const QString& appId, int volume)
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "setApplicationVolume", Qt::QueuedConnection,
                                   Q_ARG(QString, appId), Q_ARG(int, volume));
     }
 }
 
-void AudioManager::setApplicationMuteAsync(const QString& appId, bool mute) {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "setApplicationMute", Qt::QueuedConnection,
+void AudioManager::setApplicationMuteAsync(const QString& appId, bool mute)
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "setApplicationMute", Qt::QueuedConnection,
                                   Q_ARG(QString, appId), Q_ARG(bool, mute));
     }
 }
 
-void AudioManager::startAudioLevelMonitoring() {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "startAudioLevelMonitoring", Qt::QueuedConnection);
+void AudioManager::setDefaultDeviceAsync(const QString& deviceId, bool isInput, bool forCommunications)
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "setDefaultDevice", Qt::QueuedConnection,
+                                  Q_ARG(QString, deviceId), Q_ARG(bool, isInput), Q_ARG(bool, forCommunications));
     }
 }
 
-void AudioManager::stopAudioLevelMonitoring() {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "stopAudioLevelMonitoring", Qt::QueuedConnection);
-    }
+// Cached getters
+int AudioManager::getOutputVolume() const
+{
+    QMutexLocker locker(&m_cacheMutex);
+    return m_cachedOutputVolume;
 }
 
-int AudioManager::getPlaybackVolume() {
-    return g_cachedPlaybackVolume;
+int AudioManager::getInputVolume() const
+{
+    QMutexLocker locker(&m_cacheMutex);
+    return m_cachedInputVolume;
 }
 
-int AudioManager::getRecordingVolume() {
-    return g_cachedRecordingVolume;
+bool AudioManager::getOutputMute() const
+{
+    QMutexLocker locker(&m_cacheMutex);
+    return m_cachedOutputMute;
 }
 
-bool AudioManager::getPlaybackMute() {
-    return g_cachedPlaybackMute;
+bool AudioManager::getInputMute() const
+{
+    QMutexLocker locker(&m_cacheMutex);
+    return m_cachedInputMute;
 }
 
-bool AudioManager::getRecordingMute() {
-    return g_cachedRecordingMute;
+QList<AudioApplication> AudioManager::getApplications() const
+{
+    QMutexLocker locker(&m_cacheMutex);
+    return m_cachedApplications;
 }
 
-void AudioManager::queryCurrentPropertiesAsync() {
-    if (g_worker) {
-        QMetaObject::invokeMethod(g_worker, "queryCurrentProperties", Qt::QueuedConnection);
-    }
+QList<AudioDevice> AudioManager::getDevices() const
+{
+    QMutexLocker locker(&m_cacheMutex);
+    return m_cachedDevices;
+}
+
+AudioWorker* AudioManager::getWorker()
+{
+    return m_worker;
 }

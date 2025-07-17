@@ -73,22 +73,30 @@ Rectangle {
             height: 40
             required property var model
             required property string name
-            required property string shortName
+            required property string description
             required property bool isDefault
-            required property string id
+            required property string deviceId
             required property int index
 
             highlighted: model.isDefault
-            text: UserSettings.deviceShortName ? model.shortName : model.name
+
+            text: {
+                if (UserSettings.deviceShortName) {
+                    // Try to create a short name from the full name
+                    let fullName = model.name || ""
+                    // Simple shortening logic - you can customize this
+                    if (fullName.length > 25) {
+                        return fullName.substring(0, 22) + "..."
+                    }
+                    return fullName
+                } else {
+                    return model.name || ""
+                }
+            }
 
             onClicked: {
-                // Update the model to mark this device as default
-                for (let i = 0; i < devicesList.model.count; i++) {
-                    devicesList.model.setProperty(i, "isDefault", i === index)
-                }
-
-                // Emit signal to parent
-                root.deviceClicked(name, shortName, index)
+                // Emit signal to parent with the correct parameters
+                root.deviceClicked(model.name, text, index)
             }
         }
     }
@@ -104,11 +112,15 @@ Rectangle {
         if (expanded) {
             if (UserSettings.opacityAnimations) {
                 opacityTimer.start()
+            } else {
+                root.contentOpacity = 1
             }
-            root.contentOpacity = 1
         } else {
-            if (UserSettings.opacityAnimations) return
-            root.contentOpacity = 0
+            if (UserSettings.opacityAnimations) {
+                root.contentOpacity = 0
+            } else {
+                root.contentOpacity = 0
+            }
         }
     }
 }
