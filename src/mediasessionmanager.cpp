@@ -206,8 +206,17 @@ void MediaSessionManager::cleanup() {
     QMutexLocker locker(&g_mediaInitMutex);
 
     if (g_mediaWorkerThread) {
+        // Stop any timers before quitting thread
+        if (g_mediaWorker) {
+            QMetaObject::invokeMethod(g_mediaWorker, "stopMonitoring", Qt::BlockingQueuedConnection);
+        }
+
         g_mediaWorkerThread->quit();
-        g_mediaWorkerThread->wait();
+        if (!g_mediaWorkerThread->wait(3000)) {
+            g_mediaWorkerThread->terminate();
+            g_mediaWorkerThread->wait(1000);
+        }
+
         delete g_mediaWorker;
         delete g_mediaWorkerThread;
         g_mediaWorker = nullptr;
