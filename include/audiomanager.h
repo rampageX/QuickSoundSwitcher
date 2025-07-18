@@ -355,6 +355,14 @@ signals:
     void inputAudioLevelChanged(int level);
     void applicationAudioLevelChanged(const QString& appId, int level);
 
+private slots:
+    void onWorkerOutputVolumeChanged(int volume);
+    void onWorkerInputVolumeChanged(int volume);
+    void onWorkerOutputMuteChanged(bool muted);
+    void onWorkerInputMuteChanged(bool muted);
+    void onWorkerApplicationsChanged(const QList<AudioApplication>& apps);
+    void onWorkerDevicesChanged(const QList<AudioDevice>& devices);
+
 private:
     AudioManager(QObject* parent = nullptr);
     ~AudioManager();

@@ -7,7 +7,6 @@
 #include <QFileInfo>
 #include <QPainter>
 #include <QTimer>
-#include <QPointer>
 #include <atlbase.h>
 #include <psapi.h>
 #include <Shlobj.h>
@@ -1509,57 +1508,18 @@ void AudioManager::initialize()
         return;
     }
 
-    // Create a QPointer to safely reference this object
-    QPointer<AudioManager> self(this);
-
-    // Connect signals with safe lambda capture
-    connect(m_worker, &AudioWorker::outputVolumeChanged, this, [self](int volume) {
-        if (self) {  // Check if the object still exists
-            QMutexLocker cacheLock(&self->m_cacheMutex);
-            self->m_cachedOutputVolume = volume;
-            emit self->outputVolumeChanged(volume);
-        }
-    }, Qt::QueuedConnection);
-
-    connect(m_worker, &AudioWorker::inputVolumeChanged, this, [self](int volume) {
-        if (self) {
-            QMutexLocker cacheLock(&self->m_cacheMutex);
-            self->m_cachedInputVolume = volume;
-            emit self->inputVolumeChanged(volume);
-        }
-    }, Qt::QueuedConnection);
-
-    connect(m_worker, &AudioWorker::outputMuteChanged, this, [self](bool muted) {
-        if (self) {
-            QMutexLocker cacheLock(&self->m_cacheMutex);
-            self->m_cachedOutputMute = muted;
-            emit self->outputMuteChanged(muted);
-        }
-    }, Qt::QueuedConnection);
-
-    connect(m_worker, &AudioWorker::inputMuteChanged, this, [self](bool muted) {
-        if (self) {
-            QMutexLocker cacheLock(&self->m_cacheMutex);
-            self->m_cachedInputMute = muted;
-            emit self->inputMuteChanged(muted);
-        }
-    }, Qt::QueuedConnection);
-
-    connect(m_worker, &AudioWorker::applicationsChanged, this, [self](const QList<AudioApplication>& apps) {
-        if (self) {
-            QMutexLocker cacheLock(&self->m_cacheMutex);
-            self->m_cachedApplications = apps;
-            emit self->applicationsChanged(apps);
-        }
-    }, Qt::QueuedConnection);
-
-    connect(m_worker, &AudioWorker::devicesChanged, this, [self](const QList<AudioDevice>& devices) {
-        if (self) {
-            QMutexLocker cacheLock(&self->m_cacheMutex);
-            self->m_cachedDevices = devices;
-            emit self->devicesChanged(devices);
-        }
-    }, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::outputVolumeChanged,
+            this, &AudioManager::onWorkerOutputVolumeChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::inputVolumeChanged,
+            this, &AudioManager::onWorkerInputVolumeChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::outputMuteChanged,
+            this, &AudioManager::onWorkerOutputMuteChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::inputMuteChanged,
+            this, &AudioManager::onWorkerInputMuteChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::applicationsChanged,
+            this, &AudioManager::onWorkerApplicationsChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::devicesChanged,
+            this, &AudioManager::onWorkerDevicesChanged, Qt::QueuedConnection);
 
     connect(m_worker, &AudioWorker::applicationVolumeChanged, this, &AudioManager::applicationVolumeChanged, Qt::QueuedConnection);
     connect(m_worker, &AudioWorker::applicationMuteChanged, this, &AudioManager::applicationMuteChanged, Qt::QueuedConnection);
@@ -1574,6 +1534,48 @@ void AudioManager::initialize()
     m_worker->moveToThread(m_workerThread);
     connect(m_workerThread, &QThread::started, m_worker, &AudioWorker::initialize);
     m_workerThread->start();
+}
+
+void AudioManager::onWorkerOutputVolumeChanged(int volume)
+{
+    QMutexLocker cacheLock(&m_cacheMutex);
+    m_cachedOutputVolume = volume;
+    emit outputVolumeChanged(volume);
+}
+
+void AudioManager::onWorkerInputVolumeChanged(int volume)
+{
+    QMutexLocker cacheLock(&m_cacheMutex);
+    m_cachedInputVolume = volume;
+    emit inputVolumeChanged(volume);
+}
+
+void AudioManager::onWorkerOutputMuteChanged(bool muted)
+{
+    QMutexLocker cacheLock(&m_cacheMutex);
+    m_cachedOutputMute = muted;
+    emit outputMuteChanged(muted);
+}
+
+void AudioManager::onWorkerInputMuteChanged(bool muted)
+{
+    QMutexLocker cacheLock(&m_cacheMutex);
+    m_cachedInputMute = muted;
+    emit inputMuteChanged(muted);
+}
+
+void AudioManager::onWorkerApplicationsChanged(const QList<AudioApplication>& apps)
+{
+    QMutexLocker cacheLock(&m_cacheMutex);
+    m_cachedApplications = apps;
+    emit applicationsChanged(apps);
+}
+
+void AudioManager::onWorkerDevicesChanged(const QList<AudioDevice>& devices)
+{
+    QMutexLocker cacheLock(&m_cacheMutex);
+    m_cachedDevices = devices;
+    emit devicesChanged(devices);
 }
 
 void AudioManager::cleanup()
