@@ -846,6 +846,18 @@ ApplicationWindow {
                                         AudioBridge.setApplicationVolume(applicationUnitLayout.model.appId, value)
                                     }
                                 }
+
+                                onPressedChanged: {
+                                    if (!UserSettings.showAudioLevel) return
+
+                                    if (pressed) {
+                                        // Stop app audio level monitoring when starting to drag
+                                        AudioBridge.stopAudioLevelMonitoring()
+                                    } else {
+                                        // Resume when done dragging
+                                        AudioBridge.startAudioLevelMonitoring()
+                                    }
+                                }
                             }
                         }
 

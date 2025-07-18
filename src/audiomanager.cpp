@@ -587,12 +587,6 @@ void AudioWorker::updateAudioLevels()
 
     emit outputAudioLevelChanged(outputLevel);
     emit inputAudioLevelChanged(inputLevel);
-
-    // Get application audio levels
-    for (const AudioApplication& app : m_applications) {
-        int appLevel = getApplicationAudioLevel(app.id);
-        emit applicationAudioLevelChanged(app.id, appLevel);
-    }
 }
 
 // Add these helper methods to AudioWorker
