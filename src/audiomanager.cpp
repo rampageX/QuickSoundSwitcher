@@ -89,7 +89,6 @@ void AudioDeviceModel::setDevices(const QList<AudioDevice>& devices)
     beginResetModel();
     m_devices = devices;
     endResetModel();
-    qDebug() << "AudioDeviceModel updated with" << devices.count() << "devices";
 }
 
 void AudioDeviceModel::updateDevice(const AudioDevice& device)
@@ -126,12 +125,10 @@ int AudioDeviceModel::findDeviceIndex(const QString& deviceId) const
 DeviceNotificationClient::DeviceNotificationClient(AudioWorker* worker)
     : m_cRef(1), m_worker(worker)
 {
-    qDebug() << "DeviceNotificationClient created";
 }
 
 DeviceNotificationClient::~DeviceNotificationClient()
 {
-    qDebug() << "DeviceNotificationClient destroyed";
 }
 
 HRESULT STDMETHODCALLTYPE DeviceNotificationClient::QueryInterface(REFIID riid, VOID **ppvInterface)
@@ -166,7 +163,6 @@ ULONG STDMETHODCALLTYPE DeviceNotificationClient::Release()
 HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
 {
     QString deviceId = QString::fromWCharArray(pwstrDeviceId);
-    qDebug() << "Device state changed:" << deviceId << "new state:" << dwNewState;
 
     if (m_worker) {
         QMetaObject::invokeMethod(m_worker, "enumerateDevices", Qt::QueuedConnection);
@@ -177,7 +173,6 @@ HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDeviceStateChanged(LPCWSTR
 HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
 {
     QString deviceId = QString::fromWCharArray(pwstrDeviceId);
-    qDebug() << "Device added:" << deviceId;
 
     if (m_worker) {
         QMetaObject::invokeMethod(m_worker, "onDeviceAdded", Qt::QueuedConnection,
@@ -189,7 +184,6 @@ HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDeviceAdded(LPCWSTR pwstrD
 HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
 {
     QString deviceId = QString::fromWCharArray(pwstrDeviceId);
-    qDebug() << "Device removed:" << deviceId;
 
     if (m_worker) {
         QMetaObject::invokeMethod(m_worker, "onDeviceRemoved", Qt::QueuedConnection,
@@ -202,8 +196,6 @@ HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnDefaultDeviceChanged(EData
 {
     QString deviceId = pwstrDefaultDeviceId ? QString::fromWCharArray(pwstrDefaultDeviceId) : QString();
     AudioWorker::DataFlow dataFlow = AudioWorker::fromWindowsDataFlow(flow);
-
-    qDebug() << "Default device changed:" << deviceId << "flow:" << flow << "role:" << role;
 
     if (m_worker) {
         QMetaObject::invokeMethod(m_worker, "onDefaultDeviceChanged", Qt::QueuedConnection,
@@ -225,12 +217,10 @@ HRESULT STDMETHODCALLTYPE DeviceNotificationClient::OnPropertyValueChanged(LPCWS
 VolumeNotificationClient::VolumeNotificationClient(AudioWorker* worker, EDataFlow dataFlow)
     : m_cRef(1), m_worker(worker), m_dataFlow(dataFlow)
 {
-    qDebug() << "VolumeNotificationClient created for dataFlow:" << dataFlow;
 }
 
 VolumeNotificationClient::~VolumeNotificationClient()
 {
-    qDebug() << "VolumeNotificationClient destroyed";
 }
 
 HRESULT STDMETHODCALLTYPE VolumeNotificationClient::QueryInterface(REFIID riid, VOID **ppvInterface)
@@ -282,12 +272,10 @@ HRESULT STDMETHODCALLTYPE VolumeNotificationClient::OnNotify(PAUDIO_VOLUME_NOTIF
 SessionNotificationClient::SessionNotificationClient(AudioWorker* worker)
     : m_cRef(1), m_worker(worker)
 {
-    qDebug() << "SessionNotificationClient created, worker:" << (worker ? "valid" : "null");
 }
 
 SessionNotificationClient::~SessionNotificationClient()
 {
-    qDebug() << "SessionNotificationClient destroyed";
 }
 
 HRESULT STDMETHODCALLTYPE SessionNotificationClient::QueryInterface(REFIID riid, VOID **ppvInterface)
@@ -321,13 +309,9 @@ ULONG STDMETHODCALLTYPE SessionNotificationClient::Release()
 
 HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSessionControl *NewSession)
 {
-    qDebug() << "*** NEW SESSION CREATED *** Thread ID:" << GetCurrentThreadId();
-    qDebug() << "Worker pointer:" << m_worker;
 
     if (m_worker) {
-        qDebug() << "Invoking enumerateApplications on worker thread";
         bool success = QMetaObject::invokeMethod(m_worker, "enumerateApplications", Qt::QueuedConnection);
-        qDebug() << "QMetaObject::invokeMethod result:" << success;
     } else {
         qDebug() << "ERROR: No worker available!";
     }
@@ -338,12 +322,10 @@ HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSess
 SessionEventsClient::SessionEventsClient(AudioWorker* worker, const QString& appId)
     : m_cRef(1), m_worker(worker), m_appId(appId)
 {
-    qDebug() << "SessionEventsClient created for app:" << appId;
 }
 
 SessionEventsClient::~SessionEventsClient()
 {
-    qDebug() << "SessionEventsClient destroyed for app:" << m_appId;
 }
 
 HRESULT STDMETHODCALLTYPE SessionEventsClient::QueryInterface(REFIID riid, VOID **ppvInterface)
@@ -388,7 +370,6 @@ HRESULT STDMETHODCALLTYPE SessionEventsClient::OnSimpleVolumeChanged(float NewVo
 
 HRESULT STDMETHODCALLTYPE SessionEventsClient::OnStateChanged(AudioSessionState NewState)
 {
-    qDebug() << "*** Session State Changed *** App ID:" << m_appId << "New State:" << NewState;
 
     if (NewState == AudioSessionStateExpired) {
         qDebug() << "Session expired for app:" << m_appId;
@@ -401,7 +382,6 @@ HRESULT STDMETHODCALLTYPE SessionEventsClient::OnStateChanged(AudioSessionState 
 
 HRESULT STDMETHODCALLTYPE SessionEventsClient::OnSessionDisconnected(AudioSessionDisconnectReason DisconnectReason)
 {
-    qDebug() << "*** Session Disconnected *** App ID:" << m_appId << "Reason:" << DisconnectReason;
     if (m_worker) {
         QMetaObject::invokeMethod(m_worker, "onSessionDisconnected", Qt::QueuedConnection);
     }
@@ -430,9 +410,6 @@ AudioWorker::AudioWorker()
     , m_outputMuted(false)
     , m_inputMuted(false)
 {
-    qDebug() << "AudioWorker created on thread:" << QThread::currentThread();
-
-    // Register the metatypes
     qRegisterMetaType<AudioApplication>("AudioApplication");
     qRegisterMetaType<QList<AudioApplication>>("QList<AudioApplication>");
     qRegisterMetaType<AudioDevice>("AudioDevice");
@@ -441,20 +418,17 @@ AudioWorker::AudioWorker()
 
 AudioWorker::~AudioWorker()
 {
-    qDebug() << "AudioWorker destructor";
     cleanup();
 }
 
 void AudioWorker::initialize()
 {
-    qDebug() << "AudioWorker::initialize on thread:" << QThread::currentThread();
 
     HRESULT hr = initializeCOM();
     if (FAILED(hr)) {
         qDebug() << "Failed to initialize COM, HRESULT:" << QString::number(hr, 16);
         return;
     }
-    qDebug() << "COM initialized successfully";
 
     // Create device enumerator
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
@@ -463,7 +437,6 @@ void AudioWorker::initialize()
         qDebug() << "Failed to create device enumerator, HRESULT:" << QString::number(hr, 16);
         return;
     }
-    qDebug() << "Device enumerator created successfully";
 
     // Create policy config for setting default devices
     hr = CoCreateInstance(__uuidof(CPolicyConfigClient), nullptr, CLSCTX_ALL,
@@ -488,13 +461,11 @@ void AudioWorker::initialize()
     enumerateDevices();
     enumerateApplications();
 
-    qDebug() << "AudioWorker initialized successfully";
     emit initializationComplete();
 }
 
 void AudioWorker::cleanup()
 {
-    qDebug() << "AudioWorker::cleanup starting";
 
     // Clean up volume controls cache
     for (auto it = m_sessionVolumeControls.begin(); it != m_sessionVolumeControls.end(); ++it) {
@@ -506,7 +477,6 @@ void AudioWorker::cleanup()
 
     // Clean up session notifications SECOND
     if (m_sessionManager && m_sessionNotificationClient) {
-        qDebug() << "Unregistering session notifications";
         m_sessionManager->UnregisterSessionNotification(m_sessionNotificationClient);
         m_sessionNotificationClient->Release();
         m_sessionNotificationClient = nullptr;
@@ -524,7 +494,6 @@ void AudioWorker::cleanup()
     }
 
     // Clean up active sessions
-    qDebug() << "Cleaning up" << m_activeSessions.count() << "active sessions";
     for (auto& sessionInfo : m_activeSessions) {
         if (sessionInfo.sessionControl && sessionInfo.eventsClient) {
             sessionInfo.sessionControl->UnregisterAudioSessionNotification(sessionInfo.eventsClient);
@@ -578,7 +547,6 @@ void AudioWorker::cleanup()
     }
 
     CoUninitialize();
-    qDebug() << "AudioWorker::cleanup completed";
 }
 
 HRESULT AudioWorker::initializeCOM()
@@ -621,7 +589,6 @@ void AudioWorker::setupVolumeNotifications()
         if (SUCCEEDED(hr)) {
             m_outputVolumeClient = new VolumeNotificationClient(this, eRender);
             m_outputVolumeControl->RegisterControlChangeNotify(m_outputVolumeClient);
-            qDebug() << "Output volume notifications re-registered for new default device";
         }
     }
 
@@ -634,7 +601,6 @@ void AudioWorker::setupVolumeNotifications()
         if (SUCCEEDED(hr)) {
             m_inputVolumeClient = new VolumeNotificationClient(this, eCapture);
             m_inputVolumeControl->RegisterControlChangeNotify(m_inputVolumeClient);
-            qDebug() << "Input volume notifications re-registered for new default device";
         }
     }
 
@@ -644,7 +610,6 @@ void AudioWorker::setupVolumeNotifications()
 
 void AudioWorker::setupSessionNotifications()
 {
-    qDebug() << "=== SETTING UP SESSION NOTIFICATIONS ===";
 
     if (!m_deviceEnumerator) {
         qDebug() << "ERROR: No device enumerator available";
@@ -657,7 +622,6 @@ void AudioWorker::setupSessionNotifications()
         qDebug() << "ERROR: Failed to get default audio endpoint, HRESULT:" << QString::number(hr, 16);
         return;
     }
-    qDebug() << "✓ Got default audio endpoint";
 
     hr = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL,
                           nullptr, (void**)&m_sessionManager);
@@ -665,21 +629,16 @@ void AudioWorker::setupSessionNotifications()
         qDebug() << "ERROR: Failed to activate session manager, HRESULT:" << QString::number(hr, 16);
         return;
     }
-    qDebug() << "✓ Activated session manager";
 
     m_sessionNotificationClient = new SessionNotificationClient(this);
-    qDebug() << "✓ Created session notification client";
 
     hr = m_sessionManager->RegisterSessionNotification(m_sessionNotificationClient);
     if (SUCCEEDED(hr)) {
-        qDebug() << "✓ Session notifications registered successfully";
     } else {
         qDebug() << "ERROR: Failed to register session notifications, HRESULT:" << QString::number(hr, 16);
         m_sessionNotificationClient->Release();
         m_sessionNotificationClient = nullptr;
     }
-
-    qDebug() << "=== SESSION NOTIFICATION SETUP COMPLETE ===";
 }
 
 void AudioWorker::setupDeviceNotifications()
@@ -689,7 +648,6 @@ void AudioWorker::setupDeviceNotifications()
     m_deviceNotificationClient = new DeviceNotificationClient(this);
     HRESULT hr = m_deviceEnumerator->RegisterEndpointNotificationCallback(m_deviceNotificationClient);
     if (SUCCEEDED(hr)) {
-        qDebug() << "Device notifications registered successfully";
     } else {
         qDebug() << "Failed to register device notifications, HRESULT:" << QString::number(hr, 16);
         m_deviceNotificationClient->Release();
@@ -739,8 +697,6 @@ void AudioWorker::enumerateDevices()
         return;
     }
 
-    qDebug() << "=== ENUMERATING AUDIO DEVICES ===";
-
     QList<AudioDevice> newDevices;
 
     // Enumerate both input and output devices
@@ -748,7 +704,6 @@ void AudioWorker::enumerateDevices()
         EDataFlow dataFlow = (dataFlowIndex == 0) ? eRender : eCapture;
         QString flowName = (dataFlow == eRender) ? "Output" : "Input";
 
-        qDebug() << "Enumerating" << flowName << "devices";
 
         CComPtr<IMMDeviceCollection> deviceCollection;
         HRESULT hr = m_deviceEnumerator->EnumAudioEndpoints(dataFlow, DEVICE_STATE_ACTIVE, &deviceCollection);
@@ -759,7 +714,6 @@ void AudioWorker::enumerateDevices()
 
         UINT deviceCount = 0;
         deviceCollection->GetCount(&deviceCount);
-        qDebug() << "Found" << deviceCount << flowName << "devices";
 
         // Get default devices for comparison
         CComPtr<IMMDevice> defaultDevice;
@@ -792,7 +746,6 @@ void AudioWorker::enumerateDevices()
                 }
 
                 newDevices.append(audioDevice);
-                qDebug() << "  Device:" << audioDevice.name << "Default:" << audioDevice.isDefault << "DefaultComm:" << audioDevice.isDefaultCommunication;
             }
         }
 
@@ -806,9 +759,6 @@ void AudioWorker::enumerateDevices()
 
     // Update cached devices
     m_devices = newDevices;
-
-    qDebug() << "=== DEVICE ENUMERATION COMPLETE ===";
-    qDebug() << "Total devices found:" << newDevices.count();
 
     emit devicesChanged(newDevices);
 }
@@ -891,8 +841,6 @@ QString AudioWorker::getDeviceProperty(IMMDevice* device, const PROPERTYKEY& key
 
 void AudioWorker::enumerateApplications()
 {
-    qDebug() << "=== ENUMERATING APPLICATIONS (triggered by notification) ===";
-
     // Clean up existing volume controls cache
     for (auto it = m_sessionVolumeControls.begin(); it != m_sessionVolumeControls.end(); ++it) {
         if (it.value()) {
@@ -956,7 +904,6 @@ void AudioWorker::enumerateApplications()
 
     int sessionCount = 0;
     pSessionEnumerator->GetCount(&sessionCount);
-    qDebug() << "Found" << sessionCount << "total sessions";
 
     for (int i = 0; i < sessionCount; ++i) {
         IAudioSessionControl* sessionControl = nullptr;
@@ -1006,7 +953,6 @@ void AudioWorker::enumerateApplications()
             }
         } else {
             foundSystemSounds = true;
-            qDebug() << "Found system sounds session (always included)";
         }
 
         QString appId = isSystemSounds ? "system_sounds" : QString::number(processId);
@@ -1113,8 +1059,6 @@ void AudioWorker::enumerateApplications()
             sessionInfo.eventsClient = eventsClient;
             sessionInfo.appId = appId;
             m_activeSessions.append(sessionInfo);
-
-            qDebug() << "✓ Registered events for app:" << app.name << "PID:" << processId;
         } else {
             eventsClient->Release();
             sessionControl->Release();
@@ -1126,8 +1070,6 @@ void AudioWorker::enumerateApplications()
 
     // If we didn't find system sounds in the sessions, create a default entry
     if (!foundSystemSounds) {
-        qDebug() << "System sounds not found in sessions, creating default entry";
-
         AudioApplication systemApp;
         systemApp.id = "system_sounds";
         systemApp.name = "System sounds";
@@ -1283,31 +1225,26 @@ void AudioWorker::onVolumeChanged(AudioWorker::DataFlow dataFlow, float volume, 
 
 void AudioWorker::onSessionCreated()
 {
-    qDebug() << "Session created, re-enumerating applications";
     enumerateApplications();
 }
 
 void AudioWorker::onSessionDisconnected()
 {
-    qDebug() << "Session disconnected, re-enumerating applications";
     enumerateApplications();
 }
 
 void AudioWorker::onDeviceAdded(const QString& deviceId)
 {
-    qDebug() << "Device added, re-enumerating devices";
     enumerateDevices();
 }
 
 void AudioWorker::onDeviceRemoved(const QString& deviceId)
 {
-    qDebug() << "Device removed, re-enumerating devices";
     enumerateDevices();
 }
 
 void AudioWorker::onDefaultDeviceChanged(DataFlow dataFlow, const QString& deviceId)
 {
-    qDebug() << "Default device changed, re-enumerating devices";
     enumerateDevices();
 
     // Re-setup volume notifications for the new default devices
@@ -1343,7 +1280,6 @@ void AudioWorker::onApplicationSessionVolumeChanged(const QString& appId, float 
     }
 
     if (!foundApp) {
-        qDebug() << "Warning: Application" << appId << "not found in cached list";
         QMetaObject::invokeMethod(this, "enumerateApplications", Qt::QueuedConnection);
     }
 }
@@ -1398,7 +1334,6 @@ void AudioWorker::setDefaultDevice(const QString& deviceId, bool isInput, bool f
 
     HRESULT hr = m_policyConfig->SetDefaultEndpoint(wDeviceId.c_str(), role);
     if (SUCCEEDED(hr)) {
-        qDebug() << "Successfully set default device:" << deviceId << "isInput:" << isInput << "forCommunications:" << forCommunications;
     } else {
         qDebug() << "Failed to set default device, HRESULT:" << QString::number(hr, 16);
     }
@@ -1431,12 +1366,10 @@ AudioManager::AudioManager(QObject* parent)
     , m_cachedOutputMute(false)
     , m_cachedInputMute(false)
 {
-    qDebug() << "AudioManager created";
 }
 
 AudioManager::~AudioManager()
 {
-    qDebug() << "AudioManager destructor";
     cleanup();
 }
 
@@ -1457,8 +1390,6 @@ void AudioManager::initialize()
         qDebug() << "AudioManager already initialized";
         return;
     }
-
-    qDebug() << "AudioManager::initialize";
 
     m_workerThread = new QThread(this);
     m_worker = new AudioWorker();
@@ -1510,8 +1441,6 @@ void AudioManager::initialize()
     m_worker->moveToThread(m_workerThread);
     connect(m_workerThread, &QThread::started, m_worker, &AudioWorker::initialize);
     m_workerThread->start();
-
-    qDebug() << "AudioManager initialization started";
 }
 
 void AudioManager::cleanup()
@@ -1519,8 +1448,6 @@ void AudioManager::cleanup()
     QMutexLocker locker(&m_mutex);
 
     if (!m_workerThread) return;
-
-    qDebug() << "AudioManager::cleanup";
 
     if (m_worker) {
         QMetaObject::invokeMethod(m_worker, "cleanup", Qt::QueuedConnection);

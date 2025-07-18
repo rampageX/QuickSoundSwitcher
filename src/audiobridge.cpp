@@ -352,8 +352,6 @@ void AudioBridge::setInputDevice(int deviceIndex)
 // ChatMix methods
 void AudioBridge::applyChatMixToApplications(int value)
 {
-    qDebug() << "Applying ChatMix with value:" << value;
-
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
         QModelIndex index = m_applicationModel->index(i, 0);
         QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
@@ -376,8 +374,6 @@ void AudioBridge::restoreOriginalVolumes()
     if (!m_isReady) {
         return;
     }
-
-    qDebug() << "Restoring volumes to:" << restoreVolume;
 
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
         QModelIndex index = m_applicationModel->index(i, 0);
@@ -634,8 +630,6 @@ void AudioBridge::restoreOriginalVolumesSync()
     if (!m_isReady) {
         return;
     }
-
-    qDebug() << "Restoring volumes synchronously to:" << restoreVolume;
 
     auto* worker = AudioManager::instance()->getWorker();
     if (!worker) return;

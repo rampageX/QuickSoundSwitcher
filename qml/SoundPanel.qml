@@ -323,7 +323,6 @@ ApplicationWindow {
     Connections {
         target: SoundPanelBridge
         function onChatMixEnabledChanged(enabled) {
-            console.log("ChatMix shortcut toggle - enabled:", enabled)
             UserSettings.chatMixEnabled = enabled
 
             if (enabled) {
