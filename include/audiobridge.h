@@ -55,6 +55,7 @@ class FilteredDeviceModel : public QAbstractListModel
 {
     Q_OBJECT
     QML_ELEMENT
+    QML_UNCREATABLE("FilteredDeviceModel is only available through AudioBridge")
     Q_PROPERTY(int currentDefaultIndex READ getCurrentDefaultIndex NOTIFY currentDefaultIndexChanged)
 
 public:
