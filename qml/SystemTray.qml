@@ -66,8 +66,7 @@ Platform.SystemTrayIcon {
         if (defaultIndex >= 0) {
             deviceName = AudioBridge.outputDevices.getDeviceName(defaultIndex)
         }
-        let volumeText = AudioBridge.outputMuted ? "Muted" : AudioBridge.outputVolume + "%"
-        return deviceName + " " + volumeText
+        return deviceName
     }
 
     function getInputDeviceInfo() {
@@ -77,7 +76,6 @@ Platform.SystemTrayIcon {
         if (defaultIndex >= 0) {
             deviceName = AudioBridge.inputDevices.getDeviceName(defaultIndex)
         }
-        let volumeText = AudioBridge.inputMuted ? "Muted" : AudioBridge.inputVolume + "%"
-        return deviceName + " " + volumeText
+        return deviceName
     }
 }
