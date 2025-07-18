@@ -114,25 +114,25 @@ Rectangle {
             ColumnLayout {
                 spacing: -4
 
-                Label {
-                    visible: UserSettings.displayDevAppLabel
-                    opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
-                    elide: Text.ElideRight
-                    Layout.preferredWidth: 200
-                    Layout.leftMargin: 18
-                    Layout.rightMargin: 25
-                    text: {
-                        let name = individualAppLayout.model.name
-                        if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(name)) {
-                            name += " (Comm)"
-                        }
-
-                        if (name === "System sounds") {
-                            return qsTr("System sounds")
-                        }
-                        return name
-                    }
-                }
+                //Label {
+                //    visible: UserSettings.displayDevAppLabel
+                //    opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
+                //    elide: Text.ElideRight
+                //    Layout.preferredWidth: 200
+                //    Layout.leftMargin: 18
+                //    Layout.rightMargin: 25
+                //    text: {
+                //        let name = individualAppLayout.model.name
+                //        if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(name)) {
+                //            name += " (Comm)"
+                //        }
+//
+                //        if (name === "System sounds") {
+                //            return qsTr("System sounds")
+                //        }
+                //        return name
+                //    }
+                //}
 
                 ProgressSlider {
                     id: volumeSlider
