@@ -18,6 +18,7 @@
 class ApplicationModel : public QAbstractListModel
 {
     Q_OBJECT
+    QML_ELEMENT
 
 public:
     enum ApplicationRoles {
@@ -34,7 +35,7 @@ public:
     explicit ApplicationModel(QObject *parent = nullptr);
 
     // QAbstractListModel interface
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    Q_INVOKABLE int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
@@ -54,6 +55,7 @@ private:
 class FilteredDeviceModel : public QAbstractListModel
 {
     Q_OBJECT
+    QML_ELEMENT
     Q_PROPERTY(int currentDefaultIndex READ getCurrentDefaultIndex NOTIFY currentDefaultIndexChanged)
 
 public:
@@ -71,7 +73,7 @@ public:
     explicit FilteredDeviceModel(bool isInputFilter, QObject *parent = nullptr);
 
     // QAbstractListModel interface
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    Q_INVOKABLE int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
