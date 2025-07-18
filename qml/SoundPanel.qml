@@ -12,17 +12,35 @@ ApplicationWindow {
     id: panel
     width: 360
     height: {
-        let newHeight = mainLayout.implicitHeight + 30 + 15
+        let baseMargins = 30
+        let newHeight = mainLayout.implicitHeight + baseMargins
+
         if (mediaLayout.visible) {
             newHeight += mediaLayout.implicitHeight
-        } else {
-            newHeight -= 5
-        }
-        if (spacer.visible) {
             newHeight += spacer.height
         }
+
         newHeight += panel.maxDeviceListSpace
         return newHeight
+    }
+
+    Component.onCompleted: {
+        SoundPanelBridge.startMediaMonitoring()
+    }
+
+    Connections {
+        target: UserSettings
+        function onOpacityAnimationsChanged() {
+            if (panel.visible) return
+
+            if (UserSettings.opacityAnimations) {
+                mediaLayout.opacity = 0
+                mainLayout.opacity = 0
+            } else {
+                mediaLayout.opacity = 1
+                mainLayout.opacity = 1
+            }
+        }
     }
 
     SoundEffect {
@@ -129,14 +147,6 @@ ApplicationWindow {
         }
     }
 
-    onShowAnimationFinished: {
-        SoundPanelBridge.startMediaMonitoring()
-    }
-
-    onHideAnimationStarted: {
-        SoundPanelBridge.stopMediaMonitoring()
-    }
-
     PropertyAnimation {
         id: showAnimation
         target: contentTransform
@@ -196,7 +206,6 @@ ApplicationWindow {
 
         positionPanelAtTarget()
         setInitialTransform()
-        // Start animation immediately since models are always ready
 
         Qt.callLater(function() {
             Qt.callLater(function() {
@@ -216,7 +225,6 @@ ApplicationWindow {
                 Qt.callLater(panel.startAnimation)
             })
         })
-        //Qt.callLater(panel.startAnimation)
     }
 
     function positionPanelAtTarget() {
@@ -351,15 +359,14 @@ ApplicationWindow {
         }
 
         height: {
-            let newHeight = mainLayout.implicitHeight + 30 + 15
+            let baseMargins = 30
+            let newHeight = mainLayout.implicitHeight + baseMargins
+
             if (mediaLayout.visible) {
                 newHeight += mediaLayout.implicitHeight
-            } else {
-                newHeight -= 5
-            }
-            if (spacer.visible) {
                 newHeight += spacer.height
             }
+
             return newHeight
         }
 
@@ -379,11 +386,42 @@ ApplicationWindow {
         }
 
         Rectangle {
+            id: mediaLayoutBackground
             anchors.fill: mediaLayout
             anchors.margins: -15
             color: Constants.panelColor
             visible: mediaLayout.visible
             radius: 12
+            opacity: 0
+
+            onVisibleChanged: {
+                if (visible) {
+                    fadeInAnimation.start()
+                } else {
+                    fadeOutAnimation.start()
+                }
+            }
+
+            PropertyAnimation {
+                id: fadeInAnimation
+                target: mediaLayoutBackground
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: 300
+                easing.type: Easing.OutQuad
+            }
+
+            PropertyAnimation {
+                id: fadeOutAnimation
+                target: mediaLayoutBackground
+                property: "opacity"
+                from: 1
+                to: 0
+                duration: 300
+                easing.type: Easing.OutQuad
+            }
+
             Rectangle {
                 anchors.fill: parent
                 color: "#00000000"
@@ -399,9 +437,17 @@ ApplicationWindow {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: 15
+            anchors.topMargin: 15
+            anchors.leftMargin: 15
+            anchors.rightMargin: 15
+            anchors.bottomMargin: 0
             opacity: 0
             visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
+            onVisibleChanged: {
+                if (panel.visible) {
+                    opacity = 1
+                }
+            }
 
             Behavior on opacity {
                 NumberAnimation {
@@ -416,8 +462,14 @@ ApplicationWindow {
             anchors.top: mediaLayout.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            height: 30
+            height: 42
             visible: mediaLayout.visible
+            //Rectangle {
+            //    anchors.fill: parent
+            //    color: "transparent"
+            //    border.color: "red"
+            //    border.width: 1
+            //}
         }
 
         ColumnLayout {
@@ -426,7 +478,10 @@ ApplicationWindow {
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: 15
+            anchors.leftMargin: 15
+            anchors.rightMargin: 15
+            anchors.bottomMargin: 15
+            anchors.topMargin: mediaLayout.visible ? 0 : 15  // Remove top margin when media flyout is visible
             spacing: 10
             opacity: 0
 
