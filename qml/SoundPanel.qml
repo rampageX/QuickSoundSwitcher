@@ -483,7 +483,11 @@ ApplicationWindow {
 
                                 let defaultIndex = AudioBridge.outputDevices.currentDefaultIndex
                                 if (defaultIndex >= 0) {
-                                    return AudioBridge.outputDevices.getDeviceName(defaultIndex)
+                                    if (UserSettings.deviceShortName) {
+                                        return AudioBridge.outputDevices.getDeviceShortName(defaultIndex)
+                                    } else {
+                                        return AudioBridge.outputDevices.getDeviceName(defaultIndex)
+                                    }
                                 }
                                 return ""
                             }
@@ -551,17 +555,16 @@ ApplicationWindow {
                         AudioBridge.setOutputDevice(index)
 
                         if (UserSettings.linkIO) {
-                            // Try to find matching input device
+                            // Try to find matching input device using shortName
                             let inputModel = AudioBridge.inputDevices
                             for (let i = 0; i < inputModel.rowCount(); ++i) {
-                                let inputDeviceName = inputModel.data(inputModel.index(i, 0), inputModel.NameRole)
-                                if (inputDeviceName === name) {
+                                let inputDeviceShortName = inputModel.getDeviceShortName(i)
+                                if (inputDeviceShortName === shortName) {
                                     AudioBridge.setInputDevice(i)
                                     break
                                 }
                             }
                         }
-
                         if (UserSettings.closeDeviceListOnClick) {
                             expanded = false
                         }
@@ -596,7 +599,11 @@ ApplicationWindow {
 
                                 let defaultIndex = AudioBridge.inputDevices.currentDefaultIndex
                                 if (defaultIndex >= 0) {
-                                    return AudioBridge.inputDevices.getDeviceName(defaultIndex)
+                                    if (UserSettings.deviceShortName) {
+                                        return AudioBridge.inputDevices.getDeviceShortName(defaultIndex)
+                                    } else {
+                                        return AudioBridge.inputDevices.getDeviceName(defaultIndex)
+                                    }
                                 }
                                 return ""
                             }
@@ -662,11 +669,11 @@ ApplicationWindow {
                     onDeviceClicked: function(name, shortName, index) {
                         AudioBridge.setInputDevice(index)
                         if (UserSettings.linkIO) {
-                            // Try to find matching output device
+                            // Try to find matching output device using shortName
                             let outputModel = AudioBridge.outputDevices
                             for (let i = 0; i < outputModel.rowCount(); ++i) {
-                                let outputDeviceName = outputModel.data(outputModel.index(i, 0), outputModel.NameRole)
-                                if (outputDeviceName === name) {
+                                let outputDeviceShortName = outputModel.getDeviceShortName(i)
+                                if (outputDeviceShortName === shortName) {
                                     AudioBridge.setOutputDevice(i)
                                     break
                                 }

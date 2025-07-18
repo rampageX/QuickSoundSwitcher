@@ -22,8 +22,8 @@ struct AudioApplication {
     QString executableName;  // Executable name
     QString iconPath;        // Base64 encoded icon
     int volume;              // 0-100
-    bool isMuted;           // Mute state
-    int audioLevel;         // Current audio level 0-100
+    bool isMuted;            // Mute state
+    int audioLevel;          // Current audio level 0-100
 
     AudioApplication() : volume(0), isMuted(false), audioLevel(0) {}
 
@@ -33,13 +33,14 @@ struct AudioApplication {
 };
 
 struct AudioDevice {
-    QString id;              // Device ID
-    QString name;            // Friendly name
-    QString description;     // Device description
-    bool isDefault;         // Is default device
+    QString id;                  // Device ID
+    QString name;                // Friendly name
+    QString shortName;           // Short name extracted from parentheses
+    QString description;         // Device description
+    bool isDefault;              // Is default device
     bool isDefaultCommunication; // Is default communication device
-    bool isInput;           // true for input, false for output
-    QString state;          // Active, Disabled, etc.
+    bool isInput;                // true for input, false for output
+    QString state;               // Active, Disabled, etc.
 
     AudioDevice() : isDefault(false), isDefaultCommunication(false), isInput(false) {}
 
@@ -59,6 +60,7 @@ public:
     enum DeviceRoles {
         IdRole = Qt::UserRole + 1,
         NameRole,
+        ShortNameRole,
         DescriptionRole,
         IsDefaultRole,
         IsDefaultCommunicationRole,

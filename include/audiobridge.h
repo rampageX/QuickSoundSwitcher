@@ -57,6 +57,7 @@ public:
     enum DeviceRoles {
         IdRole = Qt::UserRole + 1,
         NameRole,
+        ShortNameRole,
         DescriptionRole,
         IsDefaultRole,
         IsDefaultCommunicationRole,
@@ -75,6 +76,7 @@ public:
     void setDevices(const QList<AudioDevice>& devices);
     Q_INVOKABLE int getCurrentDefaultIndex() const;
     Q_INVOKABLE QString getDeviceName(int index) const;
+    Q_INVOKABLE QString getDeviceShortName(int index) const;
 
 signals:
     void currentDefaultIndexChanged();

@@ -73,6 +73,7 @@ Rectangle {
             height: 40
             required property var model
             required property string name
+            required property string shortName
             required property string description
             required property bool isDefault
             required property string deviceId
@@ -82,21 +83,14 @@ Rectangle {
 
             text: {
                 if (UserSettings.deviceShortName) {
-                    // Try to create a short name from the full name
-                    let fullName = model.name || ""
-                    // Simple shortening logic - you can customize this
-                    if (fullName.length > 25) {
-                        return fullName.substring(0, 22) + "..."
-                    }
-                    return fullName
+                    return model.shortName || model.name || ""
                 } else {
                     return model.name || ""
                 }
             }
 
             onClicked: {
-                // Emit signal to parent with the correct parameters
-                root.deviceClicked(model.name, text, index)
+                root.deviceClicked(model.name, model.shortName, index)
             }
         }
     }
