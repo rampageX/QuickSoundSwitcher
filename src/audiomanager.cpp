@@ -579,6 +579,23 @@ HRESULT AudioWorker::initializeCOM()
 
 void AudioWorker::setupVolumeNotifications()
 {
+    // Clean up existing volume notifications first
+    if (m_outputVolumeControl && m_outputVolumeClient) {
+        m_outputVolumeControl->UnregisterControlChangeNotify(m_outputVolumeClient);
+        m_outputVolumeControl->Release();
+        m_outputVolumeControl = nullptr;
+        m_outputVolumeClient->Release();
+        m_outputVolumeClient = nullptr;
+    }
+
+    if (m_inputVolumeControl && m_inputVolumeClient) {
+        m_inputVolumeControl->UnregisterControlChangeNotify(m_inputVolumeClient);
+        m_inputVolumeControl->Release();
+        m_inputVolumeControl = nullptr;
+        m_inputVolumeClient->Release();
+        m_inputVolumeClient = nullptr;
+    }
+
     if (!m_deviceEnumerator) return;
 
     // Setup output volume notifications
@@ -590,6 +607,7 @@ void AudioWorker::setupVolumeNotifications()
         if (SUCCEEDED(hr)) {
             m_outputVolumeClient = new VolumeNotificationClient(this, eRender);
             m_outputVolumeControl->RegisterControlChangeNotify(m_outputVolumeClient);
+            qDebug() << "Output volume notifications re-registered for new default device";
         }
     }
 
@@ -602,8 +620,12 @@ void AudioWorker::setupVolumeNotifications()
         if (SUCCEEDED(hr)) {
             m_inputVolumeClient = new VolumeNotificationClient(this, eCapture);
             m_inputVolumeControl->RegisterControlChangeNotify(m_inputVolumeClient);
+            qDebug() << "Input volume notifications re-registered for new default device";
         }
     }
+
+    // Update current volumes for the new devices
+    updateCurrentVolumes();
 }
 
 void AudioWorker::setupSessionNotifications()
@@ -1279,6 +1301,9 @@ void AudioWorker::onDefaultDeviceChanged(DataFlow dataFlow, const QString& devic
 {
     qDebug() << "Default device changed, re-enumerating devices";
     enumerateDevices();
+
+    // Re-setup volume notifications for the new default devices
+    setupVolumeNotifications();
 
     // Also emit specific signal
     emit defaultDeviceChanged(deviceId, dataFlow == Input);
