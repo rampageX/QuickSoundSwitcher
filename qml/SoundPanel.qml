@@ -118,11 +118,11 @@ ApplicationWindow {
             }
 
             if (UserSettings.showAudioLevel) {
-                SoundPanelBridge.stopAudioLevelMonitoring()
+                AudioBridge.stopAudioLevelMonitoring()
             }
         } else {
             if (UserSettings.showAudioLevel) {
-                SoundPanelBridge.startAudioLevelMonitoring()
+                AudioBridge.startAudioLevelMonitoring()
             }
         }
     }
@@ -553,7 +553,7 @@ ApplicationWindow {
                             from: 0
                             to: 100
                             Layout.fillWidth: true
-                            //audioLevel: SoundPanelBridge.playbackAudioLevel
+                            audioLevel: AudioBridge.outputAudioLevel
 
                             ToolTip {
                                 parent: outputSlider.handle
@@ -668,7 +668,7 @@ ApplicationWindow {
                             value: pressed ? value : AudioBridge.inputVolume
                             from: 0
                             to: 100
-                            //audioLevel: SoundPanelBridge.recordingAudioLevel
+                            audioLevel: AudioBridge.inputAudioLevel
                             Layout.fillWidth: true
 
                             ToolTip {
@@ -819,7 +819,9 @@ ApplicationWindow {
                                 to: 100
                                 enabled: !UserSettings.chatMixEnabled && !muteRoundButton.highlighted
                                 opacity: enabled ? 1 : 0.5
-                                audioLevel: applicationUnitLayout.model.audioLevel
+                                audioLevel: {
+                                    return AudioBridge.getApplicationAudioLevel(applicationUnitLayout.model.appId)
+                                }
                                 Layout.fillWidth: true
 
                                 value: {

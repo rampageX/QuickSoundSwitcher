@@ -43,6 +43,9 @@ public:
     void updateApplicationVolume(const QString& appId, int volume);
     void updateApplicationMute(const QString& appId, bool muted);
 
+public slots:
+    void updateApplicationAudioLevel(const QString& appId, int level);
+
 private:
     QList<AudioApplication> m_applications;
     int findApplicationIndex(const QString& appId) const;
@@ -105,6 +108,9 @@ class AudioBridge : public QObject
     Q_PROPERTY(FilteredDeviceModel* inputDevices READ inputDevices CONSTANT)
     Q_PROPERTY(QVariantList commAppsList READ commAppsList NOTIFY commAppsListChanged)
 
+    Q_PROPERTY(int outputAudioLevel READ outputAudioLevel NOTIFY outputAudioLevelChanged)
+    Q_PROPERTY(int inputAudioLevel READ inputAudioLevel NOTIFY inputAudioLevelChanged)
+
 public:
     explicit AudioBridge(QObject *parent = nullptr);
     ~AudioBridge();
@@ -141,6 +147,14 @@ public:
     Q_INVOKABLE void addCommApp(const QString& name);
     Q_INVOKABLE void removeCommApp(const QString& name);
 
+    int outputAudioLevel() const { return m_outputAudioLevel; }
+    int inputAudioLevel() const { return m_inputAudioLevel; }
+
+    Q_INVOKABLE void startAudioLevelMonitoring();
+    Q_INVOKABLE void stopAudioLevelMonitoring();
+
+    Q_INVOKABLE int getApplicationAudioLevel(const QString& appId) const;
+
 signals:
     void outputVolumeChanged();
     void inputVolumeChanged();
@@ -151,6 +165,9 @@ signals:
     void deviceRemoved(const QString& deviceId);
     void defaultDeviceChanged(const QString& deviceId, bool isInput);
     void commAppsListChanged();
+    void outputAudioLevelChanged();
+    void inputAudioLevelChanged();
+    void applicationAudioLevelChanged(const QString& appId, int level);
 
 private slots:
     void onOutputVolumeChanged(int volume);
@@ -165,6 +182,9 @@ private slots:
     void onDeviceRemoved(const QString& deviceId);
     void onDefaultDeviceChanged(const QString& deviceId, bool isInput);
     void onInitializationComplete();
+    void onOutputAudioLevelChanged(int level);
+    void onInputAudioLevelChanged(int level);
+    void onApplicationAudioLevelChanged(const QString& appId, int level);
 
 private:
     int m_outputVolume;
@@ -190,6 +210,10 @@ private:
     void saveCommAppsToFile();
 
     void restoreOriginalVolumesSync();
+
+    int m_outputAudioLevel = 0;
+    int m_inputAudioLevel = 0;
+    QMap<QString, int> m_applicationAudioLevels;
 };
 
 #endif // AUDIOBRIDGE_H

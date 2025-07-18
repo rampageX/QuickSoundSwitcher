@@ -130,6 +130,9 @@ public slots:
     void enumerateApplications();
     void enumerateDevices();
 
+    void startAudioLevelMonitoring();
+    void stopAudioLevelMonitoring();
+
 signals:
     void outputVolumeChanged(int volume);
     void inputVolumeChanged(int volume);
@@ -143,6 +146,14 @@ signals:
     void deviceRemoved(const QString& deviceId);
     void defaultDeviceChanged(const QString& deviceId, bool isInput);
     void initializationComplete();
+
+    void outputAudioLevelChanged(int level);
+    void inputAudioLevelChanged(int level);
+    void applicationAudioLevelChanged(const QString& appId, int level);
+
+private slots:
+    void updateAudioLevels();
+    void initializeAudioLevelTimer();
 
 private:
     // COM objects
@@ -194,6 +205,12 @@ private:
 
     QList<SessionInfo> m_activeSessions;
     QMap<QString, ISimpleAudioVolume*> m_sessionVolumeControls;
+
+    QTimer* m_audioLevelTimer;
+    QList<AudioApplication> m_cachedApplications;
+
+    int getDeviceAudioLevel(EDataFlow dataFlow);
+    int getApplicationAudioLevel(const QString& appId);
 };
 
 // Device change notification callback
@@ -317,6 +334,9 @@ public:
 
     AudioWorker* getWorker();
 
+    void startAudioLevelMonitoring();
+    void stopAudioLevelMonitoring();
+
 signals:
     void outputVolumeChanged(int volume);
     void inputVolumeChanged(int volume);
@@ -330,6 +350,10 @@ signals:
     void deviceRemoved(const QString& deviceId);
     void defaultDeviceChanged(const QString& deviceId, bool isInput);
     void initializationComplete();
+
+    void outputAudioLevelChanged(int level);
+    void inputAudioLevelChanged(int level);
+    void applicationAudioLevelChanged(const QString& appId, int level);
 
 private:
     AudioManager(QObject* parent = nullptr);

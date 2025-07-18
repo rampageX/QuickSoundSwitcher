@@ -56,6 +56,16 @@ QHash<int, QByteArray> ApplicationModel::roleNames() const
     return roles;
 }
 
+void ApplicationModel::updateApplicationAudioLevel(const QString& appId, int level)
+{
+    int index = findApplicationIndex(appId);
+    if (index >= 0) {
+        m_applications[index].audioLevel = level;
+        QModelIndex modelIndex = createIndex(index, 0);
+        emit dataChanged(modelIndex, modelIndex, {AudioLevelRole});
+    }
+}
+
 void ApplicationModel::setApplications(const QList<AudioApplication>& applications)
 {
     beginResetModel();
@@ -262,6 +272,13 @@ AudioBridge::AudioBridge(QObject *parent)
     connect(manager, &AudioManager::defaultDeviceChanged, this, &AudioBridge::onDefaultDeviceChanged);
 
     connect(manager, &AudioManager::initializationComplete, this, &AudioBridge::onInitializationComplete);
+
+    connect(manager, &AudioManager::outputAudioLevelChanged, this, &AudioBridge::onOutputAudioLevelChanged);
+    connect(manager, &AudioManager::inputAudioLevelChanged, this, &AudioBridge::onInputAudioLevelChanged);
+    connect(manager, &AudioManager::applicationAudioLevelChanged, this, &AudioBridge::onApplicationAudioLevelChanged);
+
+    connect(this, &AudioBridge::applicationAudioLevelChanged,
+            m_applicationModel, &ApplicationModel::updateApplicationAudioLevel);
 
     // Load comm apps
     loadCommAppsFromFile();
@@ -649,4 +666,53 @@ void AudioBridge::restoreOriginalVolumesSync()
                                   Q_ARG(QString, appId),
                                   Q_ARG(int, restoreVolume));
     }
+}
+
+void AudioBridge::startAudioLevelMonitoring()
+{
+    AudioManager::instance()->startAudioLevelMonitoring();
+}
+
+void AudioBridge::stopAudioLevelMonitoring()
+{
+    AudioManager::instance()->stopAudioLevelMonitoring();
+}
+
+void AudioBridge::onOutputAudioLevelChanged(int level)
+{
+    if (m_outputAudioLevel != level) {
+        m_outputAudioLevel = level;
+        emit outputAudioLevelChanged();
+    }
+}
+
+void AudioBridge::onInputAudioLevelChanged(int level)
+{
+    if (m_inputAudioLevel != level) {
+        m_inputAudioLevel = level;
+        emit inputAudioLevelChanged();
+    }
+}
+
+void AudioBridge::onApplicationAudioLevelChanged(const QString& appId, int level)
+{
+    m_applicationAudioLevels[appId] = level;
+
+    // Update the application model
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString modelAppId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+
+        if (modelAppId == appId) {
+            // Update the model with new audio level
+            // You might need to add this to your ApplicationModel
+            emit applicationAudioLevelChanged(appId, level);
+            break;
+        }
+    }
+}
+
+int AudioBridge::getApplicationAudioLevel(const QString& appId) const
+{
+    return m_applicationAudioLevels.value(appId, 0);
 }

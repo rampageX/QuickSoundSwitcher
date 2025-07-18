@@ -6,6 +6,7 @@
 #include <QPixmap>
 #include <QFileInfo>
 #include <QPainter>
+#include <QTimer>
 #include <atlbase.h>
 #include <psapi.h>
 #include <Shlobj.h>
@@ -409,6 +410,7 @@ AudioWorker::AudioWorker()
     , m_inputVolume(0)
     , m_outputMuted(false)
     , m_inputMuted(false)
+    , m_audioLevelTimer(nullptr)
 {
     qRegisterMetaType<AudioApplication>("AudioApplication");
     qRegisterMetaType<QList<AudioApplication>>("QList<AudioApplication>");
@@ -466,6 +468,11 @@ void AudioWorker::initialize()
 
 void AudioWorker::cleanup()
 {
+    if (m_audioLevelTimer) {
+        m_audioLevelTimer->stop();
+        delete m_audioLevelTimer;
+        m_audioLevelTimer = nullptr;
+    }
 
     // Clean up volume controls cache
     for (auto it = m_sessionVolumeControls.begin(); it != m_sessionVolumeControls.end(); ++it) {
@@ -547,6 +554,112 @@ void AudioWorker::cleanup()
     }
 
     CoUninitialize();
+}
+
+void AudioWorker::initializeAudioLevelTimer()
+{
+    if (!m_audioLevelTimer) {
+        m_audioLevelTimer = new QTimer(this);
+        connect(m_audioLevelTimer, &QTimer::timeout, this, &AudioWorker::updateAudioLevels);
+    }
+}
+
+void AudioWorker::startAudioLevelMonitoring()
+{
+    if (!m_audioLevelTimer) {
+        initializeAudioLevelTimer();
+    }
+    m_audioLevelTimer->start(100); // Update every 100ms
+}
+
+void AudioWorker::stopAudioLevelMonitoring()
+{
+    if (m_audioLevelTimer) {
+        m_audioLevelTimer->stop();
+    }
+}
+
+void AudioWorker::updateAudioLevels()
+{
+    // Get device audio levels
+    int outputLevel = getDeviceAudioLevel(eRender);
+    int inputLevel = getDeviceAudioLevel(eCapture);
+
+    emit outputAudioLevelChanged(outputLevel);
+    emit inputAudioLevelChanged(inputLevel);
+
+    // Get application audio levels
+    for (const AudioApplication& app : m_applications) {
+        int appLevel = getApplicationAudioLevel(app.id);
+        emit applicationAudioLevelChanged(app.id, appLevel);
+    }
+}
+
+// Add these helper methods to AudioWorker
+int AudioWorker::getDeviceAudioLevel(EDataFlow dataFlow)
+{
+    if (!m_deviceEnumerator) return 0;
+
+    CComPtr<IMMDevice> device;
+    HRESULT hr = m_deviceEnumerator->GetDefaultAudioEndpoint(dataFlow, eConsole, &device);
+    if (FAILED(hr)) return 0;
+
+    CComPtr<IAudioMeterInformation> meterInfo;
+    hr = device->Activate(__uuidof(IAudioMeterInformation), CLSCTX_ALL, nullptr, (void**)&meterInfo);
+    if (FAILED(hr)) return 0;
+
+    float peakLevel = 0.0f;
+    hr = meterInfo->GetPeakValue(&peakLevel);
+    if (FAILED(hr)) return 0;
+
+    return static_cast<int>(peakLevel * 100);
+}
+
+int AudioWorker::getApplicationAudioLevel(const QString& appId)
+{
+    if (!m_sessionManager) return 0;
+
+    DWORD processId = 0;
+    if (appId == "system_sounds") {
+        processId = 0;
+    } else {
+        processId = appId.toULong();
+    }
+
+    CComPtr<IAudioSessionEnumerator> sessionEnumerator;
+    HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
+    if (FAILED(hr)) return 0;
+
+    int sessionCount = 0;
+    sessionEnumerator->GetCount(&sessionCount);
+
+    for (int i = 0; i < sessionCount; ++i) {
+        CComPtr<IAudioSessionControl> sessionControl;
+        hr = sessionEnumerator->GetSession(i, &sessionControl);
+        if (FAILED(hr)) continue;
+
+        CComPtr<IAudioSessionControl2> sessionControl2;
+        hr = sessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sessionControl2);
+        if (FAILED(hr)) continue;
+
+        DWORD pid = 0;
+        hr = sessionControl2->GetProcessId(&pid);
+        if (FAILED(hr)) continue;
+
+        if (pid == processId || (processId == 0 && pid == 0)) {
+            CComPtr<IAudioMeterInformation> meterInfo;
+            hr = sessionControl->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&meterInfo);
+            if (SUCCEEDED(hr)) {
+                float peakLevel = 0.0f;
+                hr = meterInfo->GetPeakValue(&peakLevel);
+                if (SUCCEEDED(hr)) {
+                    return static_cast<int>(peakLevel * 100);
+                }
+            }
+        }
+    }
+
+    return 0;
 }
 
 HRESULT AudioWorker::initializeCOM()
@@ -1437,6 +1550,9 @@ void AudioManager::initialize()
     connect(m_worker, &AudioWorker::deviceRemoved, this, &AudioManager::deviceRemoved, Qt::QueuedConnection);
     connect(m_worker, &AudioWorker::defaultDeviceChanged, this, &AudioManager::defaultDeviceChanged, Qt::QueuedConnection);
     connect(m_worker, &AudioWorker::initializationComplete, this, &AudioManager::initializationComplete, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::outputAudioLevelChanged, this, &AudioManager::outputAudioLevelChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::inputAudioLevelChanged, this, &AudioManager::inputAudioLevelChanged, Qt::QueuedConnection);
+    connect(m_worker, &AudioWorker::applicationAudioLevelChanged, this, &AudioManager::applicationAudioLevelChanged, Qt::QueuedConnection);
 
     m_worker->moveToThread(m_workerThread);
     connect(m_workerThread, &QThread::started, m_worker, &AudioWorker::initialize);
@@ -1472,6 +1588,21 @@ void AudioManager::cleanup()
     m_cachedInputMute = false;
     m_cachedApplications.clear();
     m_cachedDevices.clear();
+}
+
+
+void AudioManager::startAudioLevelMonitoring()
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "startAudioLevelMonitoring", Qt::QueuedConnection);
+    }
+}
+
+void AudioManager::stopAudioLevelMonitoring()
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "stopAudioLevelMonitoring", Qt::QueuedConnection);
+    }
 }
 
 // Async methods
