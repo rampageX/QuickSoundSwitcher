@@ -56,22 +56,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Volume value display mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Control how you want sound value to be displayed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Slider tooltip</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Label</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Hidden</source>
         <translation type="unfinished"></translation>
     </message>
@@ -114,6 +98,13 @@
 </context>
 <context>
     <name>ApplicationsListView</name>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AudioWorker</name>
     <message>
         <source>System sounds</source>
         <translation type="unfinished"></translation>
@@ -471,6 +462,10 @@
     <name>SoundPanel</name>
     <message>
         <source>ChatMix</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System sounds</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

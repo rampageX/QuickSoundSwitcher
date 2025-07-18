@@ -163,7 +163,7 @@ Rectangle {
 
                     ToolTip {
                         parent: volumeSlider.handle
-                        visible: volumeSlider.pressed && (UserSettings.volumeValueMode === 0)
+                        visible: volumeSlider.pressed
                         text: Math.round(volumeSlider.value).toString()
                     }
 
@@ -188,14 +188,6 @@ Rectangle {
                         }
                     }
                 }
-            }
-
-            Label {
-                text: Math.round(volumeSlider.value).toString()
-                Layout.rightMargin: 5
-                font.pixelSize: 14
-                opacity: UserSettings.chatMixEnabled ? 0.5 : 1
-                visible: UserSettings.volumeValueMode === 1
             }
         }
     }

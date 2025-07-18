@@ -65,19 +65,19 @@
     </message>
     <message>
         <source>Volume value display mode</source>
-        <translation>Mode d&apos;affichage du volume</translation>
+        <translation type="vanished">Mode d&apos;affichage du volume</translation>
     </message>
     <message>
         <source>Control how you want sound value to be displayed</source>
-        <translation>Contrôlez la façon dont la valeur du volume est affichée</translation>
+        <translation type="vanished">Contrôlez la façon dont la valeur du volume est affichée</translation>
     </message>
     <message>
         <source>Slider tooltip</source>
-        <translation>Infobulle</translation>
+        <translation type="vanished">Infobulle</translation>
     </message>
     <message>
         <source>Label</source>
-        <translation>Texte</translation>
+        <translation type="vanished">Texte</translation>
     </message>
     <message>
         <source>Hidden</source>
@@ -122,6 +122,13 @@
 </context>
 <context>
     <name>ApplicationsListView</name>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AudioWorker</name>
     <message>
         <source>System sounds</source>
         <translation type="unfinished"></translation>
@@ -528,6 +535,10 @@
     <message>
         <source>ChatMix</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

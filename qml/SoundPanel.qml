@@ -113,6 +113,19 @@ ApplicationWindow {
         if (!visible) {
             outputDevicesRect.expanded = false
             inputDevicesRect.expanded = false
+
+            for (let i = 0; i < appRepeater.count; ++i) {
+                let item = appRepeater.itemAt(i)
+                if (item && item.children) {
+                    for (let j = 0; j < item.children.length; ++j) {
+                        let child = item.children[j]
+                        if (child && child.hasOwnProperty('expanded')) {
+                            child.expanded = false
+                        }
+                    }
+                }
+            }
+
             if (UserSettings.opacityAnimations) {
                 mediaLayout.opacity = 0
                 mainLayout.opacity = 0
@@ -568,7 +581,7 @@ ApplicationWindow {
 
                             ToolTip {
                                 parent: outputSlider.handle
-                                visible: outputSlider.pressed && (UserSettings.volumeValueMode === 0)
+                                visible: outputSlider.pressed
                                 text: Math.round(outputSlider.value).toString()
                             }
 
@@ -585,13 +598,6 @@ ApplicationWindow {
                                 }
                             }
                         }
-                    }
-
-                    Label {
-                        text: Math.round(outputSlider.value).toString()
-                        Layout.rightMargin: 5
-                        font.pixelSize: 14
-                        visible: UserSettings.volumeValueMode === 1
                     }
 
                     ToolButton {
@@ -684,7 +690,7 @@ ApplicationWindow {
 
                             ToolTip {
                                 parent: inputSlider.handle
-                                visible: inputSlider.pressed && (UserSettings.volumeValueMode === 0)
+                                visible: inputSlider.pressed
                                 text: Math.round(inputSlider.value).toString()
                             }
 
@@ -700,13 +706,6 @@ ApplicationWindow {
                                 }
                             }
                         }
-                    }
-
-                    Label {
-                        text: Math.round(inputSlider.value).toString()
-                        Layout.rightMargin: 5
-                        font.pixelSize: 14
-                        visible: UserSettings.volumeValueMode === 1
                     }
 
                     ToolButton {
@@ -798,7 +797,7 @@ ApplicationWindow {
                                 ToolTip.delay: 1000
                                 opacity: highlighted ? 0.3 : (enabled ? 1 : 0.5)
                                 icon.color: "transparent"
-                                icon.source: appDelegateRoot.model.iconPath
+                                icon.source: appDelegateRoot.model.displayName === qsTr("System sounds") ? Constants.systemIcon : appDelegateRoot.model.iconPath
 
                                 onClicked: {
                                     // Mute/unmute all sessions for this executable
@@ -842,7 +841,7 @@ ApplicationWindow {
 
                                     ToolTip {
                                         parent: executableVolumeSlider.handle
-                                        visible: executableVolumeSlider.pressed && (UserSettings.volumeValueMode === 0)
+                                        visible: executableVolumeSlider.pressed
                                         text: Math.round(executableVolumeSlider.value).toString()
                                     }
 
@@ -860,14 +859,6 @@ ApplicationWindow {
                                         }
                                     }
                                 }
-                            }
-
-                            Label {
-                                text: Math.round(executableVolumeSlider.value).toString()
-                                Layout.rightMargin: 5
-                                font.pixelSize: 14
-                                opacity: UserSettings.chatMixEnabled ? 0.5 : 1
-                                visible: UserSettings.volumeValueMode === 1
                             }
 
                             ToolButton {

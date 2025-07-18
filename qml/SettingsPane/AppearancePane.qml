@@ -94,20 +94,6 @@ ColumnLayout {
 
             Card {
                 Layout.fillWidth: true
-                title: qsTr("Volume value display mode")
-                description: qsTr("Control how you want sound value to be displayed")
-
-                additionalControl: ComboBox {
-                    Layout.preferredHeight: 35
-                    Layout.preferredWidth: 160
-                    model: [qsTr("Slider tooltip"), qsTr("Label"), qsTr("Hidden")]
-                    currentIndex: UserSettings.volumeValueMode
-                    onActivated: UserSettings.volumeValueMode = currentIndex
-                }
-            }
-
-            Card {
-                Layout.fillWidth: true
                 title: qsTr("Media info display")
                 description: qsTr("Display currently playing media from Windows known sources")
 

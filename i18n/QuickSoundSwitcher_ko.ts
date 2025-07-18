@@ -57,19 +57,19 @@
     </message>
     <message>
         <source>Volume value display mode</source>
-        <translation>볼륨 값 표시 모드</translation>
+        <translation type="vanished">볼륨 값 표시 모드</translation>
     </message>
     <message>
         <source>Control how you want sound value to be displayed</source>
-        <translation>사운드 값 표시 방법 제어</translation>
+        <translation type="vanished">사운드 값 표시 방법 제어</translation>
     </message>
     <message>
         <source>Slider tooltip</source>
-        <translation>슬라이더 도구 설명</translation>
+        <translation type="vanished">슬라이더 도구 설명</translation>
     </message>
     <message>
         <source>Label</source>
-        <translation>레이블</translation>
+        <translation type="vanished">레이블</translation>
     </message>
     <message>
         <source>Hidden</source>
@@ -114,6 +114,13 @@
 </context>
 <context>
     <name>ApplicationsListView</name>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AudioWorker</name>
     <message>
         <source>System sounds</source>
         <translation type="unfinished"></translation>
@@ -504,6 +511,10 @@
     <message>
         <source>ChatMix</source>
         <translation>채팅 믹스</translation>
+    </message>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

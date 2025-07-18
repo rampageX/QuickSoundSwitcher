@@ -9,7 +9,6 @@ Settings {
     property int panelPosition: 1
     property int taskbarOffset: 48
     property bool deviceShortName: true
-    property int volumeValueMode: 0
     property int xAxisMargin: 12
     property int yAxisMargin: 12
     property int mediaMode: 0

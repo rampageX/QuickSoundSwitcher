@@ -1085,27 +1085,11 @@ void AudioWorker::enumerateApplications()
 
         // Handle special case for Windows system sounds first
         if (isSystemSounds) {
-            finalAppName = "System sounds";
-            executableName = "System sounds";
+            finalAppName = tr("System sounds");
+            executableName = tr("System sounds");
             app.name = finalAppName;
             app.executableName = executableName;
-
-            // Create a simple icon for system sounds
-            QPixmap systemPixmap(32, 32);
-            systemPixmap.fill(Qt::transparent);
-            QPainter painter(&systemPixmap);
-            painter.setBrush(QBrush(QColor(100, 150, 200)));
-            painter.setPen(Qt::NoPen);
-            painter.drawEllipse(0, 0, 32, 32);
-            painter.setPen(QPen(Qt::white, 2));
-            painter.drawText(systemPixmap.rect(), Qt::AlignCenter, "S");
-            painter.end();
-
-            QByteArray byteArray;
-            QBuffer buffer(&byteArray);
-            buffer.open(QIODevice::WriteOnly);
-            systemPixmap.save(&buffer, "PNG");
-            app.iconPath = "data:image/png;base64," + byteArray.toBase64();
+            app.iconPath = "";
         }
         else {
             // Handle regular applications
