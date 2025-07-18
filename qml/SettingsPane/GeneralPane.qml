@@ -76,17 +76,6 @@ ColumnLayout {
                     onClicked: UserSettings.closeDeviceListOnClick = checked
                 }
             }
-
-            Card {
-                Layout.fillWidth: true
-                title: qsTr("Group applications by executable")
-                description: qsTr("Control multiple stream comming from a single app with one slider")
-
-                additionalControl: Switch {
-                    checked: UserSettings.groupApplications
-                    onClicked: UserSettings.groupApplications = checked
-                }
-            }
         }
     }
 }

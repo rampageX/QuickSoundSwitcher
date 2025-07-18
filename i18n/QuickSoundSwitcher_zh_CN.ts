@@ -121,6 +121,13 @@
     </message>
 </context>
 <context>
+    <name>ApplicationsListView</name>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ChatMixNotification</name>
     <message>
         <source>ChatMix Enabled</source>
@@ -301,11 +308,11 @@
     </message>
     <message>
         <source>Group applications by executable</source>
-        <translation>按照执行文件名分组应用程序</translation>
+        <translation type="vanished">按照执行文件名分组应用程序</translation>
     </message>
     <message>
         <source>Control multiple stream comming from a single app with one slider</source>
-        <translation>通过单一滑动条来控制多个 Stream 通信</translation>
+        <translation type="vanished">通过单一滑动条来控制多个 Stream 通信</translation>
     </message>
 </context>
 <context>
@@ -517,10 +524,6 @@
     <message>
         <source>ChatMix</source>
         <translation>ChatMix</translation>
-    </message>
-    <message>
-        <source>System sounds</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

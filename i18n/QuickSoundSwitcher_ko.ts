@@ -113,6 +113,13 @@
     </message>
 </context>
 <context>
+    <name>ApplicationsListView</name>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ChatMixNotification</name>
     <message>
         <source>ChatMix Enabled</source>
@@ -293,11 +300,11 @@
     </message>
     <message>
         <source>Group applications by executable</source>
-        <translation>실행 파일별 응용 프로그램 그룹화</translation>
+        <translation type="vanished">실행 파일별 응용 프로그램 그룹화</translation>
     </message>
     <message>
         <source>Control multiple stream comming from a single app with one slider</source>
-        <translation>하나의 슬라이더로 하나의 앱에서 들어오는 여러 스트림을 제어합니다</translation>
+        <translation type="vanished">하나의 슬라이더로 하나의 앱에서 들어오는 여러 스트림을 제어합니다</translation>
     </message>
 </context>
 <context>
@@ -497,10 +504,6 @@
     <message>
         <source>ChatMix</source>
         <translation>채팅 믹스</translation>
-    </message>
-    <message>
-        <source>System sounds</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

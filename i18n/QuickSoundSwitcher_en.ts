@@ -113,6 +113,13 @@
     </message>
 </context>
 <context>
+    <name>ApplicationsListView</name>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ChatMixNotification</name>
     <message>
         <source>ChatMix Enabled</source>
@@ -291,14 +298,6 @@
         <source>Device list will automatically close after selecting a device</source>
         <translation></translation>
     </message>
-    <message>
-        <source>Group applications by executable</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Control multiple stream comming from a single app with one slider</source>
-        <translation></translation>
-    </message>
 </context>
 <context>
     <name>LanguagePane</name>
@@ -469,10 +468,6 @@
     <message>
         <source>ChatMix</source>
         <translation></translation>
-    </message>
-    <message>
-        <source>System sounds</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -118,6 +118,8 @@ set(QML_FILES
     qml/SettingsPane/ShortcutsPane.qml
     qml/ProgressSlider.qml
     qml/ChatMixNotification.qml
+    qml/ApplicationsListView.qml
+    qml/SystemTray.qml
 )
 
 set(QML_SINGLETONS
@@ -134,7 +136,6 @@ qt_add_qml_module(QuickSoundSwitcher
     URI Odizinne.QuickSoundSwitcher
     VERSION 1.0
     QML_FILES ${QML_FILES} ${QML_SINGLETONS}
-    QML_FILES qml/SystemTray.qml
 )
 
 # Avoid collision between executable name and QML module directory (QTBUG-98568).

@@ -4,7 +4,8 @@
 #include <QDebug>
 #include <QQmlContext>
 #include <QSettings>
-// ApplicationModel implementation
+
+// ApplicationModel implementation (unchanged)
 ApplicationModel::ApplicationModel(QObject *parent)
     : QAbstractListModel(parent)
 {
@@ -126,7 +127,7 @@ int ApplicationModel::findApplicationIndex(const QString& appId) const
     return -1;
 }
 
-// FilteredDeviceModel implementation
+// FilteredDeviceModel implementation (unchanged - keeping existing code)
 FilteredDeviceModel::FilteredDeviceModel(bool isInputFilter, QObject *parent)
     : QAbstractListModel(parent), m_isInputFilter(isInputFilter), m_currentDefaultIndex(-1)
 {
@@ -240,6 +241,173 @@ int FilteredDeviceModel::findDeviceIndex(const QString& deviceId) const
     return -1;
 }
 
+// GroupedApplicationModel implementation
+GroupedApplicationModel::GroupedApplicationModel(QObject *parent)
+    : QAbstractListModel(parent)
+{
+}
+
+int GroupedApplicationModel::rowCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent)
+    return m_groups.count();
+}
+
+QVariant GroupedApplicationModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid() || index.row() >= m_groups.count())
+        return QVariant();
+
+    const ApplicationGroup& group = m_groups.at(index.row());
+
+    switch (role) {
+    case ExecutableNameRole:
+        return group.executableName;
+    case DisplayNameRole:
+        return group.displayName;
+    case IconPathRole:
+        return group.iconPath;
+    case AverageVolumeRole:
+        return group.averageVolume;
+    case AnyMutedRole:
+        return group.anyMuted;
+    case AllMutedRole:
+        return group.allMuted;
+    case SessionCountRole:
+        return group.sessionCount;
+    default:
+        return QVariant();
+    }
+}
+
+void GroupedApplicationModel::updateGroupVolume(const QString& executableName, int averageVolume)
+{
+    for (int i = 0; i < m_groups.count(); ++i) {
+        if (m_groups[i].executableName == executableName) {
+            m_groups[i].averageVolume = averageVolume;
+            QModelIndex modelIndex = createIndex(i, 0);
+            emit dataChanged(modelIndex, modelIndex, {AverageVolumeRole});
+            break;
+        }
+    }
+}
+
+void GroupedApplicationModel::updateGroupMute(const QString& executableName, bool anyMuted, bool allMuted)
+{
+    for (int i = 0; i < m_groups.count(); ++i) {
+        if (m_groups[i].executableName == executableName) {
+            m_groups[i].anyMuted = anyMuted;
+            m_groups[i].allMuted = allMuted;
+            QModelIndex modelIndex = createIndex(i, 0);
+            emit dataChanged(modelIndex, modelIndex, {AnyMutedRole, AllMutedRole});
+            break;
+        }
+    }
+}
+
+QHash<int, QByteArray> GroupedApplicationModel::roleNames() const
+{
+    QHash<int, QByteArray> roles;
+    roles[ExecutableNameRole] = "executableName";
+    roles[DisplayNameRole] = "displayName";
+    roles[IconPathRole] = "iconPath";
+    roles[AverageVolumeRole] = "averageVolume";
+    roles[AnyMutedRole] = "anyMuted";
+    roles[AllMutedRole] = "allMuted";
+    roles[SessionCountRole] = "sessionCount";
+    return roles;
+}
+
+void GroupedApplicationModel::setGroups(const QList<ApplicationGroup>& groups)
+{
+    beginResetModel();
+    m_groups = groups;
+    endResetModel();
+}
+
+// ExecutableSessionModel implementation
+ExecutableSessionModel::ExecutableSessionModel(QObject *parent)
+    : QAbstractListModel(parent)
+{
+}
+
+int ExecutableSessionModel::rowCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent)
+    return m_sessions.count();
+}
+
+QVariant ExecutableSessionModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid() || index.row() >= m_sessions.count())
+        return QVariant();
+
+    const AudioApplication& session = m_sessions.at(index.row());
+
+    switch (role) {
+    case IdRole:
+        return session.id;
+    case NameRole:
+        return session.name;
+    case ExecutableNameRole:
+        return session.executableName;
+    case IconPathRole:
+        return session.iconPath;
+    case VolumeRole:
+        return session.volume;
+    case IsMutedRole:
+        return session.isMuted;
+    case AudioLevelRole:
+        return session.audioLevel;
+    default:
+        return QVariant();
+    }
+}
+
+void ExecutableSessionModel::updateSessionVolume(const QString& appId, int volume)
+{
+    for (int i = 0; i < m_sessions.count(); ++i) {
+        if (m_sessions[i].id == appId) {
+            m_sessions[i].volume = volume;
+            QModelIndex modelIndex = createIndex(i, 0);
+            emit dataChanged(modelIndex, modelIndex, {VolumeRole});
+            break;
+        }
+    }
+}
+
+void ExecutableSessionModel::updateSessionMute(const QString& appId, bool muted)
+{
+    for (int i = 0; i < m_sessions.count(); ++i) {
+        if (m_sessions[i].id == appId) {
+            m_sessions[i].isMuted = muted;
+            QModelIndex modelIndex = createIndex(i, 0);
+            emit dataChanged(modelIndex, modelIndex, {IsMutedRole});
+            break;
+        }
+    }
+}
+
+QHash<int, QByteArray> ExecutableSessionModel::roleNames() const
+{
+    QHash<int, QByteArray> roles;
+    roles[IdRole] = "appId";
+    roles[NameRole] = "name";
+    roles[ExecutableNameRole] = "executableName";
+    roles[IconPathRole] = "iconPath";
+    roles[VolumeRole] = "volume";
+    roles[IsMutedRole] = "isMuted";
+    roles[AudioLevelRole] = "audioLevel";
+    return roles;
+}
+
+void ExecutableSessionModel::setSessions(const QList<AudioApplication>& sessions)
+{
+    beginResetModel();
+    m_sessions = sessions;
+    endResetModel();
+}
+
 // AudioBridge implementation
 AudioBridge::AudioBridge(QObject *parent)
     : QObject(parent)
@@ -249,6 +417,7 @@ AudioBridge::AudioBridge(QObject *parent)
     , m_inputMuted(false)
     , m_isReady(false)
     , m_applicationModel(new ApplicationModel(this))
+    , m_groupedApplicationModel(new GroupedApplicationModel(this))
     , m_outputDeviceModel(new FilteredDeviceModel(false, this))
     , m_inputDeviceModel(new FilteredDeviceModel(true, this))
 {
@@ -296,6 +465,12 @@ AudioBridge::~AudioBridge() {
         restoreOriginalVolumesSync();
     }
 
+    // Clean up session models
+    for (auto* model : m_sessionModels) {
+        delete model;
+    }
+    m_sessionModels.clear();
+
     auto* manager = AudioManager::instance();
     manager->cleanup();
 }
@@ -307,7 +482,178 @@ AudioBridge* AudioBridge::create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
     return new AudioBridge();
 }
 
-// Volume control methods
+// Grouped application methods
+ExecutableSessionModel* AudioBridge::getSessionsForExecutable(const QString& executableName)
+{
+    if (!m_sessionModels.contains(executableName)) {
+        m_sessionModels[executableName] = new ExecutableSessionModel(this);
+    }
+
+    ExecutableSessionModel* model = m_sessionModels[executableName];
+
+    // Find sessions for this executable
+    QList<AudioApplication> sessions;
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appExecutableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+
+        if (appExecutableName == executableName) {
+            AudioApplication app;
+            app.id = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+            app.name = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+            app.executableName = appExecutableName;
+            app.iconPath = m_applicationModel->data(index, ApplicationModel::IconPathRole).toString();
+            app.volume = m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
+            app.isMuted = m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool();
+            app.audioLevel = m_applicationModel->data(index, ApplicationModel::AudioLevelRole).toInt();
+            sessions.append(app);
+        }
+    }
+
+    model->setSessions(sessions);
+    return model;
+}
+
+void AudioBridge::setExecutableVolume(const QString& executableName, int volume)
+{
+    // Temporarily disable individual update signals to avoid loops
+    bool wasBlocked = blockSignals(true);
+
+    // Set volume for all sessions of this executable
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appExecutableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+
+        if (appExecutableName == executableName) {
+            QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+            setApplicationVolume(appId, volume);
+        }
+    }
+
+    blockSignals(wasBlocked);
+
+    // Update models directly without triggering the change handlers
+    m_groupedApplicationModel->updateGroupVolume(executableName, volume);
+
+    // Update session model
+    if (m_sessionModels.contains(executableName)) {
+        for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+            QModelIndex index = m_applicationModel->index(i, 0);
+            QString appExecutableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+
+            if (appExecutableName == executableName) {
+                QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+                m_sessionModels[executableName]->updateSessionVolume(appId, volume);
+            }
+        }
+    }
+}
+
+void AudioBridge::setExecutableMute(const QString& executableName, bool muted)
+{
+    // Set mute for all sessions of this executable
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appExecutableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+
+        if (appExecutableName == executableName) {
+            QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+            setApplicationMute(appId, muted);
+        }
+    }
+
+    // Update grouped model in place
+    m_groupedApplicationModel->updateGroupMute(executableName, muted, muted);
+
+    // Update session model
+    if (m_sessionModels.contains(executableName)) {
+        for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+            QModelIndex index = m_applicationModel->index(i, 0);
+            QString appExecutableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+
+            if (appExecutableName == executableName) {
+                QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+                m_sessionModels[executableName]->updateSessionMute(appId, muted);
+            }
+        }
+    }
+}
+
+void AudioBridge::updateGroupedApplications()
+{
+    QMap<QString, ApplicationGroup> groups;
+
+    // Group applications by executable name
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+
+        QString executableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+        QString name = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+        QString iconPath = m_applicationModel->data(index, ApplicationModel::IconPathRole).toString();
+        int volume = m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
+        bool muted = m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool();
+        QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+        int audioLevel = m_applicationModel->data(index, ApplicationModel::AudioLevelRole).toInt();
+
+        AudioApplication app;
+        app.id = appId;
+        app.name = name;
+        app.executableName = executableName;
+        app.iconPath = iconPath;
+        app.volume = volume;
+        app.isMuted = muted;
+        app.audioLevel = audioLevel;
+
+        if (!groups.contains(executableName)) {
+            ApplicationGroup group;
+            group.executableName = executableName;
+            group.displayName = executableName;
+            group.iconPath = iconPath;
+            group.sessions.append(app);
+            groups[executableName] = group;
+        } else {
+            groups[executableName].sessions.append(app);
+        }
+    }
+
+    // Calculate group statistics
+    QList<ApplicationGroup> groupList;
+    for (auto& group : groups) {
+        int totalVolume = 0;
+        int mutedCount = 0;
+
+        for (const auto& app : group.sessions) {
+            totalVolume += app.volume;
+            if (app.isMuted) mutedCount++;
+        }
+
+        group.averageVolume = group.sessions.isEmpty() ? 0 : totalVolume / group.sessions.count();
+        group.anyMuted = mutedCount > 0;
+        group.allMuted = mutedCount == group.sessions.count();
+        group.sessionCount = group.sessions.count();
+
+        groupList.append(group);
+    }
+
+    // Sort groups (System sounds last, others alphabetically)
+    std::sort(groupList.begin(), groupList.end(),
+              [](const ApplicationGroup& a, const ApplicationGroup& b) {
+                  if (a.executableName == "System sounds") return false;
+                  if (b.executableName == "System sounds") return true;
+                  return a.displayName.toLower() < b.displayName.toLower();
+              });
+
+    m_groupedApplicationModel->setGroups(groupList);
+
+    // Update session models for each executable
+    for (const auto& group : groupList) {
+        if (m_sessionModels.contains(group.executableName)) {
+            m_sessionModels[group.executableName]->setSessions(group.sessions);
+        }
+    }
+}
+
+// Volume control methods (unchanged)
 void AudioBridge::setOutputVolume(int volume)
 {
     AudioManager::instance()->setOutputVolumeAsync(volume);
@@ -338,7 +684,7 @@ void AudioBridge::setApplicationMute(const QString& appId, bool mute)
     AudioManager::instance()->setApplicationMuteAsync(appId, mute);
 }
 
-// Device management methods
+// Device management methods (unchanged)
 void AudioBridge::setDefaultDevice(const QString& deviceId, bool isInput, bool forCommunications)
 {
     AudioManager::instance()->setDefaultDeviceAsync(deviceId, isInput, forCommunications);
@@ -366,7 +712,7 @@ void AudioBridge::setInputDevice(int deviceIndex)
     }
 }
 
-// ChatMix methods
+// ChatMix methods (unchanged)
 void AudioBridge::applyChatMixToApplications(int value)
 {
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
@@ -578,16 +924,19 @@ void AudioBridge::onInputMuteChanged(bool muted)
 void AudioBridge::onApplicationVolumeChanged(const QString& appId, int volume)
 {
     m_applicationModel->updateApplicationVolume(appId, volume);
+    updateGroupForApplication(appId); // Use targeted update instead of full rebuild
 }
 
 void AudioBridge::onApplicationMuteChanged(const QString& appId, bool muted)
 {
     m_applicationModel->updateApplicationMute(appId, muted);
+    updateGroupForApplication(appId); // Use targeted update instead of full rebuild
 }
 
 void AudioBridge::onApplicationsChanged(const QList<AudioApplication>& applications)
 {
     m_applicationModel->setApplications(applications);
+    updateGroupedApplications(); // Only rebuild when apps are added/removed
 
     QTimer::singleShot(0, this, &AudioBridge::applyChatMixIfEnabled);
 }
@@ -623,6 +972,7 @@ void AudioBridge::onInitializationComplete()
 
     QList<AudioApplication> apps = manager->getApplications();
     m_applicationModel->setApplications(apps);
+    updateGroupedApplications(); // Initial grouping
 
     QList<AudioDevice> devices = manager->getDevices();
     m_outputDeviceModel->setDevices(devices);
@@ -705,7 +1055,6 @@ void AudioBridge::onApplicationAudioLevelChanged(const QString& appId, int level
 
         if (modelAppId == appId) {
             // Update the model with new audio level
-            // You might need to add this to your ApplicationModel
             emit applicationAudioLevelChanged(appId, level);
             break;
         }
@@ -715,4 +1064,63 @@ void AudioBridge::onApplicationAudioLevelChanged(const QString& appId, int level
 int AudioBridge::getApplicationAudioLevel(const QString& appId) const
 {
     return m_applicationAudioLevels.value(appId, 0);
+}
+
+void AudioBridge::updateGroupForApplication(const QString& appId)
+{
+    // Find the executable name for this appId
+    QString executableName;
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        if (m_applicationModel->data(index, ApplicationModel::IdRole).toString() == appId) {
+            executableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+            break;
+        }
+    }
+
+    if (executableName.isEmpty()) return;
+
+    // Update the session model for this executable
+    if (m_sessionModels.contains(executableName)) {
+        // Find the session and update it
+        for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+            QModelIndex index = m_applicationModel->index(i, 0);
+            if (m_applicationModel->data(index, ApplicationModel::IdRole).toString() == appId) {
+                int volume = m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
+                bool muted = m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool();
+
+                m_sessionModels[executableName]->updateSessionVolume(appId, volume);
+                m_sessionModels[executableName]->updateSessionMute(appId, muted);
+                break;
+            }
+        }
+    }
+
+    // Calculate new group statistics
+    int totalVolume = 0;
+    int mutedCount = 0;
+    int sessionCount = 0;
+
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appExecutableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+
+        if (appExecutableName == executableName) {
+            totalVolume += m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
+            if (m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool()) {
+                mutedCount++;
+            }
+            sessionCount++;
+        }
+    }
+
+    if (sessionCount > 0) {
+        int averageVolume = totalVolume / sessionCount;
+        bool anyMuted = mutedCount > 0;
+        bool allMuted = mutedCount == sessionCount;
+
+        // Update the grouped model in place
+        m_groupedApplicationModel->updateGroupVolume(executableName, averageVolume);
+        m_groupedApplicationModel->updateGroupMute(executableName, anyMuted, allMuted);
+    }
 }

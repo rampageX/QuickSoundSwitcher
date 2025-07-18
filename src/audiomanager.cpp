@@ -1043,22 +1043,12 @@ void AudioWorker::enumerateApplications()
         bool isSystemSounds = (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202" ||
                                processId == 0);
 
-        if (!isSystemSounds) {
-            // Skip our own process
-            if (processId == GetCurrentProcessId()) {
-                sessionControl->Release();
-                continue;
-            }
+        if (!isSystemSounds && processId == GetCurrentProcessId()) {
+            sessionControl->Release();
+            continue;
+        }
 
-            // For non-system sounds, check if session is active
-            AudioSessionState state;
-            hr = sessionControl->GetState(&state);
-            if (FAILED(hr) || state != AudioSessionStateActive) {
-                qDebug() << "Session" << i << "for process" << processId << "is not active (state:" << state << ")";
-                sessionControl->Release();
-                continue;
-            }
-        } else {
+        if (isSystemSounds) {
             foundSystemSounds = true;
         }
 

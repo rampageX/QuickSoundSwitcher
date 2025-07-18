@@ -86,6 +86,7 @@ ApplicationWindow {
     property real maxDeviceListSpace: {
         let outputSpace = outputDevicesRect.expandedNeededHeight || 0
         let inputSpace = inputDevicesRect.expandedNeededHeight || 0
+
         return outputSpace + inputSpace
     }
 
@@ -209,7 +210,7 @@ ApplicationWindow {
 
         Qt.callLater(function() {
             Qt.callLater(function() {
-                let newHeight = mainLayout.implicitHeight + 30 + 15
+                let newHeight = mainLayout.implicitHeight + 30
 
                 if (mediaLayout.visible) {
                     newHeight += mediaLayout.implicitHeight
@@ -220,6 +221,16 @@ ApplicationWindow {
                 }
 
                 newHeight += panel.maxDeviceListSpace
+
+                let appListView = 0
+                for (let i = 0; i < appRepeater.count; ++i) {
+                    let item = appRepeater.itemAt(i)
+                    if (item && item.hasOwnProperty('applicationListHeight')) {
+                        appListView += item.applicationListHeight || 0
+                    }
+                }
+
+                newHeight += appListView
 
                 panel.height = newHeight
                 Qt.callLater(panel.startAnimation)
@@ -756,117 +767,142 @@ ApplicationWindow {
                 visible: UserSettings.panelMode < 2 && AudioBridge.isReady && AudioBridge.applications.rowCount() > 0
 
                 Repeater {
-                    model: AudioBridge.applications
-                    delegate: RowLayout {
-                        id: applicationUnitLayout
-                        Layout.preferredHeight: 40
+                    id: appRepeater
+                    model: AudioBridge.groupedApplications // You'll need to implement this model
+
+                    delegate: ColumnLayout {
+                        id: appDelegateRoot
+                        spacing: 5
                         Layout.fillWidth: true
-                        spacing: 0
                         required property var model
                         required property int index
 
-                        ToolButton {
-                            id: muteRoundButton
-                            Layout.preferredWidth: 40
+                        readonly property real applicationListHeight: individualAppsRect.expandedNeededHeight
+
+                        // Main application row (represents the executable)
+                        RowLayout {
                             Layout.preferredHeight: 40
-                            flat: !checked
-                            checkable: true
-                            highlighted: checked
-                            checked: applicationUnitLayout.model.isMuted
-                            ToolTip.text: applicationUnitLayout.model.name
-                            ToolTip.visible: hovered
-                            ToolTip.delay: 1000
-                            opacity: highlighted ? 0.3 : (enabled ? 1 : 0.5)
-                            icon.color: "transparent"
-                            icon.source: applicationUnitLayout.model.name == qsTr("System sounds") ? Constants.systemIcon : applicationUnitLayout.model.iconPath
+                            Layout.fillWidth: true
+                            spacing: 0
 
-                            onClicked: {
-                                let newMutedState = !applicationUnitLayout.model.isMuted
-                                AudioBridge.setApplicationMute(applicationUnitLayout.model.appId, newMutedState)
+                            ToolButton {
+                                id: executableMuteButton
+                                Layout.preferredWidth: 40
+                                Layout.preferredHeight: 40
+                                flat: !checked
+                                checkable: true
+                                highlighted: checked
+                                checked: appDelegateRoot.model.allMuted // Property from your grouped model
+                                ToolTip.text: appDelegateRoot.model.displayName
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 1000
+                                opacity: highlighted ? 0.3 : (enabled ? 1 : 0.5)
+                                icon.color: "transparent"
+                                icon.source: appDelegateRoot.model.iconPath
+
+                                onClicked: {
+                                    // Mute/unmute all sessions for this executable
+                                    AudioBridge.setExecutableMute(appDelegateRoot.model.executableName, !checked)
+                                }
+
+                                Component.onCompleted: {
+                                    palette.accent = palette.button
+                                }
                             }
 
-                            Component.onCompleted: {
-                                palette.accent = palette.button
-                            }
-                        }
+                            ColumnLayout {
+                                spacing: -4
 
-                        ColumnLayout {
-                            spacing: -4
+                                Label {
+                                    visible: UserSettings.displayDevAppLabel
+                                    opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
+                                    elide: Text.ElideRight
+                                    Layout.preferredWidth: 200
+                                    Layout.leftMargin: 18
+                                    Layout.rightMargin: 25
+                                    text: {
+                                        let name = appDelegateRoot.model.displayName
+                                        if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(name)) {
+                                            name += " (Comm)"
+                                        }
+                                        return name
+                                    }
+                                }
+
+                                ProgressSlider {
+                                    id: executableVolumeSlider
+                                    from: 0
+                                    to: 100
+                                    enabled: !UserSettings.chatMixEnabled && !executableMuteButton.highlighted
+                                    opacity: enabled ? 1 : 0.5
+                                    Layout.fillWidth: true
+
+                                    // Break the binding loop by only updating when not being dragged
+                                    value: pressed ? value : appDelegateRoot.model.averageVolume
+
+                                    ToolTip {
+                                        parent: executableVolumeSlider.handle
+                                        visible: executableVolumeSlider.pressed && (UserSettings.volumeValueMode === 0)
+                                        text: Math.round(executableVolumeSlider.value).toString()
+                                    }
+
+                                    onValueChanged: {
+                                        if (!UserSettings.chatMixEnabled && pressed) {
+                                            // Set volume for all sessions of this executable
+                                            AudioBridge.setExecutableVolume(appDelegateRoot.model.executableName, value)
+                                        }
+                                    }
+
+                                    onPressedChanged: {
+                                        if (!pressed && !UserSettings.chatMixEnabled) {
+                                            // Final update when releasing
+                                            AudioBridge.setExecutableVolume(appDelegateRoot.model.executableName, value)
+                                        }
+                                    }
+                                }
+                            }
 
                             Label {
-                                visible: UserSettings.displayDevAppLabel
-                                opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
-                                elide: Text.ElideRight
-                                Layout.preferredWidth: 200
-                                Layout.leftMargin: 18
-                                Layout.rightMargin: 25
-                                text: {
-                                    let name = applicationUnitLayout.model.name
-                                    if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(name)) {
-                                        name += " (Comm)"
-                                    }
-
-                                    if (name === "System sounds") {
-                                        return qsTr("System sounds")
-                                    }
-                                    return name
-                                }
+                                text: Math.round(executableVolumeSlider.value).toString()
+                                Layout.rightMargin: 5
+                                font.pixelSize: 14
+                                opacity: UserSettings.chatMixEnabled ? 0.5 : 1
+                                visible: UserSettings.volumeValueMode === 1
                             }
 
-                            ProgressSlider {
-                                id: volumeSlider
-                                from: 0
-                                to: 100
-                                enabled: !UserSettings.chatMixEnabled && !muteRoundButton.highlighted
-                                opacity: enabled ? 1 : 0.5
-                                audioLevel: {
-                                    return AudioBridge.getApplicationAudioLevel(applicationUnitLayout.model.appId)
-                                }
-                                Layout.fillWidth: true
+                            ToolButton {
+                                icon.source: "qrc:/icons/arrow.svg"
+                                rotation: individualAppsRect.expanded ? 90 : 0
+                                visible: appDelegateRoot.model.sessionCount > 1 // Only show if multiple sessions
+                                Layout.preferredHeight: 35
+                                Layout.preferredWidth: 35
 
-                                value: {
-                                    if (!UserSettings.chatMixEnabled) {
-                                        return applicationUnitLayout.model.volume
-                                    }
-
-                                    let appName = applicationUnitLayout.model.name
-                                    let isCommApp = AudioBridge.isCommApp(appName)
-
-                                    return isCommApp ? 100 : UserSettings.chatMixValue
-                                }
-
-                                ToolTip {
-                                    parent: volumeSlider.handle
-                                    visible: volumeSlider.pressed && (UserSettings.volumeValueMode === 0)
-                                    text: Math.round(volumeSlider.value).toString()
-                                }
-
-                                onValueChanged: {
-                                    if (!UserSettings.chatMixEnabled && pressed) {
-                                        AudioBridge.setApplicationVolume(applicationUnitLayout.model.appId, value)
+                                Behavior on rotation {
+                                    NumberAnimation {
+                                        duration: 150
+                                        easing.type: Easing.Linear
                                     }
                                 }
 
-                                onPressedChanged: {
-                                    if (!UserSettings.showAudioLevel) return
-
-                                    if (pressed) {
-                                        // Stop app audio level monitoring when starting to drag
-                                        AudioBridge.stopAudioLevelMonitoring()
-                                    } else {
-                                        // Resume when done dragging
-                                        AudioBridge.startAudioLevelMonitoring()
-                                    }
+                                onClicked: {
+                                    individualAppsRect.expanded = !individualAppsRect.expanded
                                 }
                             }
                         }
 
-                        Label {
-                            text: Math.round(volumeSlider.value).toString()
-                            Layout.rightMargin: 5
-                            font.pixelSize: 14
-                            opacity: UserSettings.chatMixEnabled ? 0.5 : 1
-                            visible: UserSettings.volumeValueMode === 1
+                        // Individual applications list
+                        ApplicationsListView {
+                            id: individualAppsRect
+                            model: AudioBridge.getSessionsForExecutable(appDelegateRoot.model.executableName)
+                            executableName: appDelegateRoot.model.executableName
+
+                            onApplicationVolumeChanged: function(appId, volume) {
+                                AudioBridge.setApplicationVolume(appId, volume)
+                            }
+
+                            onApplicationMuteChanged: function(appId, muted) {
+                                AudioBridge.setApplicationMute(appId, muted)
+                            }
                         }
                     }
                 }

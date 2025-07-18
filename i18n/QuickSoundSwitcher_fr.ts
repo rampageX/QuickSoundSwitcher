@@ -121,6 +121,13 @@
     </message>
 </context>
 <context>
+    <name>ApplicationsListView</name>
+    <message>
+        <source>System sounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ChatMixNotification</name>
     <message>
         <source>ChatMix Enabled</source>
@@ -305,11 +312,11 @@
     </message>
     <message>
         <source>Group applications by executable</source>
-        <translation>Regrouper les applications par exécutable</translation>
+        <translation type="vanished">Regrouper les applications par exécutable</translation>
     </message>
     <message>
         <source>Control multiple stream comming from a single app with one slider</source>
-        <translation>Contrôlez plusieurs flux provenant d’une seule application en meme temps</translation>
+        <translation type="vanished">Contrôlez plusieurs flux provenant d’une seule application en meme temps</translation>
     </message>
 </context>
 <context>
@@ -521,10 +528,6 @@
     <message>
         <source>ChatMix</source>
         <translation></translation>
-    </message>
-    <message>
-        <source>System sounds</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

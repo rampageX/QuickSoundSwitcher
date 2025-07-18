@@ -1,4 +1,3 @@
-// include/audiobridge.h
 #ifndef AUDIOBRIDGE_H
 #define AUDIOBRIDGE_H
 
@@ -94,6 +93,86 @@ private:
     void updateCurrentDefaultIndex();
 };
 
+// New models for grouped applications
+struct ApplicationGroup {
+    QString executableName;
+    QString displayName;
+    QString iconPath;
+    QList<AudioApplication> sessions;
+    int averageVolume;
+    bool anyMuted;
+    bool allMuted;
+    int sessionCount;
+};
+
+class GroupedApplicationModel : public QAbstractListModel
+{
+    Q_OBJECT
+    QML_ELEMENT
+
+public:
+    enum GroupRoles {
+        ExecutableNameRole = Qt::UserRole + 1,
+        DisplayNameRole,
+        IconPathRole,
+        AverageVolumeRole,
+        AnyMutedRole,
+        AllMutedRole,
+        SessionCountRole
+    };
+    Q_ENUM(GroupRoles)
+
+    explicit GroupedApplicationModel(QObject *parent = nullptr);
+
+    // QAbstractListModel interface
+    Q_INVOKABLE int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
+
+    // Model management
+    void setGroups(const QList<ApplicationGroup>& groups);
+    QList<ApplicationGroup> getGroups() const { return m_groups; }
+    void updateGroupVolume(const QString& executableName, int averageVolume);
+    void updateGroupMute(const QString& executableName, bool anyMuted, bool allMuted);
+
+
+private:
+    QList<ApplicationGroup> m_groups;
+};
+
+class ExecutableSessionModel : public QAbstractListModel
+{
+    Q_OBJECT
+    QML_ELEMENT
+
+public:
+    enum SessionRoles {
+        IdRole = Qt::UserRole + 1,
+        NameRole,
+        ExecutableNameRole,
+        IconPathRole,
+        VolumeRole,
+        IsMutedRole,
+        AudioLevelRole
+    };
+    Q_ENUM(SessionRoles)
+
+    explicit ExecutableSessionModel(QObject *parent = nullptr);
+
+    // QAbstractListModel interface
+    Q_INVOKABLE int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
+    void updateSessionVolume(const QString& appId, int volume);
+    void updateSessionMute(const QString& appId, bool muted);
+
+    // Model management
+    void setSessions(const QList<AudioApplication>& sessions);
+
+private:
+    QList<AudioApplication> m_sessions;
+};
+
 class AudioBridge : public QObject
 {
     Q_OBJECT
@@ -106,6 +185,7 @@ class AudioBridge : public QObject
     Q_PROPERTY(bool inputMuted READ inputMuted NOTIFY inputMutedChanged)
     Q_PROPERTY(bool isReady READ isReady NOTIFY isReadyChanged)
     Q_PROPERTY(ApplicationModel* applications READ applications CONSTANT)
+    Q_PROPERTY(GroupedApplicationModel* groupedApplications READ groupedApplications CONSTANT)
     Q_PROPERTY(FilteredDeviceModel* outputDevices READ outputDevices CONSTANT)
     Q_PROPERTY(FilteredDeviceModel* inputDevices READ inputDevices CONSTANT)
     Q_PROPERTY(QVariantList commAppsList READ commAppsList NOTIFY commAppsListChanged)
@@ -125,6 +205,7 @@ public:
     bool inputMuted() const { return m_inputMuted; }
     bool isReady() const { return m_isReady; }
     ApplicationModel* applications() { return m_applicationModel; }
+    GroupedApplicationModel* groupedApplications() { return m_groupedApplicationModel; }
     FilteredDeviceModel* outputDevices() { return m_outputDeviceModel; }
     FilteredDeviceModel* inputDevices() { return m_inputDeviceModel; }
     QVariantList commAppsList() const;
@@ -141,6 +222,11 @@ public:
     Q_INVOKABLE void setDefaultDevice(const QString& deviceId, bool isInput, bool forCommunications = false);
     Q_INVOKABLE void setOutputDevice(int deviceIndex);
     Q_INVOKABLE void setInputDevice(int deviceIndex);
+
+    // Grouped application methods
+    Q_INVOKABLE ExecutableSessionModel* getSessionsForExecutable(const QString& executableName);
+    Q_INVOKABLE void setExecutableVolume(const QString& executableName, int volume);
+    Q_INVOKABLE void setExecutableMute(const QString& executableName, bool muted);
 
     // ChatMix methods
     Q_INVOKABLE void applyChatMixToApplications(int value);
@@ -195,6 +281,7 @@ private:
     bool m_inputMuted;
     bool m_isReady;
     ApplicationModel* m_applicationModel;
+    GroupedApplicationModel* m_groupedApplicationModel;
     FilteredDeviceModel* m_outputDeviceModel;
     FilteredDeviceModel* m_inputDeviceModel;
 
@@ -205,17 +292,24 @@ private:
     };
     QList<CommApp> m_commApps;
 
+    // Session models cache for executables
+    QMap<QString, ExecutableSessionModel*> m_sessionModels;
+
     // Helper methods to read from UserSettings
     void applyChatMixIfEnabled();
     QString getCommAppsFilePath() const;
     void loadCommAppsFromFile();
     void saveCommAppsToFile();
+    void updateGroupedApplications();
 
     void restoreOriginalVolumesSync();
 
     int m_outputAudioLevel = 0;
     int m_inputAudioLevel = 0;
     QMap<QString, int> m_applicationAudioLevels;
+
+    void updateGroupForApplication(const QString& appId);
+    int findGroupIndex(const QString& executableName) const;
 };
 
 #endif // AUDIOBRIDGE_H
