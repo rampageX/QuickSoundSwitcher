@@ -33,4 +33,5 @@ Settings {
     property bool chatMixShortcutNotification: true
     property bool autoUpdateTranslations: false
     property bool opacityAnimations: true
+    property bool firstRun: true
 }

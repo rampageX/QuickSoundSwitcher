@@ -97,6 +97,9 @@ public:
     // Legacy audio methods for compatibility (these should redirect to AudioBridge)
     Q_INVOKABLE void onOutputSliderReleased();
 
+    Q_INVOKABLE void openLegacySoundSettings();
+    Q_INVOKABLE void openModernSoundSettings();
+
 private slots:
     void checkForTranslationUpdates();
 

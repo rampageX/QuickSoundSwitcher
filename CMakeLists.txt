@@ -136,6 +136,7 @@ qt_add_qml_module(QuickSoundSwitcher
     URI Odizinne.QuickSoundSwitcher
     VERSION 1.0
     QML_FILES ${QML_FILES} ${QML_SINGLETONS}
+    QML_FILES qml/SystemTray.qml
 )
 
 # Avoid collision between executable name and QML module directory (QTBUG-98568).

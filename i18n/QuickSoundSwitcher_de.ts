@@ -363,23 +363,7 @@
     <name>QuickSoundSwitcher</name>
     <message>
         <source>Exit</source>
-        <translation>Beenden</translation>
-    </message>
-    <message>
-        <source>Output: Loading...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Input: Loading...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Windows sound settings (Legacy)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Windows sound settings (Modern)</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Beenden</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -391,14 +375,6 @@
     </message>
     <message>
         <source>ChatMix %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Output</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Input</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -515,6 +491,37 @@
     </message>
     <message>
         <source>Downloaded %1 of %2 translation files</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SystemTray</name>
+    <message>
+        <source>Output: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Input: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit</source>
+        <translation type="unfinished">Beenden</translation>
+    </message>
+    <message>
+        <source>Quick Sound Switcher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access sound panel from the system tray. This notification won&apos;t show again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Windows sound settings (Legacy)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Windows sound settings (Modern)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -383,23 +383,23 @@
     <name>QuickSoundSwitcher</name>
     <message>
         <source>Exit</source>
-        <translation>退出</translation>
+        <translation type="vanished">退出</translation>
     </message>
     <message>
         <source>Output: Loading...</source>
-        <translation>输出: 载入中...</translation>
+        <translation type="vanished">输出: 载入中...</translation>
     </message>
     <message>
         <source>Input: Loading...</source>
-        <translation>输入: 载入中...</translation>
+        <translation type="vanished">输入: 载入中...</translation>
     </message>
     <message>
         <source>Windows sound settings (Legacy)</source>
-        <translation>Windows 声音设置（旧版）</translation>
+        <translation type="vanished">Windows 声音设置（旧版）</translation>
     </message>
     <message>
         <source>Windows sound settings (Modern)</source>
-        <translation>Windows 声音设置（新版）</translation>
+        <translation type="vanished">Windows 声音设置（新版）</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -415,11 +415,11 @@
     </message>
     <message>
         <source>Output</source>
-        <translation>输出</translation>
+        <translation type="vanished">输出</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>输入</translation>
+        <translation type="vanished">输入</translation>
     </message>
 </context>
 <context>
@@ -536,6 +536,37 @@
     <message>
         <source>Downloaded %1 of %2 translation files</source>
         <translation>%2 所有语言文件中的 1% 已下载</translation>
+    </message>
+</context>
+<context>
+    <name>SystemTray</name>
+    <message>
+        <source>Output: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Input: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit</source>
+        <translation type="unfinished">退出</translation>
+    </message>
+    <message>
+        <source>Quick Sound Switcher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access sound panel from the system tray. This notification won&apos;t show again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Windows sound settings (Legacy)</source>
+        <translation type="unfinished">Windows 声音设置（旧版）</translation>
+    </message>
+    <message>
+        <source>Windows sound settings (Modern)</source>
+        <translation type="unfinished">Windows 声音设置（新版）</translation>
     </message>
 </context>
 </TS>

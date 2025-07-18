@@ -387,23 +387,23 @@
     <name>QuickSoundSwitcher</name>
     <message>
         <source>Output: Loading...</source>
-        <translation>Sortie: Chargement...</translation>
+        <translation type="vanished">Sortie: Chargement...</translation>
     </message>
     <message>
         <source>Input: Loading...</source>
-        <translation>Entrée: Chargement...</translation>
+        <translation type="vanished">Entrée: Chargement...</translation>
     </message>
     <message>
         <source>Windows sound settings (Legacy)</source>
-        <translation>Paramètres audio Windows (Herité)</translation>
+        <translation type="vanished">Paramètres audio Windows (Herité)</translation>
     </message>
     <message>
         <source>Windows sound settings (Modern)</source>
-        <translation>Paramètres audio Windows (Moderne)</translation>
+        <translation type="vanished">Paramètres audio Windows (Moderne)</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation>Quitter</translation>
+        <translation type="vanished">Quitter</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -419,11 +419,11 @@
     </message>
     <message>
         <source>Output</source>
-        <translation>Sortie</translation>
+        <translation type="vanished">Sortie</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>Entrée</translation>
+        <translation type="vanished">Entrée</translation>
     </message>
 </context>
 <context>
@@ -540,6 +540,37 @@
     <message>
         <source>Downloaded %1 of %2 translation files</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SystemTray</name>
+    <message>
+        <source>Output: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Input: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit</source>
+        <translation type="unfinished">Quitter</translation>
+    </message>
+    <message>
+        <source>Quick Sound Switcher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access sound panel from the system tray. This notification won&apos;t show again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Windows sound settings (Legacy)</source>
+        <translation type="unfinished">Paramètres audio Windows (Herité)</translation>
+    </message>
+    <message>
+        <source>Windows sound settings (Modern)</source>
+        <translation type="unfinished">Paramètres audio Windows (Moderne)</translation>
     </message>
 </context>
 </TS>

@@ -24,6 +24,15 @@ ApplicationWindow {
         return newHeight
     }
 
+    SystemTray {
+        onTogglePanelRequested: {
+            if (panel.visible) {
+                panel.hidePanel()
+            } else {
+                panel.showPanel()
+            }
+        }
+    }
     MouseArea {
         height: panel.maxDeviceListSpace - panel.currentUsedListSpace
         anchors.left: parent.left

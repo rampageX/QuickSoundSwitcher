@@ -1,8 +1,6 @@
 pragma Singleton
-
 import QtQuick
 import Odizinne.QuickSoundSwitcher
-
 
 QtObject {
     property bool darkMode: SoundPanelBridge.getDarkMode()
@@ -13,4 +11,21 @@ QtObject {
     property color cardBorderColor: darkMode ? "#0F0F0F" : "#D0D0D0"
     property color separatorColor: darkMode ? "#E3E3E3" : "#A0A0A0"
     property string systemIcon: darkMode ? "qrc:/icons/system_light.png" : "qrc:/icons/system_dark.png"
+
+    function getTrayIcon(volume, muted) {
+        let theme = darkMode ? "light" : "dark"
+        let volumeLevel
+
+        if (muted || volume === 0) {
+            volumeLevel = "0"
+        } else if (volume > 66) {
+            volumeLevel = "100"
+        } else if (volume > 33) {
+            volumeLevel = "66"
+        } else {
+            volumeLevel = "33"
+        }
+
+        return `qrc:/icons/tray_${theme}_${volumeLevel}.png`
+    }
 }

@@ -363,23 +363,23 @@
     <name>QuickSoundSwitcher</name>
     <message>
         <source>Exit</source>
-        <translation>종료</translation>
+        <translation type="vanished">종료</translation>
     </message>
     <message>
         <source>Output: Loading...</source>
-        <translation>출력: 로드 중...</translation>
+        <translation type="vanished">출력: 로드 중...</translation>
     </message>
     <message>
         <source>Input: Loading...</source>
-        <translation>입력: 로드 중...</translation>
+        <translation type="vanished">입력: 로드 중...</translation>
     </message>
     <message>
         <source>Windows sound settings (Legacy)</source>
-        <translation>Windows 사운드 설정 (레거시)</translation>
+        <translation type="vanished">Windows 사운드 설정 (레거시)</translation>
     </message>
     <message>
         <source>Windows sound settings (Modern)</source>
-        <translation>Windows 사운드 설정 (모던)</translation>
+        <translation type="vanished">Windows 사운드 설정 (모던)</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -395,11 +395,11 @@
     </message>
     <message>
         <source>Output</source>
-        <translation>출력</translation>
+        <translation type="vanished">출력</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>입력</translation>
+        <translation type="vanished">입력</translation>
     </message>
 </context>
 <context>
@@ -516,6 +516,37 @@
     <message>
         <source>Downloaded %1 of %2 translation files</source>
         <translation>%1 / %2 번역 파일을 다운로드했습니다</translation>
+    </message>
+</context>
+<context>
+    <name>SystemTray</name>
+    <message>
+        <source>Output: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Input: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit</source>
+        <translation type="unfinished">종료</translation>
+    </message>
+    <message>
+        <source>Quick Sound Switcher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Access sound panel from the system tray. This notification won&apos;t show again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Windows sound settings (Legacy)</source>
+        <translation type="unfinished">Windows 사운드 설정 (레거시)</translation>
+    </message>
+    <message>
+        <source>Windows sound settings (Modern)</source>
+        <translation type="unfinished">Windows 사운드 설정 (모던)</translation>
     </message>
 </context>
 </TS>

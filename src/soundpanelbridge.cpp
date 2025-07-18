@@ -3,7 +3,7 @@
 #include "shortcutmanager.h"
 #include <QBuffer>
 #include <QPixmap>
-#include <algorithm>
+#include <QProcess>
 #include "version.h"
 #include "mediasessionmanager.h"
 #include "languages.h"
@@ -646,4 +646,12 @@ QStringList SoundPanelBridge::getLanguageNativeNames() const
 QStringList SoundPanelBridge::getLanguageCodes() const
 {
     return ::getLanguageCodes();
+}
+
+void SoundPanelBridge::openLegacySoundSettings() {
+    QProcess::startDetached("control", QStringList() << "mmsys.cpl");
+}
+
+void SoundPanelBridge::openModernSoundSettings() {
+    QProcess::startDetached("explorer", QStringList() << "ms-settings:sound");
 }

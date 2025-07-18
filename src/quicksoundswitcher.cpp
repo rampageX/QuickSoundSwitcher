@@ -21,10 +21,8 @@ static bool validMouseDown = false;
 
 QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     : QWidget(parent)
-    , trayIcon(new QSystemTrayIcon(this))
     , engine(nullptr)
     , panelWindow(nullptr)
-    , isPanelVisible(false)
     , settings("Odizinne", "QuickSoundSwitcher")
     , outputDeviceAction(nullptr)
     , inputDeviceAction(nullptr)
@@ -35,52 +33,25 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     MediaSessionManager::initialize();
     instance = this;
     initializeQMLEngine();
-
-    // Get AudioManager instance once and reuse it
-    //auto* audioManager = AudioManager::instance();
-    //audioManager->initialize();
-
     setupLocalServer();
-    // Initialize QML engine once
-
-    // Connect to AudioManager for tray icon updates - reuse the same instance
-    //    connect(audioManager, &AudioManager::outputVolumeChanged,
-    //            this, &QuickSoundSwitcher::onOutputMuteChanged);
-    //    connect(audioManager, &AudioManager::outputMuteChanged,
-    //            this, &QuickSoundSwitcher::onOutputMuteChanged);
-    //
-    //    // Connect for tray menu updates
-    //    connect(audioManager, &AudioManager::outputVolumeChanged,
-    //            this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
-    //    connect(audioManager, &AudioManager::outputMuteChanged,
-    //            this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
-    //    connect(audioManager, &AudioManager::inputVolumeChanged,
-    //            this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
-    //    connect(audioManager, &AudioManager::inputMuteChanged,
-    //            this, &QuickSoundSwitcher::updateTrayMenuDeviceInfo);
-    //    connect(audioManager, &AudioManager::defaultDeviceChanged,
-    //            this, &QuickSoundSwitcher::initializeTrayMenuDeviceInfo);
+    installKeyboardHook();
 
     if (SoundPanelBridge::instance()) {
         connect(SoundPanelBridge::instance(), &SoundPanelBridge::languageChanged,
                 this, &QuickSoundSwitcher::onLanguageChanged);
     }
 
-    createTrayIcon();
-    installKeyboardHook();
 
-    // Initialize device info after a short delay to let everything settle
-    QTimer::singleShot(1000, this, &QuickSoundSwitcher::initializeTrayMenuDeviceInfo);
 
     bool firstRun = settings.value("firstRun", true).toBool();
-    if (firstRun) {
-        settings.setValue("firstRun", false);
-        trayIcon->showMessage(
-            "Access sound panel from the system tray",
-            "This notification won't show again",
-            QSystemTrayIcon::NoIcon
-            );
-    }
+    //if (firstRun) {
+    //    settings.setValue("firstRun", false);
+    //    trayIcon->showMessage(
+    //        "Access sound panel from the system tray",
+    //        "This notification won't show again",
+    //        QSystemTrayIcon::NoIcon
+    //        );
+    //}
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
@@ -121,7 +92,22 @@ void QuickSoundSwitcher::initializeQMLEngine()
 
             connect(panelWindow, SIGNAL(hideAnimationFinished()),
                     this, SLOT(onPanelHideAnimationFinished()));
+
+            // Connect to visibility changes
+            connect(panelWindow, &QWindow::visibleChanged,
+                    this, &QuickSoundSwitcher::onPanelVisibilityChanged);
         }
+    }
+}
+
+void QuickSoundSwitcher::onPanelVisibilityChanged(bool visible)
+{
+    isPanelVisible = visible;
+
+    if (visible) {
+        installGlobalMouseHook();
+    } else {
+        uninstallGlobalMouseHook();
     }
 }
 
@@ -132,105 +118,6 @@ void QuickSoundSwitcher::destroyQMLEngine()
         engine = nullptr;
     }
     panelWindow = nullptr;
-}
-
-void QuickSoundSwitcher::createTrayIcon()
-{
-    onOutputMuteChanged();
-
-    if (settings.value("panelMode", 0).toInt() == 1) {
-        QString theme = Utils::getTheme();
-        if (theme == "light") {
-            trayIcon->setIcon(QIcon(":/icons/system_light.png"));
-        } else {
-            trayIcon->setIcon(QIcon(":/icons/system_dark.png"));
-        }
-    }
-
-    QMenu *trayMenu = new QMenu(this);
-
-    outputDeviceAction = new QAction(tr("Output: Loading..."), this);
-    trayMenu->addAction(outputDeviceAction);
-
-    inputDeviceAction = new QAction(tr("Input: Loading..."), this);
-    trayMenu->addAction(inputDeviceAction);
-
-    trayMenu->addSeparator();
-
-    QAction *lSoundSettingsAction = new QAction(tr("Windows sound settings (Legacy)"), this);
-    trayMenu->addAction(lSoundSettingsAction);
-
-    QAction *mSoundSettingsAction = new QAction(tr("Windows sound settings (Modern)"), this);
-    trayMenu->addAction(mSoundSettingsAction);
-
-    trayMenu->addSeparator();
-
-    QAction *exitAction = new QAction(tr("Exit"), this);
-    trayMenu->addAction(exitAction);
-
-    connect(exitAction, &QAction::triggered, this, &QApplication::quit);
-    connect(lSoundSettingsAction, &QAction::triggered, this, &QuickSoundSwitcher::openLegacySoundSettings);
-    connect(mSoundSettingsAction, &QAction::triggered, this, &QuickSoundSwitcher::openModernSoundSettings);
-
-    trayIcon->setContextMenu(trayMenu);
-    trayIcon->setToolTip("Quick Sound Switcher");
-    trayIcon->show();
-    connect(trayIcon, &QSystemTrayIcon::activated, this, &QuickSoundSwitcher::trayIconActivated);
-}
-
-void QuickSoundSwitcher::initializeTrayMenuDeviceInfo()
-{
-    auto* audioManager = AudioManager::instance();
-
-    // Get device names from the cached devices
-    auto devices = audioManager->getDevices();
-
-    for (const AudioDevice& device : devices) {
-        if (device.isDefault && !device.isInput) {
-            currentOutputDevice = device.name;
-            break;
-        }
-    }
-
-    for (const AudioDevice& device : devices) {
-        if (device.isDefault && device.isInput) {
-            currentInputDevice = device.name;
-            break;
-        }
-    }
-
-    updateTrayMenuDeviceInfo();
-}
-
-void QuickSoundSwitcher::updateTrayMenuDeviceInfo()
-{
-    if (!outputDeviceAction || !inputDeviceAction) return;
-
-    auto* audioManager = AudioManager::instance();
-
-    // Get current volumes and mute states (from cache, non-blocking)
-    int outputVolume = audioManager->getOutputVolume();
-    int inputVolume = audioManager->getInputVolume();
-    bool outputMuted = audioManager->getOutputMute();
-    bool inputMuted = audioManager->getInputMute();
-
-    // Update output device info
-    QString outputText;
-    if (!currentOutputDevice.isEmpty()) {
-        outputText = QString("Output: %1").arg(elideDeviceText(currentOutputDevice, outputVolume, outputMuted));
-    } else {
-        outputText = QString("Output: %1%").arg(outputVolume);
-    }
-    outputDeviceAction->setText(outputText);
-
-    // Update input device info
-    QString inputText;
-    if (!currentInputDevice.isEmpty()) {
-        inputText = QString("Input: %1").arg(elideDeviceText(currentInputDevice, inputVolume, inputMuted));
-    } else {
-        inputText = QString("Input: %1%").arg(inputVolume);
-    }
-    inputDeviceAction->setText(inputText);
 }
 
 QString QuickSoundSwitcher::elideDeviceText(const QString& deviceName, int volume, bool muted)
@@ -246,28 +133,6 @@ QString QuickSoundSwitcher::elideDeviceText(const QString& deviceName, int volum
 
     QString elidedName = metrics.elidedText(deviceName, Qt::ElideRight, availableWidth);
     return QString("%1%2").arg(elidedName, volumeText);
-}
-
-void QuickSoundSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
-{
-    if (reason == QSystemTrayIcon::Trigger) {
-        togglePanel();
-    }
-}
-
-void QuickSoundSwitcher::onOutputMuteChanged()
-{
-    auto* audioManager = AudioManager::instance();
-
-    // Use the cached getters (now non-blocking)
-    int volumeIcon;
-    if (audioManager->getOutputMute()) {
-        volumeIcon = 0;
-    } else {
-        volumeIcon = audioManager->getOutputVolume();
-    }
-
-    trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
 }
 
 void QuickSoundSwitcher::installGlobalMouseHook()
@@ -305,7 +170,6 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
     if (nCode == HC_ACTION) {
         if (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN) {
             QPoint cursorPos = QCursor::pos();
-            QRect trayIconRect = instance->trayIcon->geometry();
             QRect soundPanelRect;
 
             if (instance->panelWindow && instance->isPanelVisible) {
@@ -314,11 +178,10 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
                 soundPanelRect = QRect();
             }
 
-            validMouseDown = !soundPanelRect.contains(cursorPos) && !trayIconRect.contains(cursorPos);
+            validMouseDown = !soundPanelRect.contains(cursorPos);
         }
         else if ((wParam == WM_LBUTTONUP || wParam == WM_RBUTTONUP) && validMouseDown) {
             QPoint cursorPos = QCursor::pos();
-            QRect trayIconRect = instance->trayIcon->geometry();
             QRect soundPanelRect;
 
             if (instance->panelWindow && instance->isPanelVisible) {
@@ -329,18 +192,14 @@ LRESULT CALLBACK QuickSoundSwitcher::MouseProc(int nCode, WPARAM wParam, LPARAM 
 
             validMouseDown = false;
 
-            if (!soundPanelRect.contains(cursorPos) && !trayIconRect.contains(cursorPos)) {
-                if (instance->isPanelVisible) {
-                    instance->hidePanel();
-                }
+            if (!soundPanelRect.contains(cursorPos)) {
+                QMetaObject::invokeMethod(instance->panelWindow, "hidePanel");
             }
         }
     }
-
     return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-// In quicksoundswitcher.cpp - add these helper functions
 bool QuickSoundSwitcher::isModifierPressed(int qtModifier)
 {
     bool result = true;
@@ -470,98 +329,15 @@ void QuickSoundSwitcher::toggleChatMix()
     }
 }
 
-void QuickSoundSwitcher::adjustOutputVolume(bool up)
-{
-    auto* audioManager = AudioManager::instance();
-
-    // Use cached getter (non-blocking)
-    int originalVolume = audioManager->getOutputVolume();
-    int newVolume;
-    if (up) {
-        newVolume = originalVolume + 2;
-    } else {
-        newVolume = originalVolume - 2;
-    }
-
-    newVolume = qMax(0, qMin(100, newVolume));
-
-    // Use async for setting volume
-    audioManager->setOutputVolumeAsync(newVolume);
-
-    // Use cached getter (non-blocking)
-    if (audioManager->getOutputMute()) {
-        audioManager->setOutputMuteAsync(false);
-    }
-
-    // Update tray icon immediately with new volume for responsiveness
-    trayIcon->setIcon(QIcon(Utils::getIcon(1, newVolume, NULL)));
-}
-
-void QuickSoundSwitcher::toggleMuteWithKey()
-{
-    auto* audioManager = AudioManager::instance();
-
-    // Use cached getters (non-blocking)
-    bool currentMuted = audioManager->getOutputMute();
-    bool newMuted = !currentMuted;
-    int volume = audioManager->getOutputVolume();
-
-    // Use async for setting mute
-    audioManager->setOutputMuteAsync(newMuted);
-
-    int volumeIcon;
-    if (volume == 0 || newMuted) {
-        volumeIcon = 0;
-    } else {
-        volumeIcon = volume;
-    }
-
-    // Update tray icon immediately for responsiveness
-    trayIcon->setIcon(QIcon(Utils::getIcon(1, volumeIcon, NULL)));
-}
-
 void QuickSoundSwitcher::togglePanel()
 {
+    if (!panelWindow) return;
+
     if (!isPanelVisible) {
-        showPanel();
-    } else {
-        hidePanel();
-    }
-}
-
-void QuickSoundSwitcher::showPanel()
-{
-    qDebug() << "showPanel triggered";
-    if (!isPanelVisible && panelWindow) {
-        if (SoundPanelBridge::instance()) {
-            isPanelVisible = true;
-            installGlobalMouseHook();
-            qDebug() << "showPanel triggered2";
-
-
-            QMetaObject::invokeMethod(panelWindow, "showPanel");
-        }
-    }
-}
-
-void QuickSoundSwitcher::onDataInitializationComplete()
-{
-    if (panelWindow && isPanelVisible) {
         QMetaObject::invokeMethod(panelWindow, "showPanel");
-    }
-}
-
-void QuickSoundSwitcher::hidePanel()
-{
-    if (panelWindow && isPanelVisible) {
+    } else {
         QMetaObject::invokeMethod(panelWindow, "hidePanel");
     }
-}
-
-void QuickSoundSwitcher::onPanelHideAnimationFinished()
-{
-    isPanelVisible = false;
-    uninstallGlobalMouseHook();
 }
 
 void QuickSoundSwitcher::onLanguageChanged()
@@ -569,56 +345,6 @@ void QuickSoundSwitcher::onLanguageChanged()
     if (engine) {
         engine->retranslate();
     }
-
-    updateTrayMenu();
-}
-
-void QuickSoundSwitcher::updateTrayMenu()
-{
-    if (!trayIcon || !trayIcon->contextMenu()) {
-        return;
-    }
-
-    // Get the current menu
-    QMenu *trayMenu = trayIcon->contextMenu();
-
-    // Update the Exit action text
-    QList<QAction*> actions = trayMenu->actions();
-    for (QAction* action : actions) {
-        if (action->text().contains("Exit") || action->text().contains("Quitter") ||
-            action->text().contains("Esci") || action->text().contains("Beenden")) {
-            action->setText(tr("Exit"));
-            break;
-        }
-    }
-
-    // Update device info actions text
-    if (outputDeviceAction) {
-        QString currentText = outputDeviceAction->text();
-        // Extract the device info part and rebuild with translated prefix
-        int colonIndex = currentText.indexOf(':');
-        if (colonIndex != -1) {
-            QString deviceInfo = currentText.mid(colonIndex);
-            outputDeviceAction->setText(tr("Output") + deviceInfo);
-        }
-    }
-
-    if (inputDeviceAction) {
-        QString currentText = inputDeviceAction->text();
-        int colonIndex = currentText.indexOf(':');
-        if (colonIndex != -1) {
-            QString deviceInfo = currentText.mid(colonIndex);
-            inputDeviceAction->setText(tr("Input") + deviceInfo);
-        }
-    }
-}
-
-void QuickSoundSwitcher::openLegacySoundSettings() {
-    QProcess::startDetached("control", QStringList() << "mmsys.cpl");
-}
-
-void QuickSoundSwitcher::openModernSoundSettings() {
-    QProcess::startDetached("explorer", QStringList() << "ms-settings:sound");
 }
 
 void QuickSoundSwitcher::setupLocalServer()
@@ -660,10 +386,12 @@ void QuickSoundSwitcher::onNewConnection()
         QByteArray data = clientSocket->readAll();
         QString message = QString::fromUtf8(data);
 
-        qDebug() << "Received message from new instance:" << message;
-
         if (message == "show_panel") {
-            showPanel();
+            if (panelWindow) {
+                if (SoundPanelBridge::instance()) {
+                    QMetaObject::invokeMethod(panelWindow, "showPanel");
+                }
+            }
         }
 
         clientSocket->disconnectFromServer();
