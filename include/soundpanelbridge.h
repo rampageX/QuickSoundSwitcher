@@ -1,3 +1,4 @@
+// include/soundpanelbridge.h
 #ifndef SOUNDPANELBRIDGE_H
 #define SOUNDPANELBRIDGE_H
 
@@ -9,13 +10,6 @@
 #include <QGuiApplication>
 #include <QTranslator>
 #include <QTimer>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QStandardPaths>
-#include <QDir>
-#include <QFile>
-#include <QVariant>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -34,10 +28,6 @@ class SoundPanelBridge : public QObject
     Q_PROPERTY(QString mediaArtist READ mediaArtist NOTIFY mediaInfoChanged)
     Q_PROPERTY(bool isMediaPlaying READ isMediaPlaying NOTIFY mediaInfoChanged)
     Q_PROPERTY(QString mediaArt READ mediaArt NOTIFY mediaInfoChanged)
-
-    // ChatMix properties
-    Q_PROPERTY(int chatMixValue READ chatMixValue WRITE setChatMixValue NOTIFY chatMixValueChanged)
-    Q_PROPERTY(QVariantList commAppsList READ commAppsList NOTIFY commAppsListChanged)
 
 public:
     explicit SoundPanelBridge(QObject* parent = nullptr);
@@ -73,16 +63,6 @@ public:
     Q_INVOKABLE void changeApplicationLanguage(int languageIndex);
     Q_INVOKABLE QString getLanguageCodeFromIndex(int index) const;
 
-    int chatMixValue() const;
-    void setChatMixValue(int value);
-    QVariantList commAppsList() const;
-    Q_INVOKABLE void applyChatMixToApplications();
-    Q_INVOKABLE bool isCommApp(const QString& name) const;
-    Q_INVOKABLE void addCommApp(const QString& name);
-    Q_INVOKABLE void removeCommApp(const QString& name);
-    Q_INVOKABLE void restoreOriginalVolumes();
-    Q_INVOKABLE void updateMissingCommAppIcons();
-
     Q_INVOKABLE void toggleChatMixFromShortcut(bool enabled);
     Q_INVOKABLE void suspendGlobalShortcuts();
     Q_INVOKABLE void resumeGlobalShortcuts();
@@ -94,7 +74,7 @@ public:
     Q_INVOKABLE QStringList getLanguageNativeNames() const;
     Q_INVOKABLE QStringList getLanguageCodes() const;
 
-    // Legacy audio methods for compatibility (these should redirect to AudioBridge)
+    // Legacy audio methods for compatibility
     Q_INVOKABLE void onOutputSliderReleased();
 
     Q_INVOKABLE void openLegacySoundSettings();
@@ -108,8 +88,6 @@ signals:
     void taskbarPositionChanged();
     void mediaInfoChanged();
     void languageChanged();
-    void chatMixValueChanged();
-    void commAppsListChanged();
     void chatMixEnabledChanged(bool enabled);
     void chatMixNotificationRequested(QString message);
     void translationDownloadStarted();
@@ -131,23 +109,6 @@ private:
     QString m_mediaArt;
 
     QTranslator *translator;
-
-    struct CommApp {
-        QString name;
-        QString icon;
-    };
-
-    int m_chatMixValue = 50;
-    QList<CommApp> m_commApps;
-    QTimer* m_chatMixCheckTimer;
-
-    void checkAndApplyChatMixToNewApps();
-    QStringList getCommAppsFromSettings() const;
-    void startChatMixMonitoring();
-    void stopChatMixMonitoring();
-    QString getCommAppsFilePath() const;
-    void loadCommAppsFromFile();
-    void saveCommAppsToFile();
 
     bool m_globalShortcutsSuspended = false;
 

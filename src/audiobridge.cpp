@@ -1,8 +1,10 @@
+// src/audiobridge.cpp
 #include "audiobridge.h"
 #include "audiomanager.h"
 #include <QDebug>
-
-// ApplicationModel implementation (unchanged)
+#include <QQmlContext>
+#include <QSettings>
+// ApplicationModel implementation
 ApplicationModel::ApplicationModel(QObject *parent)
     : QAbstractListModel(parent)
 {
@@ -58,12 +60,10 @@ void ApplicationModel::setApplications(const QList<AudioApplication>& applicatio
 {
     beginResetModel();
 
-    // Create a copy to work with
     QList<AudioApplication> sortedApplications;
     AudioApplication systemSounds;
     bool hasSystemSounds = false;
 
-    // Separate system sounds from other applications
     for (const AudioApplication& app : applications) {
         if (app.name == "System sounds" || app.id == "system_sounds") {
             systemSounds = app;
@@ -73,21 +73,17 @@ void ApplicationModel::setApplications(const QList<AudioApplication>& applicatio
         }
     }
 
-    // Sort regular applications alphabetically by name (case-insensitive)
     std::sort(sortedApplications.begin(), sortedApplications.end(),
               [](const AudioApplication& a, const AudioApplication& b) {
                   return a.name.toLower() < b.name.toLower();
               });
 
-    // Add system sounds at the end (should always be present now)
     if (hasSystemSounds) {
         sortedApplications.append(systemSounds);
     }
 
     m_applications = sortedApplications;
     endResetModel();
-
-    qDebug() << "ApplicationModel updated with" << applications.count() << "applications (sorted alphabetically, system sounds last)";
 }
 
 void ApplicationModel::updateApplicationVolume(const QString& appId, int volume)
@@ -177,13 +173,11 @@ QString FilteredDeviceModel::getDeviceName(int index) const
     return QString();
 }
 
-
 void FilteredDeviceModel::setDevices(const QList<AudioDevice>& devices)
 {
     beginResetModel();
     m_devices.clear();
 
-    // Filter devices based on input/output
     for (const AudioDevice& device : devices) {
         if (device.isInput == m_isInputFilter) {
             m_devices.append(device);
@@ -192,7 +186,6 @@ void FilteredDeviceModel::setDevices(const QList<AudioDevice>& devices)
 
     endResetModel();
     updateCurrentDefaultIndex();
-    qDebug() << "FilteredDeviceModel updated with" << m_devices.count() << (m_isInputFilter ? "input" : "output") << "devices";
 }
 
 int FilteredDeviceModel::getCurrentDefaultIndex() const
@@ -213,7 +206,6 @@ void FilteredDeviceModel::updateCurrentDefaultIndex()
     if (m_currentDefaultIndex != newDefaultIndex) {
         m_currentDefaultIndex = newDefaultIndex;
         emit currentDefaultIndexChanged();
-        qDebug() << "Default index changed to" << m_currentDefaultIndex << "for" << (m_isInputFilter ? "input" : "output") << "devices";
     }
 }
 
@@ -236,8 +228,8 @@ AudioBridge::AudioBridge(QObject *parent)
     , m_inputMuted(false)
     , m_isReady(false)
     , m_applicationModel(new ApplicationModel(this))
-    , m_outputDeviceModel(new FilteredDeviceModel(false, this)) // false = output devices
-    , m_inputDeviceModel(new FilteredDeviceModel(true, this))   // true = input devices
+    , m_outputDeviceModel(new FilteredDeviceModel(false, this))
+    , m_inputDeviceModel(new FilteredDeviceModel(true, this))
 {
     auto* manager = AudioManager::instance();
 
@@ -259,6 +251,9 @@ AudioBridge::AudioBridge(QObject *parent)
     connect(manager, &AudioManager::defaultDeviceChanged, this, &AudioBridge::onDefaultDeviceChanged);
 
     connect(manager, &AudioManager::initializationComplete, this, &AudioBridge::onInitializationComplete);
+
+    // Load comm apps
+    loadCommAppsFromFile();
 
     // Initialize the manager
     manager->initialize();
@@ -294,20 +289,17 @@ void AudioBridge::setInputMute(bool mute)
 
 void AudioBridge::setApplicationVolume(const QString& appId, int volume)
 {
-    qDebug() << "AudioBridge::setApplicationVolume" << appId << volume;
     AudioManager::instance()->setApplicationVolumeAsync(appId, volume);
 }
 
 void AudioBridge::setApplicationMute(const QString& appId, bool mute)
 {
-    qDebug() << "AudioBridge::setApplicationMute" << appId << mute;
     AudioManager::instance()->setApplicationMuteAsync(appId, mute);
 }
 
 // Device management methods
 void AudioBridge::setDefaultDevice(const QString& deviceId, bool isInput, bool forCommunications)
 {
-    qDebug() << "AudioBridge::setDefaultDevice" << deviceId << "isInput:" << isInput << "forComm:" << forCommunications;
     AudioManager::instance()->setDefaultDeviceAsync(deviceId, isInput, forCommunications);
 }
 
@@ -317,9 +309,6 @@ void AudioBridge::setOutputDevice(int deviceIndex)
         QModelIndex modelIndex = m_outputDeviceModel->index(deviceIndex);
         QString deviceId = m_outputDeviceModel->data(modelIndex, FilteredDeviceModel::IdRole).toString();
 
-        qDebug() << "AudioBridge::setOutputDevice" << deviceIndex << deviceId;
-
-        // Set both default and communication roles
         setDefaultDevice(deviceId, false, false);
         setDefaultDevice(deviceId, false, true);
     }
@@ -331,12 +320,197 @@ void AudioBridge::setInputDevice(int deviceIndex)
         QModelIndex modelIndex = m_inputDeviceModel->index(deviceIndex);
         QString deviceId = m_inputDeviceModel->data(modelIndex, FilteredDeviceModel::IdRole).toString();
 
-        qDebug() << "AudioBridge::setInputDevice" << deviceIndex << deviceId;
-
-        // Set both default and communication roles
         setDefaultDevice(deviceId, true, false);
         setDefaultDevice(deviceId, true, true);
     }
+}
+
+// ChatMix methods
+void AudioBridge::applyChatMixToApplications(int value)
+{
+    QSettings settings;
+    bool activateChatMix = settings.value("activateChatmix").toBool();
+    bool chatMixEnabled = settings.value("chatMixEnabled").toBool();
+
+    if (!activateChatMix || !chatMixEnabled || !m_isReady) {
+        return;
+    }
+
+    qDebug() << "Applying ChatMix with value:" << value;
+
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+        QString appName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+
+        if (appName == "System sounds" || appId == "system_sounds") {
+            continue;
+        }
+
+        int targetVolume = isCommApp(appName) ? 100 : value;
+        setApplicationVolume(appId, targetVolume);
+    }
+}
+
+void AudioBridge::restoreOriginalVolumes()
+{
+    QSettings settings;
+    int restoreVolume = settings.value("chatmixRestoreVolume").toInt();
+
+    if (!m_isReady) {
+        return;
+    }
+
+    qDebug() << "Restoring volumes to:" << restoreVolume;
+
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+        QString appName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+
+        if (appName == "System sounds" || appId == "system_sounds") {
+            continue;
+        }
+
+        setApplicationVolume(appId, restoreVolume);
+    }
+}
+
+void AudioBridge::applyChatMixIfEnabled()
+{
+    QSettings settings;
+    bool activateChatMix = settings.value("activateChatmix").toBool();
+    bool chatMixEnabled = settings.value("chatMixEnabled").toBool();
+
+    if (activateChatMix && chatMixEnabled) {
+        QSettings settings;
+        applyChatMixToApplications(settings.value("chatMixValue").toInt());
+    }
+}
+
+bool AudioBridge::isCommApp(const QString& name) const
+{
+    for (const CommApp& app : m_commApps) {
+        if (app.name.compare(name, Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AudioBridge::addCommApp(const QString& name)
+{
+    for (const CommApp& existing : m_commApps) {
+        if (existing.name.compare(name, Qt::CaseInsensitive) == 0) {
+            return;
+        }
+    }
+
+    CommApp newApp;
+    newApp.name = name;
+
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+
+        if (appName.compare(name, Qt::CaseInsensitive) == 0) {
+            newApp.icon = m_applicationModel->data(index, ApplicationModel::IconPathRole).toString();
+            break;
+        }
+    }
+
+    m_commApps.append(newApp);
+    saveCommAppsToFile();
+    emit commAppsListChanged();
+}
+
+void AudioBridge::removeCommApp(const QString& name)
+{
+    for (int i = 0; i < m_commApps.count(); ++i) {
+        if (m_commApps[i].name.compare(name, Qt::CaseInsensitive) == 0) {
+            m_commApps.removeAt(i);
+            saveCommAppsToFile();
+            emit commAppsListChanged();
+            return;
+        }
+    }
+}
+
+QVariantList AudioBridge::commAppsList() const
+{
+    QVariantList result;
+    for (const CommApp& app : m_commApps) {
+        QVariantMap appMap;
+        appMap["name"] = app.name;
+        appMap["icon"] = app.icon;
+        result.append(appMap);
+    }
+    return result;
+}
+
+QString AudioBridge::getCommAppsFilePath() const
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/commapps.json";
+}
+
+void AudioBridge::loadCommAppsFromFile()
+{
+    QString filePath = getCommAppsFilePath();
+    QFile file(filePath);
+
+    if (!file.exists()) {
+        return;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        return;
+    }
+
+    QJsonObject root = doc.object();
+    QJsonArray commAppsArray = root["commApps"].toArray();
+
+    m_commApps.clear();
+    for (const QJsonValue& value : commAppsArray) {
+        QJsonObject appObj = value.toObject();
+        CommApp app;
+        app.name = appObj["name"].toString();
+        app.icon = appObj["icon"].toString();
+        m_commApps.append(app);
+    }
+}
+
+void AudioBridge::saveCommAppsToFile()
+{
+    QString filePath = getCommAppsFilePath();
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        return;
+    }
+
+    QJsonArray commAppsArray;
+    for (const CommApp& app : m_commApps) {
+        QJsonObject appObj;
+        appObj["name"] = app.name;
+        appObj["icon"] = app.icon;
+        commAppsArray.append(appObj);
+    }
+
+    QJsonObject root;
+    root["commApps"] = commAppsArray;
+
+    QJsonDocument doc(root);
+    file.write(doc.toJson());
 }
 
 // Event handlers
@@ -374,65 +548,51 @@ void AudioBridge::onInputMuteChanged(bool muted)
 
 void AudioBridge::onApplicationVolumeChanged(const QString& appId, int volume)
 {
-    qDebug() << "AudioBridge::onApplicationVolumeChanged" << appId << volume;
     m_applicationModel->updateApplicationVolume(appId, volume);
 }
 
 void AudioBridge::onApplicationMuteChanged(const QString& appId, bool muted)
 {
-    qDebug() << "AudioBridge::onApplicationMuteChanged" << appId << muted;
     m_applicationModel->updateApplicationMute(appId, muted);
 }
 
 void AudioBridge::onApplicationsChanged(const QList<AudioApplication>& applications)
 {
-    qDebug() << "AudioBridge::onApplicationsChanged - received" << applications.count() << "applications";
-    for (const auto& app : applications) {
-        qDebug() << "  App:" << app.name << "Volume:" << app.volume << "Muted:" << app.isMuted;
-    }
     m_applicationModel->setApplications(applications);
+
+    // Apply ChatMix if enabled
+    QTimer::singleShot(100, this, &AudioBridge::applyChatMixIfEnabled);
 }
 
 void AudioBridge::onDevicesChanged(const QList<AudioDevice>& devices)
 {
-    qDebug() << "AudioBridge::onDevicesChanged - received" << devices.count() << "devices";
-    for (const auto& device : devices) {
-        qDebug() << "  Device:" << device.name << "Input:" << device.isInput << "Default:" << device.isDefault;
-    }
-
-    // Update both filtered models
     m_outputDeviceModel->setDevices(devices);
     m_inputDeviceModel->setDevices(devices);
 }
 
 void AudioBridge::onDeviceAdded(const AudioDevice& device)
 {
-    qDebug() << "AudioBridge::onDeviceAdded" << device.name;
     emit deviceAdded(device.id, device.name);
 }
 
 void AudioBridge::onDeviceRemoved(const QString& deviceId)
 {
-    qDebug() << "AudioBridge::onDeviceRemoved" << deviceId;
     emit deviceRemoved(deviceId);
 }
 
 void AudioBridge::onDefaultDeviceChanged(const QString& deviceId, bool isInput)
 {
-    qDebug() << "AudioBridge::onDefaultDeviceChanged" << deviceId << "isInput:" << isInput;
     emit defaultDeviceChanged(deviceId, isInput);
 }
 
 void AudioBridge::onInitializationComplete()
 {
-    // Get initial values
     auto* manager = AudioManager::instance();
     m_outputVolume = manager->getOutputVolume();
     m_inputVolume = manager->getInputVolume();
     m_outputMuted = manager->getOutputMute();
     m_inputMuted = manager->getInputMute();
 
-    // Set initial applications and devices
     QList<AudioApplication> apps = manager->getApplications();
     m_applicationModel->setApplications(apps);
 
@@ -448,6 +608,5 @@ void AudioBridge::onInitializationComplete()
     emit inputMutedChanged();
     emit isReadyChanged();
 
-    qDebug() << "AudioBridge initialization complete";
+    applyChatMixIfEnabled();
 }
-

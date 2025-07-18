@@ -4,6 +4,8 @@
 #include <QBuffer>
 #include <QPixmap>
 #include <QProcess>
+#include <QFile>
+#include <QDir>
 #include "version.h"
 #include "mediasessionmanager.h"
 #include "languages.h"
@@ -15,8 +17,6 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     , settings("Odizinne", "QuickSoundSwitcher")
     , m_currentPanelMode(0)
     , translator(new QTranslator(this))
-    , m_chatMixValue(50)
-    , m_chatMixCheckTimer(new QTimer(this))
     , m_networkManager(new QNetworkAccessManager(this))
     , m_totalDownloads(0)
     , m_completedDownloads(0)
@@ -24,19 +24,8 @@ SoundPanelBridge::SoundPanelBridge(QObject* parent)
     , m_autoUpdateTimer(new QTimer(this))
 {
     m_instance = this;
-
-    loadCommAppsFromFile();
-    m_chatMixValue = settings.value("chatMixValue", 50).toInt();
-
     changeApplicationLanguage(settings.value("languageIndex", 0).toInt());
 
-    // Setup ChatMix monitoring timer
-    m_chatMixCheckTimer->setInterval(500);
-    connect(m_chatMixCheckTimer, &QTimer::timeout, this, &SoundPanelBridge::checkAndApplyChatMixToNewApps);
-
-    if (settings.value("chatMixEnabled").toBool()) {
-        startChatMixMonitoring();
-    }
 
     if (MediaSessionManager::getWorker()) {
         connect(MediaSessionManager::getWorker(), &MediaWorker::mediaInfoChanged,
@@ -107,66 +96,6 @@ void SoundPanelBridge::setStartupShortcut(bool enabled)
 int SoundPanelBridge::panelMode() const
 {
     return settings.value("panelMode", 0).toInt();
-}
-
-// ChatMix methods
-int SoundPanelBridge::chatMixValue() const
-{
-    return m_chatMixValue;
-}
-
-QStringList SoundPanelBridge::getCommAppsFromSettings() const
-{
-    QStringList result;
-    for (const CommApp& app : m_commApps) {
-        result.append(app.name);
-    }
-    return result;
-}
-
-bool SoundPanelBridge::isCommApp(const QString& name) const
-{
-    QStringList commApps = getCommAppsFromSettings();
-    return commApps.contains(name, Qt::CaseInsensitive);
-}
-
-void SoundPanelBridge::applyChatMixToApplications()
-{
-    // Note: This now needs to work with AudioBridge instead of direct audio control
-    // The actual application volume setting should be handled by the AudioBridge
-    // This method can still handle the logic of determining which apps need what volume
-
-    int nonCommAppVolume = m_chatMixValue;
-
-    // Emit signal to let AudioBridge handle the actual volume setting
-    // or use AudioBridge directly here
-
-    startChatMixMonitoring();
-}
-
-void SoundPanelBridge::checkAndApplyChatMixToNewApps()
-{
-    bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
-    if (!chatMixEnabled) {
-        return;
-    }
-
-    applyChatMixToApplications();
-}
-
-void SoundPanelBridge::startChatMixMonitoring()
-{
-    bool chatMixEnabled = settings.value("chatMixEnabled", false).toBool();
-    if (chatMixEnabled && !m_chatMixCheckTimer->isActive()) {
-        m_chatMixCheckTimer->start();
-    }
-}
-
-void SoundPanelBridge::stopChatMixMonitoring()
-{
-    if (m_chatMixCheckTimer->isActive()) {
-        m_chatMixCheckTimer->stop();
-    }
 }
 
 void SoundPanelBridge::refreshPanelModeState()
@@ -321,154 +250,6 @@ QString SoundPanelBridge::getBuildTimestamp() const
     return QString(BUILD_TIMESTAMP);
 }
 
-void SoundPanelBridge::setChatMixValue(int value)
-{
-    if (m_chatMixValue != value) {
-        bool wasEnabled = settings.value("chatMixEnabled", false).toBool();
-        m_chatMixValue = value;
-        emit chatMixValueChanged();
-
-        if (wasEnabled) {
-            applyChatMixToApplications();
-        }
-    }
-}
-
-QString SoundPanelBridge::getCommAppsFilePath() const
-{
-    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir().mkpath(appDataPath);
-    return appDataPath + "/commapps.json";
-}
-
-void SoundPanelBridge::loadCommAppsFromFile()
-{
-    QString filePath = getCommAppsFilePath();
-    QFile file(filePath);
-
-    if (!file.exists()) {
-        return;
-    }
-
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Failed to open commapps.json for reading";
-        return;
-    }
-
-    QByteArray data = file.readAll();
-    QJsonParseError error;
-    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
-
-    if (error.error != QJsonParseError::NoError) {
-        qWarning() << "Failed to parse commapps.json:" << error.errorString();
-        return;
-    }
-
-    QJsonObject root = doc.object();
-    QJsonArray commAppsArray = root["commApps"].toArray();
-
-    m_commApps.clear();
-    for (const QJsonValue& value : commAppsArray) {
-        QJsonObject appObj = value.toObject();
-        CommApp app;
-        app.name = appObj["name"].toString();
-        app.icon = appObj["icon"].toString();
-        m_commApps.append(app);
-    }
-}
-
-void SoundPanelBridge::saveCommAppsToFile()
-{
-    QString filePath = getCommAppsFilePath();
-    QFile file(filePath);
-
-    if (!file.open(QIODevice::WriteOnly)) {
-        qWarning() << "Failed to open commapps.json for writing";
-        return;
-    }
-
-    QJsonArray commAppsArray;
-    for (const CommApp& app : m_commApps) {
-        QJsonObject appObj;
-        appObj["name"] = app.name;
-        appObj["icon"] = app.icon;
-        commAppsArray.append(appObj);
-    }
-
-    QJsonObject root;
-    root["commApps"] = commAppsArray;
-
-    QJsonDocument doc(root);
-    file.write(doc.toJson());
-}
-
-void SoundPanelBridge::addCommApp(const QString& name)
-{
-    for (const CommApp& existing : m_commApps) {
-        if (existing.name.compare(name, Qt::CaseInsensitive) == 0) {
-            return;
-        }
-    }
-
-    CommApp newApp;
-    newApp.name = name;
-
-    // Note: Icon retrieval now needs to work with AudioBridge applications
-    // This might need to be updated to get icons from AudioBridge.applications
-
-    m_commApps.append(newApp);
-    saveCommAppsToFile();
-    emit commAppsListChanged();
-}
-
-void SoundPanelBridge::removeCommApp(const QString& name)
-{
-    for (int i = 0; i < m_commApps.count(); ++i) {
-        if (m_commApps[i].name.compare(name, Qt::CaseInsensitive) == 0) {
-            m_commApps.removeAt(i);
-            saveCommAppsToFile();
-            emit commAppsListChanged();
-            return;
-        }
-    }
-}
-
-void SoundPanelBridge::restoreOriginalVolumes()
-{
-    stopChatMixMonitoring();
-
-    int restoredVolume = settings.value("chatmixRestoreVolume", 80).toInt();
-
-    // Note: This now needs to work with AudioBridge instead of direct control
-    // The actual volume restoration should be handled by AudioBridge
-}
-
-QVariantList SoundPanelBridge::commAppsList() const
-{
-    QVariantList result;
-    for (const CommApp& app : m_commApps) {
-        QVariantMap appMap;
-        appMap["name"] = app.name;
-        appMap["icon"] = app.icon;
-        result.append(appMap);
-    }
-    return result;
-}
-
-void SoundPanelBridge::updateMissingCommAppIcons()
-{
-    // Note: This now needs to work with AudioBridge.applications
-    // instead of the old applications list
-    bool iconsUpdated = false;
-
-    // This method will need to be updated to work with AudioBridge
-    // For now, just emit the signal
-    if (iconsUpdated) {
-        saveCommAppsToFile();
-        emit commAppsListChanged();
-    }
-}
-
 void SoundPanelBridge::toggleChatMixFromShortcut(bool enabled)
 {
     emit chatMixEnabledChanged(enabled);
@@ -493,14 +274,12 @@ void SoundPanelBridge::requestChatMixNotification(QString message) {
     emit chatMixNotificationRequested(message);
 }
 
-// Legacy compatibility method
 void SoundPanelBridge::onOutputSliderReleased()
 {
     // Keep the sound notification for compatibility
     Utils::playSoundNotification();
 }
 
-// Translation methods (keeping all of these as they're not audio-related)
 void SoundPanelBridge::downloadLatestTranslations()
 {
     cancelTranslationDownload();

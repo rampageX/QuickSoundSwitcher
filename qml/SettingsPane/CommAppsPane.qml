@@ -18,12 +18,12 @@ ColumnLayout {
         Layout.bottomMargin: 15
     }
 
-    Connections {
-        target: SoundPanelBridge
-        function onApplicationsChanged() {
-            SoundPanelBridge.updateMissingCommAppIcons()
-        }
-    }
+    //Connections {
+    //    target: SoundPanelBridge
+    //    function onApplicationsChanged() {
+    //        SoundPanelBridge.updateMissingCommAppIcons()
+    //    }
+    //}
 
     ScrollView {
         Layout.fillWidth: true
@@ -46,7 +46,7 @@ ColumnLayout {
                         } else {
                             UserSettings.activateChatmix = checked
                             UserSettings.chatMixEnabled = checked
-                            SoundPanelBridge.restoreOriginalVolumes()
+                            AudioBridge.restoreOriginalVolumes()
                         }
                     }
                     Connections {
@@ -69,10 +69,10 @@ ColumnLayout {
                     onClicked: {
                         if (checked) {
                             UserSettings.chatMixEnabled = checked
-                            SoundPanelBridge.applyChatMixToApplications()
+                            AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
                         } else {
                             UserSettings.chatMixEnabled = checked
-                            SoundPanelBridge.restoreOriginalVolumes()
+                            AudioBridge.restoreOriginalVolumes()
                         }
                     }
                 }
@@ -99,9 +99,8 @@ ColumnLayout {
                     onPressedChanged: {
                         if (pressed) return
 
-                        SoundPanelBridge.chatMixValue = UserSettings.chatMixValue
                         if (UserSettings.chatMixEnabled) {
-                            SoundPanelBridge.applyChatMixToApplications()
+                            AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
                         }
                     }
                 }
@@ -140,7 +139,7 @@ ColumnLayout {
             }
 
             Repeater {
-                model: SoundPanelBridge.commAppsList
+                model: AudioBridge.commAppsList
                 Card {
                     show: UserSettings.activateChatmix
                     id: appCard
@@ -154,7 +153,7 @@ ColumnLayout {
                     additionalControl: Button {
                         text: qsTr("Remove")
                         onClicked: {
-                            SoundPanelBridge.removeCommApp(appCard.model.name)
+                            AudioBridge.removeCommApp(appCard.model.name)
                         }
                     }
                 }
@@ -207,7 +206,7 @@ ColumnLayout {
                     onClicked: {
                         UserSettings.activateChatmix = true
                         UserSettings.chatMixEnabled = true
-                        SoundPanelBridge.applyChatMixToApplications()
+                        AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
                         chatMixWarningDialog.close()
                     }
                 }
@@ -250,7 +249,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     highlighted: true
                     onClicked: {
-                        SoundPanelBridge.addCommApp(executableField.text)
+                        AudioBridge.addCommApp(executableField.text)
                         executableField.text = ""
                         addAppDialog.close()
                     }

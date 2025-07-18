@@ -158,10 +158,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>Activate ChatMix</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>ChatMix volume</source>
         <translation type="unfinished"></translation>
     </message>
@@ -207,6 +203,10 @@
     </message>
     <message>
         <source>The volume to set for non communication applications when ChatMix is enabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Activate ChatMix</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -313,19 +313,12 @@ ApplicationWindow {
         hideAnimation.start()
     }
 
-    // ChatMix connections
     Connections {
         target: SoundPanelBridge
         function onChatMixEnabledChanged(enabled) {
-            if (enabled) {
-                UserSettings.chatMixEnabled = true
-                UserSettings.sync()
-                SoundPanelBridge.applyChatMixToApplications()
-            } else {
-                UserSettings.chatMixEnabled = false
-                UserSettings.sync()
-                SoundPanelBridge.restoreOriginalVolumes()
-            }
+            console.log("ChatMix shortcut toggle - enabled:", enabled)
+            UserSettings.chatMixEnabled = enabled
+            AudioBridge.setChatMixEnabled(enabled, UserSettings.chatMixValue)
         }
     }
 
@@ -736,7 +729,7 @@ ApplicationWindow {
                                 Layout.rightMargin: 25
                                 text: {
                                     let name = applicationUnitLayout.model.name
-                                    if (UserSettings.chatMixEnabled && SoundPanelBridge.isCommApp(name)) {
+                                    if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(name)) {
                                         name += " (Comm)"
                                     }
 
@@ -762,7 +755,7 @@ ApplicationWindow {
                                     }
 
                                     let appName = applicationUnitLayout.model.name
-                                    let isCommApp = SoundPanelBridge.isCommApp(appName)
+                                    let isCommApp = AudioBridge.isCommApp(appName)
 
                                     return isCommApp ? 100 : UserSettings.chatMixValue
                                 }
@@ -828,12 +821,12 @@ ApplicationWindow {
                         }
 
                         onClicked: {
+                            UserSettings.chatMixEnabled = !checked
+
                             if (!checked) {
-                                UserSettings.chatMixEnabled = !checked
-                                SoundPanelBridge.applyChatMixToApplications()
+                                AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
                             } else {
-                                UserSettings.chatMixEnabled = !checked
-                                SoundPanelBridge.restoreOriginalVolumes()
+                                AudioBridge.restoreOriginalVolumes()
                             }
                         }
                     }
@@ -863,10 +856,8 @@ ApplicationWindow {
 
                             onPressedChanged: {
                                 if (pressed) return
-
-                                SoundPanelBridge.chatMixValue = UserSettings.chatMixValue
                                 if (UserSettings.chatMixEnabled) {
-                                    SoundPanelBridge.applyChatMixToApplications()
+                                    AudioBridge.applyChatMixToApplications(Math.round(value))
                                 }
                             }
                         }

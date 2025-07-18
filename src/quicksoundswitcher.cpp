@@ -40,33 +40,10 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
         connect(SoundPanelBridge::instance(), &SoundPanelBridge::languageChanged,
                 this, &QuickSoundSwitcher::onLanguageChanged);
     }
-
-
-
-    bool firstRun = settings.value("firstRun", true).toBool();
-    //if (firstRun) {
-    //    settings.setValue("firstRun", false);
-    //    trayIcon->showMessage(
-    //        "Access sound panel from the system tray",
-    //        "This notification won't show again",
-    //        QSystemTrayIcon::NoIcon
-    //        );
-    //}
 }
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
 {
-    if (SoundPanelBridge::instance()) {
-        bool chatMixEnabled = QSettings("Odizinne", "QuickSoundSwitcher").value("chatMixEnabled", false).toBool();
-        if (chatMixEnabled) {
-            SoundPanelBridge::instance()->restoreOriginalVolumes();
-
-            QEventLoop loop;
-            QTimer::singleShot(200, &loop, &QEventLoop::quit);
-            loop.exec();
-        }
-    }
-
     AudioManager::instance()->cleanup();
     MediaSessionManager::cleanup();
     uninstallGlobalMouseHook();
@@ -89,9 +66,6 @@ void QuickSoundSwitcher::initializeQMLEngine()
         panelWindow = qobject_cast<QWindow*>(engine->rootObjects().first());
         if (panelWindow) {
             panelWindow->setProperty("visible", false);
-
-            connect(panelWindow, SIGNAL(hideAnimationFinished()),
-                    this, SLOT(onPanelHideAnimationFinished()));
 
             // Connect to visibility changes
             connect(panelWindow, &QWindow::visibleChanged,

@@ -1,3 +1,4 @@
+// include/audiobridge.h
 #ifndef AUDIOBRIDGE_H
 #define AUDIOBRIDGE_H
 
@@ -5,6 +6,13 @@
 #include <QQmlEngine>
 #include <QtQml/qqmlregistration.h>
 #include <QAbstractListModel>
+#include <QStandardPaths>
+#include <QDir>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QTimer>
 #include "audiomanager.h"
 
 class ApplicationModel : public QAbstractListModel
@@ -34,7 +42,6 @@ public:
     void setApplications(const QList<AudioApplication>& applications);
     void updateApplicationVolume(const QString& appId, int volume);
     void updateApplicationMute(const QString& appId, bool muted);
-
 
 private:
     QList<AudioApplication> m_applications;
@@ -69,7 +76,6 @@ public:
     Q_INVOKABLE int getCurrentDefaultIndex() const;
     Q_INVOKABLE QString getDeviceName(int index) const;
 
-
 signals:
     void currentDefaultIndexChanged();
 
@@ -95,6 +101,7 @@ class AudioBridge : public QObject
     Q_PROPERTY(ApplicationModel* applications READ applications CONSTANT)
     Q_PROPERTY(FilteredDeviceModel* outputDevices READ outputDevices CONSTANT)
     Q_PROPERTY(FilteredDeviceModel* inputDevices READ inputDevices CONSTANT)
+    Q_PROPERTY(QVariantList commAppsList READ commAppsList NOTIFY commAppsListChanged)
 
 public:
     explicit AudioBridge(QObject *parent = nullptr);
@@ -109,6 +116,7 @@ public:
     ApplicationModel* applications() { return m_applicationModel; }
     FilteredDeviceModel* outputDevices() { return m_outputDeviceModel; }
     FilteredDeviceModel* inputDevices() { return m_inputDeviceModel; }
+    QVariantList commAppsList() const;
 
     // Invokable methods - Volume Control
     Q_INVOKABLE void setOutputVolume(int volume);
@@ -123,6 +131,13 @@ public:
     Q_INVOKABLE void setOutputDevice(int deviceIndex);
     Q_INVOKABLE void setInputDevice(int deviceIndex);
 
+    // ChatMix methods
+    Q_INVOKABLE void applyChatMixToApplications(int value);
+    Q_INVOKABLE void restoreOriginalVolumes();
+    Q_INVOKABLE bool isCommApp(const QString& name) const;
+    Q_INVOKABLE void addCommApp(const QString& name);
+    Q_INVOKABLE void removeCommApp(const QString& name);
+
 signals:
     void outputVolumeChanged();
     void inputVolumeChanged();
@@ -132,6 +147,7 @@ signals:
     void deviceAdded(const QString& deviceId, const QString& deviceName);
     void deviceRemoved(const QString& deviceId);
     void defaultDeviceChanged(const QString& deviceId, bool isInput);
+    void commAppsListChanged();
 
 private slots:
     void onOutputVolumeChanged(int volume);
@@ -156,6 +172,19 @@ private:
     ApplicationModel* m_applicationModel;
     FilteredDeviceModel* m_outputDeviceModel;
     FilteredDeviceModel* m_inputDeviceModel;
+
+    // ChatMix - no stored values, read from UserSettings
+    struct CommApp {
+        QString name;
+        QString icon;
+    };
+    QList<CommApp> m_commApps;
+
+    // Helper methods to read from UserSettings
+    void applyChatMixIfEnabled();
+    QString getCommAppsFilePath() const;
+    void loadCommAppsFromFile();
+    void saveCommAppsToFile();
 };
 
 #endif // AUDIOBRIDGE_H
