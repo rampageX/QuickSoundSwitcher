@@ -1,5 +1,4 @@
 #include "soundpanelbridge.h"
-#include "utils.h"
 #include "shortcutmanager.h"
 #include <QBuffer>
 #include <QPixmap>
@@ -272,12 +271,6 @@ bool SoundPanelBridge::areGlobalShortcutsSuspended() const
 
 void SoundPanelBridge::requestChatMixNotification(QString message) {
     emit chatMixNotificationRequested(message);
-}
-
-void SoundPanelBridge::onOutputSliderReleased()
-{
-    // Keep the sound notification for compatibility
-    Utils::playSoundNotification();
 }
 
 void SoundPanelBridge::downloadLatestTranslations()

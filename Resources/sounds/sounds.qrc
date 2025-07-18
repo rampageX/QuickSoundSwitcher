@@ -3,5 +3,6 @@
         <file>empty.wav</file>
         <file>outcome-success.wav</file>
         <file>outcome-failure.wav</file>
+        <file>windows-background.wav</file>
     </qresource>
 </RCC>

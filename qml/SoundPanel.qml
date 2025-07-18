@@ -6,6 +6,7 @@ import QtQuick.Controls.FluentWinUI3
 import QtQuick.Controls.impl
 import QtQuick.Window
 import Odizinne.QuickSoundSwitcher
+import QtMultimedia
 
 ApplicationWindow {
     id: panel
@@ -22,6 +23,12 @@ ApplicationWindow {
         }
         newHeight += panel.maxDeviceListSpace
         return newHeight
+    }
+
+    SoundEffect {
+        id: audioFeedback
+        volume: 1
+        source: "qrc:/sounds/windows-background.wav"
     }
 
     SystemTray {
@@ -318,7 +325,12 @@ ApplicationWindow {
         function onChatMixEnabledChanged(enabled) {
             console.log("ChatMix shortcut toggle - enabled:", enabled)
             UserSettings.chatMixEnabled = enabled
-            AudioBridge.setChatMixEnabled(enabled, UserSettings.chatMixValue)
+
+            if (enabled) {
+                AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
+            } else {
+                AudioBridge.restoreOriginalVolumes()
+            }
         }
     }
 
@@ -500,7 +512,7 @@ ApplicationWindow {
                             onPressedChanged: {
                                 if (!pressed) {
                                     AudioBridge.setOutputVolume(value)
-                                    SoundPanelBridge.onOutputSliderReleased()
+                                    audioFeedback.play()
                                 }
                             }
                         }
@@ -824,8 +836,10 @@ ApplicationWindow {
                             UserSettings.chatMixEnabled = !checked
 
                             if (!checked) {
+                                console.log("apply")
                                 AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
                             } else {
+                                console.log("restore")
                                 AudioBridge.restoreOriginalVolumes()
                             }
                         }

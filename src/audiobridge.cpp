@@ -259,6 +259,19 @@ AudioBridge::AudioBridge(QObject *parent)
     manager->initialize();
 }
 
+AudioBridge::~AudioBridge() {
+    QSettings settings("Odizinne", "QuickSoundSwitcher");
+    bool activateChatMix = settings.value("activateChatmix").toBool();
+    bool chatMixEnabled = settings.value("chatMixEnabled").toBool();
+
+    if (activateChatMix && chatMixEnabled) {
+        restoreOriginalVolumesSync();
+    }
+
+    auto* manager = AudioManager::instance();
+    manager->cleanup();
+}
+
 AudioBridge* AudioBridge::create(QQmlEngine *qmlEngine, QJSEngine *jsEngine)
 {
     Q_UNUSED(qmlEngine)
@@ -328,14 +341,6 @@ void AudioBridge::setInputDevice(int deviceIndex)
 // ChatMix methods
 void AudioBridge::applyChatMixToApplications(int value)
 {
-    QSettings settings;
-    bool activateChatMix = settings.value("activateChatmix").toBool();
-    bool chatMixEnabled = settings.value("chatMixEnabled").toBool();
-
-    if (!activateChatMix || !chatMixEnabled || !m_isReady) {
-        return;
-    }
-
     qDebug() << "Applying ChatMix with value:" << value;
 
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
@@ -354,7 +359,7 @@ void AudioBridge::applyChatMixToApplications(int value)
 
 void AudioBridge::restoreOriginalVolumes()
 {
-    QSettings settings;
+    QSettings settings("Odizinne", "QuickSoundSwitcher");
     int restoreVolume = settings.value("chatmixRestoreVolume").toInt();
 
     if (!m_isReady) {
@@ -378,12 +383,12 @@ void AudioBridge::restoreOriginalVolumes()
 
 void AudioBridge::applyChatMixIfEnabled()
 {
-    QSettings settings;
+    QSettings settings("Odizinne", "QuickSoundSwitcher");
     bool activateChatMix = settings.value("activateChatmix").toBool();
     bool chatMixEnabled = settings.value("chatMixEnabled").toBool();
 
     if (activateChatMix && chatMixEnabled) {
-        QSettings settings;
+        QSettings settings("Odizinne", "QuickSoundSwitcher");
         applyChatMixToApplications(settings.value("chatMixValue").toInt());
     }
 }
@@ -560,8 +565,7 @@ void AudioBridge::onApplicationsChanged(const QList<AudioApplication>& applicati
 {
     m_applicationModel->setApplications(applications);
 
-    // Apply ChatMix if enabled
-    QTimer::singleShot(100, this, &AudioBridge::applyChatMixIfEnabled);
+    QTimer::singleShot(0, this, &AudioBridge::applyChatMixIfEnabled);
 }
 
 void AudioBridge::onDevicesChanged(const QList<AudioDevice>& devices)
@@ -609,4 +613,35 @@ void AudioBridge::onInitializationComplete()
     emit isReadyChanged();
 
     applyChatMixIfEnabled();
+}
+
+void AudioBridge::restoreOriginalVolumesSync()
+{
+    QSettings settings("Odizinne", "QuickSoundSwitcher");
+    int restoreVolume = settings.value("chatmixRestoreVolume").toInt();
+
+    if (!m_isReady) {
+        return;
+    }
+
+    qDebug() << "Restoring volumes synchronously to:" << restoreVolume;
+
+    auto* worker = AudioManager::instance()->getWorker();
+    if (!worker) return;
+
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+        QString appName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+
+        if (appName == "System sounds" || appId == "system_sounds") {
+            continue;
+        }
+
+        // Use blocking call to ensure completion before destructor finishes
+        QMetaObject::invokeMethod(worker, "setApplicationVolume",
+                                  Qt::BlockingQueuedConnection,
+                                  Q_ARG(QString, appId),
+                                  Q_ARG(int, restoreVolume));
+    }
 }

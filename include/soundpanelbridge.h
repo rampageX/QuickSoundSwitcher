@@ -74,9 +74,6 @@ public:
     Q_INVOKABLE QStringList getLanguageNativeNames() const;
     Q_INVOKABLE QStringList getLanguageCodes() const;
 
-    // Legacy audio methods for compatibility
-    Q_INVOKABLE void onOutputSliderReleased();
-
     Q_INVOKABLE void openLegacySoundSettings();
     Q_INVOKABLE void openModernSoundSettings();
 

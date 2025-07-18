@@ -105,6 +105,7 @@ class AudioBridge : public QObject
 
 public:
     explicit AudioBridge(QObject *parent = nullptr);
+    ~AudioBridge();
     static AudioBridge* create(QQmlEngine *qmlEngine, QJSEngine *jsEngine);
 
     // Properties
@@ -185,6 +186,8 @@ private:
     QString getCommAppsFilePath() const;
     void loadCommAppsFromFile();
     void saveCommAppsToFile();
+
+    void restoreOriginalVolumesSync();
 };
 
 #endif // AUDIOBRIDGE_H

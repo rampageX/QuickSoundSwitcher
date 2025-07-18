@@ -1,7 +1,5 @@
 #include "quicksoundswitcher.h"
 #include "soundpanelbridge.h"
-#include "utils.h"
-#include "audiomanager.h"
 #include "mediasessionmanager.h"
 #include <QMenu>
 #include <QApplication>
@@ -44,7 +42,6 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
 
 QuickSoundSwitcher::~QuickSoundSwitcher()
 {
-    AudioManager::instance()->cleanup();
     MediaSessionManager::cleanup();
     uninstallGlobalMouseHook();
     uninstallKeyboardHook();
