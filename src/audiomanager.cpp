@@ -363,19 +363,11 @@ ULONG STDMETHODCALLTYPE SessionEventsClient::Release()
 
 HRESULT STDMETHODCALLTYPE SessionEventsClient::OnSimpleVolumeChanged(float NewVolume, BOOL NewMute, LPCGUID EventContext)
 {
-    qDebug() << "*** SessionEventsClient::OnSimpleVolumeChanged ***";
-    qDebug() << "App ID:" << m_appId;
-    qDebug() << "New Volume:" << (NewVolume * 100.0f) << "%";
-    qDebug() << "New Mute:" << (NewMute ? "true" : "false");
-
     if (m_worker) {
         bool success = QMetaObject::invokeMethod(m_worker, "onApplicationSessionVolumeChanged", Qt::QueuedConnection,
                                                  Q_ARG(QString, m_appId),
                                                  Q_ARG(float, NewVolume),
                                                  Q_ARG(bool, NewMute));
-        qDebug() << "QMetaObject::invokeMethod success:" << success;
-    } else {
-        qDebug() << "ERROR: No worker available!";
     }
     return S_OK;
 }
@@ -490,7 +482,15 @@ void AudioWorker::cleanup()
 {
     qDebug() << "AudioWorker::cleanup starting";
 
-    // Clean up session notifications FIRST
+    // Clean up volume controls cache
+    for (auto it = m_sessionVolumeControls.begin(); it != m_sessionVolumeControls.end(); ++it) {
+        if (it.value()) {
+            it.value()->Release();
+        }
+    }
+    m_sessionVolumeControls.clear();
+
+    // Clean up session notifications SECOND
     if (m_sessionManager && m_sessionNotificationClient) {
         qDebug() << "Unregistering session notifications";
         m_sessionManager->UnregisterSessionNotification(m_sessionNotificationClient);
@@ -877,6 +877,14 @@ void AudioWorker::enumerateApplications()
 {
     qDebug() << "=== ENUMERATING APPLICATIONS (triggered by notification) ===";
 
+    // Clean up existing volume controls cache
+    for (auto it = m_sessionVolumeControls.begin(); it != m_sessionVolumeControls.end(); ++it) {
+        if (it.value()) {
+            it.value()->Release();
+        }
+    }
+    m_sessionVolumeControls.clear();
+
     // Clean up existing sessions
     for (auto& sessionInfo : m_activeSessions) {
         if (sessionInfo.sessionControl && sessionInfo.eventsClient) {
@@ -987,7 +995,7 @@ void AudioWorker::enumerateApplications()
 
         QString appId = isSystemSounds ? "system_sounds" : QString::number(processId);
 
-        // Get volume info
+        // Get volume info and cache the volume control
         CComPtr<ISimpleAudioVolume> pSimpleAudioVolume;
         hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pSimpleAudioVolume);
         if (FAILED(hr)) {
@@ -995,11 +1003,15 @@ void AudioWorker::enumerateApplications()
             continue;
         }
 
+        // Cache the volume control with manual reference counting
+        ISimpleAudioVolume* volumeControl = pSimpleAudioVolume.Detach(); // Detach from CComPtr
+        m_sessionVolumeControls[appId] = volumeControl;
+
         BOOL isMuted = FALSE;
-        pSimpleAudioVolume->GetMute(&isMuted);
+        volumeControl->GetMute(&isMuted);
 
         float volumeLevel = 0.0f;
-        pSimpleAudioVolume->GetMasterVolume(&volumeLevel);
+        volumeControl->GetMasterVolume(&volumeLevel);
 
         // Process application info
         AudioApplication app;
@@ -1107,32 +1119,12 @@ void AudioWorker::enumerateApplications()
         systemApp.volume = 100; // Default volume
         systemApp.isMuted = false;
         systemApp.audioLevel = 0;
-
-        // Create a simple icon for system sounds
-        QPixmap systemPixmap(32, 32);
-        systemPixmap.fill(Qt::transparent);
-        QPainter painter(&systemPixmap);
-        painter.setBrush(QBrush(QColor(100, 150, 200)));
-        painter.setPen(Qt::NoPen);
-        painter.drawEllipse(0, 0, 32, 32);
-        painter.setPen(QPen(Qt::white, 2));
-        painter.drawText(systemPixmap.rect(), Qt::AlignCenter, "S");
-        painter.end();
-
-        QByteArray byteArray;
-        QBuffer buffer(&byteArray);
-        buffer.open(QIODevice::WriteOnly);
-        systemPixmap.save(&buffer, "PNG");
-        systemApp.iconPath = "data:image/png;base64," + byteArray.toBase64();
+        systemApp.iconPath = "";
 
         newApplications.append(systemApp);
     }
 
     m_applications = newApplications;
-    qDebug() << "=== APPLICATION ENUMERATION COMPLETE ===";
-    qDebug() << "Total applications found:" << newApplications.count();
-    qDebug() << "Active sessions tracked:" << m_activeSessions.count();
-    qDebug() << "System sounds included:" << (foundSystemSounds ? "from session" : "as default");
 
     emit applicationsChanged(newApplications);
 }
@@ -1312,13 +1304,6 @@ void AudioWorker::onDefaultDeviceChanged(DataFlow dataFlow, const QString& devic
 void AudioWorker::onApplicationSessionVolumeChanged(const QString& appId, float volume, bool muted)
 {
     int volumePercent = static_cast<int>(std::round(volume * 100.0f));
-
-    qDebug() << "=== APPLICATION SESSION VOLUME CHANGED ===";
-    qDebug() << "App ID:" << appId;
-    qDebug() << "Volume:" << volumePercent << "%";
-    qDebug() << "Muted:" << muted;
-
-    // Update our cached application list
     bool foundApp = false;
     for (int i = 0; i < m_applications.count(); ++i) {
         if (m_applications[i].id == appId) {
@@ -1330,18 +1315,12 @@ void AudioWorker::onApplicationSessionVolumeChanged(const QString& appId, float 
                 m_applications[i].volume = volumePercent;
                 m_applications[i].isMuted = muted;
 
-                qDebug() << "Updated app in cache - Volume changed:" << volumeChanged << "Mute changed:" << muteChanged;
-
-                // Emit individual change signals
                 if (volumeChanged) {
                     emit applicationVolumeChanged(appId, volumePercent);
                 }
                 if (muteChanged) {
                     emit applicationMuteChanged(appId, muted);
                 }
-
-                // Emit the full list to ensure model updates
-                emit applicationsChanged(m_applications);
             }
             break;
         }
@@ -1349,7 +1328,6 @@ void AudioWorker::onApplicationSessionVolumeChanged(const QString& appId, float 
 
     if (!foundApp) {
         qDebug() << "Warning: Application" << appId << "not found in cached list";
-        // Re-enumerate to pick up any missed applications
         QMetaObject::invokeMethod(this, "enumerateApplications", Qt::QueuedConnection);
     }
 }
@@ -1377,145 +1355,18 @@ void AudioWorker::setInputMute(bool mute)
 
 void AudioWorker::setApplicationVolume(const QString& appId, int volume)
 {
-    if (!m_sessionManager) return;
-
-    float volumeScalar = static_cast<float>(volume) / 100.0f;
-
-    // Special handling for system sounds
-    if (appId == "system_sounds") {
-        // Try to find system sounds session
-        CComPtr<IAudioSessionEnumerator> sessionEnumerator;
-        HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
-        if (FAILED(hr)) return;
-
-        int sessionCount = 0;
-        sessionEnumerator->GetCount(&sessionCount);
-
-        for (int i = 0; i < sessionCount; ++i) {
-            CComPtr<IAudioSessionControl> sessionControl;
-            hr = sessionEnumerator->GetSession(i, &sessionControl);
-            if (FAILED(hr)) continue;
-
-            LPWSTR pwszDisplayName = nullptr;
-            hr = sessionControl->GetDisplayName(&pwszDisplayName);
-            QString sessionDisplayName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "";
-            CoTaskMemFree(pwszDisplayName);
-
-            if (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
-                CComPtr<ISimpleAudioVolume> simpleVolume;
-                hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&simpleVolume);
-                if (SUCCEEDED(hr)) {
-                    simpleVolume->SetMasterVolume(volumeScalar, nullptr);
-                    qDebug() << "Set system sounds volume to" << volume;
-                }
-                return;
-            }
-        }
-        qDebug() << "System sounds session not found for volume control";
-        return;
-    }
-
-    // Handle regular applications
-    DWORD processId = appId.toULong();
-
-    CComPtr<IAudioSessionEnumerator> sessionEnumerator;
-    HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
-    if (FAILED(hr)) return;
-
-    int sessionCount = 0;
-    sessionEnumerator->GetCount(&sessionCount);
-
-    for (int i = 0; i < sessionCount; ++i) {
-        CComPtr<IAudioSessionControl> sessionControl;
-        hr = sessionEnumerator->GetSession(i, &sessionControl);
-        if (FAILED(hr)) continue;
-
-        CComPtr<IAudioSessionControl2> sessionControl2;
-        hr = sessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sessionControl2);
-        if (FAILED(hr)) continue;
-
-        DWORD pid = 0;
-        hr = sessionControl2->GetProcessId(&pid);
-        if (FAILED(hr) || pid != processId) continue;
-
-        CComPtr<ISimpleAudioVolume> simpleVolume;
-        hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&simpleVolume);
-        if (SUCCEEDED(hr)) {
-            simpleVolume->SetMasterVolume(volumeScalar, nullptr);
-            qDebug() << "Set application" << appId << "volume to" << volume;
-        }
-        break;
+    auto it = m_sessionVolumeControls.find(appId);
+    if (it != m_sessionVolumeControls.end()) {
+        float volumeScalar = static_cast<float>(volume) / 100.0f;
+        it.value()->SetMasterVolume(volumeScalar, nullptr);
     }
 }
 
 void AudioWorker::setApplicationMute(const QString& appId, bool mute)
 {
-    if (!m_sessionManager) return;
-
-    // Special handling for system sounds
-    if (appId == "system_sounds") {
-        // Try to find system sounds session
-        CComPtr<IAudioSessionEnumerator> sessionEnumerator;
-        HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
-        if (FAILED(hr)) return;
-
-        int sessionCount = 0;
-        sessionEnumerator->GetCount(&sessionCount);
-
-        for (int i = 0; i < sessionCount; ++i) {
-            CComPtr<IAudioSessionControl> sessionControl;
-            hr = sessionEnumerator->GetSession(i, &sessionControl);
-            if (FAILED(hr)) continue;
-
-            LPWSTR pwszDisplayName = nullptr;
-            hr = sessionControl->GetDisplayName(&pwszDisplayName);
-            QString sessionDisplayName = SUCCEEDED(hr) ? QString::fromWCharArray(pwszDisplayName) : "";
-            CoTaskMemFree(pwszDisplayName);
-
-            if (sessionDisplayName == "@%SystemRoot%\\System32\\AudioSrv.Dll,-202") {
-                CComPtr<ISimpleAudioVolume> simpleVolume;
-                hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&simpleVolume);
-                if (SUCCEEDED(hr)) {
-                    simpleVolume->SetMute(mute, nullptr);
-                    qDebug() << "Set system sounds mute to" << mute;
-                }
-                return;
-            }
-        }
-        qDebug() << "System sounds session not found for mute control";
-        return;
-    }
-
-    // Handle regular applications
-    DWORD processId = appId.toULong();
-
-    CComPtr<IAudioSessionEnumerator> sessionEnumerator;
-    HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
-    if (FAILED(hr)) return;
-
-    int sessionCount = 0;
-    sessionEnumerator->GetCount(&sessionCount);
-
-    for (int i = 0; i < sessionCount; ++i) {
-        CComPtr<IAudioSessionControl> sessionControl;
-        hr = sessionEnumerator->GetSession(i, &sessionControl);
-        if (FAILED(hr)) continue;
-
-        CComPtr<IAudioSessionControl2> sessionControl2;
-        hr = sessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sessionControl2);
-        if (FAILED(hr)) continue;
-
-        DWORD pid = 0;
-        hr = sessionControl2->GetProcessId(&pid);
-        if (FAILED(hr) || pid != processId) continue;
-
-        CComPtr<ISimpleAudioVolume> simpleVolume;
-        hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&simpleVolume);
-        if (SUCCEEDED(hr)) {
-            simpleVolume->SetMute(mute, nullptr);
-            qDebug() << "Set application" << appId << "mute to" << mute;
-        }
-        break;
+    auto it = m_sessionVolumeControls.find(appId);
+    if (it != m_sessionVolumeControls.end()) {
+        it.value()->SetMute(mute, nullptr);
     }
 }
 

@@ -189,7 +189,9 @@ private:
 
         SessionInfo() : sessionControl(nullptr), eventsClient(nullptr) {}
     };
+
     QList<SessionInfo> m_activeSessions;
+    QMap<QString, ISimpleAudioVolume*> m_sessionVolumeControls;
 };
 
 // Device change notification callback
