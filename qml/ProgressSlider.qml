@@ -11,6 +11,7 @@ Slider {
     id: control
 
     property int audioLevel: 0  // Add this property
+    property bool displayProgress: true
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             implicitHandleWidth + leftPadding + rightPadding)
@@ -108,7 +109,7 @@ Slider {
                     height: control.horizontal ? parent.height : parent.height * control.position
                     radius: control.__config.track.height * 0.5
                     color: control.palette.accent
-                    opacity: UserSettings.showAudioLevel ? 0.4 : 1
+                    opacity: control.displayProgress && UserSettings.showAudioLevel ? 0.4 : 1
 
                 }
 

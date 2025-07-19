@@ -731,6 +731,10 @@ void AudioWorker::setupSessionNotifications()
 
 int AudioWorker::getApplicationAudioLevel(const QString& appId)
 {
+    if (appId == "system_sounds") {
+        return 0;
+    }
+
     auto it = m_sessionMeterControls.find(appId);
     if (it == m_sessionMeterControls.end()) {
         return 0;
@@ -1049,7 +1053,7 @@ void AudioWorker::enumerateApplications()
     struct TempSessionData {
         IAudioSessionControl* sessionControl;
         ISimpleAudioVolume* volumeControl;
-        IAudioMeterInformation* meterControl; // Add meter control
+        IAudioMeterInformation* meterControl;
         QString appId;
         QString executableName;
         QString finalAppName;
@@ -1113,12 +1117,14 @@ void AudioWorker::enumerateApplications()
             continue;
         }
 
-        // Get meter info for audio levels
+        // Get meter info for audio levels - but exclude system sounds
         CComPtr<IAudioMeterInformation> pMeterInfo;
-        hr = sessionControl->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&pMeterInfo);
-        if (FAILED(hr)) {
-            qDebug() << "Failed to get meter info for session" << i;
-            // Don't fail the entire session, just set meter to nullptr
+        if (!isSystemSounds) {
+            hr = sessionControl->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&pMeterInfo);
+            if (FAILED(hr)) {
+                qDebug() << "Failed to get meter info for session" << i;
+                // Don't fail the entire session, just continue without meter
+            }
         }
 
         BOOL isMuted = FALSE;
@@ -1131,7 +1137,7 @@ void AudioWorker::enumerateApplications()
         TempSessionData tempData;
         tempData.sessionControl = sessionControl;
         tempData.volumeControl = pSimpleAudioVolume.Detach(); // Detach from CComPtr
-        tempData.meterControl = pMeterInfo.Detach(); // Detach meter control
+        tempData.meterControl = isSystemSounds ? nullptr : pMeterInfo.Detach(); // Only assign meter for non-system sounds
         tempData.volume = static_cast<int>(volumeLevel * 100);
         tempData.isMuted = isMuted;
         tempData.isSystemSounds = isSystemSounds;
@@ -1257,8 +1263,8 @@ void AudioWorker::enumerateApplications()
             // Cache the volume control
             m_sessionVolumeControls[app.id] = tempData->volumeControl;
 
-            // Cache the meter control for audio levels
-            if (tempData->meterControl) {
+            // Cache the meter control for audio levels - but only for non-system sounds
+            if (tempData->meterControl && !tempData->isSystemSounds) {
                 m_sessionMeterControls[app.id] = tempData->meterControl;
             }
 

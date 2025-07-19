@@ -866,7 +866,10 @@ ApplicationWindow {
                                     enabled: !UserSettings.chatMixEnabled && !executableMuteButton.highlighted
                                     opacity: enabled ? 1 : 0.5
                                     Layout.fillWidth: true
-                                    audioLevel: appDelegateRoot.model.averageAudioLevel || 0
+                                    displayProgress: appDelegateRoot.model.displayName !== qsTr("System sounds")
+                                    audioLevel: appDelegateRoot.model.displayName !== qsTr("System sounds")
+                                               ? (appDelegateRoot.model.averageAudioLevel || 0)
+                                               : 0
 
                                     // Break the binding loop by only updating when not being dragged
                                     value: pressed ? value : appDelegateRoot.model.averageVolume
