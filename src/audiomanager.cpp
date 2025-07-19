@@ -587,6 +587,11 @@ void AudioWorker::updateAudioLevels()
 
     emit outputAudioLevelChanged(outputLevel);
     emit inputAudioLevelChanged(inputLevel);
+
+    for (const AudioApplication& app : m_applications) {
+        int appLevel = getApplicationAudioLevel(app.id);
+        emit applicationAudioLevelChanged(app.id, appLevel);
+    }
 }
 
 // Add these helper methods to AudioWorker
@@ -1012,6 +1017,25 @@ void AudioWorker::enumerateApplications()
     int sessionCount = 0;
     pSessionEnumerator->GetCount(&sessionCount);
 
+    // First pass: collect all session data
+    struct TempSessionData {
+        IAudioSessionControl* sessionControl;
+        ISimpleAudioVolume* volumeControl;
+        QString appId;
+        QString executableName;
+        QString finalAppName;
+        QString iconPath;
+        int volume;
+        bool isMuted;
+        bool isSystemSounds;
+        DWORD processId;
+        int sessionIndex;
+        QString sessionDisplayName; // Add this for debugging
+        uintptr_t sessionControlPtr; // Add this for stable sorting
+    };
+
+    QList<TempSessionData> tempSessions;
+
     for (int i = 0; i < sessionCount; ++i) {
         IAudioSessionControl* sessionControl = nullptr;
         hr = pSessionEnumerator->GetSession(i, &sessionControl);
@@ -1052,8 +1076,6 @@ void AudioWorker::enumerateApplications()
             foundSystemSounds = true;
         }
 
-        QString appId = isSystemSounds ? "system_sounds" : QString::number(processId);
-
         // Get volume info and cache the volume control
         CComPtr<ISimpleAudioVolume> pSimpleAudioVolume;
         hr = sessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void**)&pSimpleAudioVolume);
@@ -1062,22 +1084,23 @@ void AudioWorker::enumerateApplications()
             continue;
         }
 
-        // Cache the volume control with manual reference counting
-        ISimpleAudioVolume* volumeControl = pSimpleAudioVolume.Detach(); // Detach from CComPtr
-        m_sessionVolumeControls[appId] = volumeControl;
-
         BOOL isMuted = FALSE;
-        volumeControl->GetMute(&isMuted);
+        pSimpleAudioVolume->GetMute(&isMuted);
 
         float volumeLevel = 0.0f;
-        volumeControl->GetMasterVolume(&volumeLevel);
+        pSimpleAudioVolume->GetMasterVolume(&volumeLevel);
 
         // Process application info
-        AudioApplication app;
-        app.id = appId;
-        app.volume = static_cast<int>(volumeLevel * 100);
-        app.isMuted = isMuted;
-        app.audioLevel = 0;
+        TempSessionData tempData;
+        tempData.sessionControl = sessionControl;
+        tempData.volumeControl = pSimpleAudioVolume.Detach(); // Detach from CComPtr
+        tempData.volume = static_cast<int>(volumeLevel * 100);
+        tempData.isMuted = isMuted;
+        tempData.isSystemSounds = isSystemSounds;
+        tempData.processId = processId;
+        tempData.sessionIndex = i;
+        tempData.sessionDisplayName = sessionDisplayName;
+        tempData.sessionControlPtr = reinterpret_cast<uintptr_t>(sessionControl); // For stable sorting
 
         QString executablePath;
         QString executableName;
@@ -1087,9 +1110,8 @@ void AudioWorker::enumerateApplications()
         if (isSystemSounds) {
             finalAppName = tr("System sounds");
             executableName = tr("System sounds");
-            app.name = finalAppName;
-            app.executableName = executableName;
-            app.iconPath = "";
+            tempData.appId = "system_sounds";
+            tempData.iconPath = "";
         }
         else {
             // Handle regular applications
@@ -1121,32 +1143,98 @@ void AudioWorker::enumerateApplications()
                         QBuffer buffer(&byteArray);
                         buffer.open(QIODevice::WriteOnly);
                         pixmap.save(&buffer, "PNG");
-                        app.iconPath = "data:image/png;base64," + byteArray.toBase64();
+                        tempData.iconPath = "data:image/png;base64," + byteArray.toBase64();
                     }
                 }
                 CloseHandle(hProcess);
             }
 
-            app.name = finalAppName;
-            app.executableName = executableName;
+            // Create unique ID using process ID and session control pointer for stability
+            tempData.appId = QString::number(processId) + "_" + QString::number(tempData.sessionControlPtr);
         }
 
-        // Register session events for real-time updates
-        SessionEventsClient* eventsClient = new SessionEventsClient(this, appId);
-        hr = sessionControl->RegisterAudioSessionNotification(eventsClient);
-        if (SUCCEEDED(hr)) {
-            SessionInfo sessionInfo;
-            sessionInfo.sessionControl = sessionControl; // Keep alive
-            sessionInfo.eventsClient = eventsClient;
-            sessionInfo.appId = appId;
-            m_activeSessions.append(sessionInfo);
-        } else {
-            eventsClient->Release();
-            sessionControl->Release();
-            qDebug() << "✗ Failed to register events for app:" << app.name;
-        }
+        tempData.executableName = executableName;
+        tempData.finalAppName = finalAppName;
 
-        newApplications.append(app);
+        tempSessions.append(tempData);
+    }
+
+    // Second pass: group by executable and assign stream indices
+    QMap<QString, QList<TempSessionData*>> executableGroups;
+
+    // Group sessions by executable name
+    for (int i = 0; i < tempSessions.count(); ++i) {
+        TempSessionData& tempData = tempSessions[i];
+        if (!executableGroups.contains(tempData.executableName)) {
+            executableGroups[tempData.executableName] = QList<TempSessionData*>();
+        }
+        executableGroups[tempData.executableName].append(&tempData);
+    }
+
+    // Sort sessions within each executable group by session control pointer for stability
+    for (auto& group : executableGroups) {
+        std::sort(group.begin(), group.end(),
+                  [](const TempSessionData* a, const TempSessionData* b) {
+                      return a->processId < b->processId;
+                  });
+    }
+
+    // Debug output for Discord
+    if (executableGroups.contains("Discord")) {
+        qDebug() << "=== Discord Sessions ===";
+        const auto& discordGroup = executableGroups["Discord"];
+        for (int i = 0; i < discordGroup.count(); ++i) {
+            qDebug() << "Stream" << i << ":"
+                     << "DisplayName:" << discordGroup[i]->sessionDisplayName
+                     << "SessionIndex:" << discordGroup[i]->sessionIndex
+                     << "ProcessId:" << discordGroup[i]->processId
+                     << "SessionPtr:" << QString::number(discordGroup[i]->sessionControlPtr, 16);
+        }
+    }
+
+    // Third pass: create final applications with proper stream indices
+    for (const auto& group : executableGroups) {
+        for (int streamIndex = 0; streamIndex < group.count(); ++streamIndex) {
+            const TempSessionData* tempData = group[streamIndex];
+
+            AudioApplication app;
+            app.id = tempData->appId;
+            app.name = tempData->finalAppName;
+            app.executableName = tempData->executableName;
+            app.iconPath = tempData->iconPath;
+            app.volume = tempData->volume;
+            app.isMuted = tempData->isMuted;
+            app.audioLevel = 0;
+            app.streamIndex = tempData->isSystemSounds ? 0 : streamIndex;
+
+            // Debug output for Discord streams
+            if (tempData->executableName == "Discord") {
+                qDebug() << "Creating Discord app:"
+                         << "Name:" << app.name
+                         << "StreamIndex:" << app.streamIndex
+                         << "AppId:" << app.id;
+            }
+
+            // Cache the volume control
+            m_sessionVolumeControls[app.id] = tempData->volumeControl;
+
+            // Register session events for real-time updates
+            SessionEventsClient* eventsClient = new SessionEventsClient(this, app.id);
+            hr = tempData->sessionControl->RegisterAudioSessionNotification(eventsClient);
+            if (SUCCEEDED(hr)) {
+                SessionInfo sessionInfo;
+                sessionInfo.sessionControl = tempData->sessionControl; // Keep alive
+                sessionInfo.eventsClient = eventsClient;
+                sessionInfo.appId = app.id;
+                m_activeSessions.append(sessionInfo);
+            } else {
+                eventsClient->Release();
+                tempData->sessionControl->Release();
+                qDebug() << "✗ Failed to register events for app:" << app.name;
+            }
+
+            newApplications.append(app);
+        }
     }
 
     // If we didn't find system sounds in the sessions, create a default entry
@@ -1159,6 +1247,7 @@ void AudioWorker::enumerateApplications()
         systemApp.isMuted = false;
         systemApp.audioLevel = 0;
         systemApp.iconPath = "";
+        systemApp.streamIndex = 0;
 
         newApplications.append(systemApp);
     }

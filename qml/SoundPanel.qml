@@ -835,6 +835,7 @@ ApplicationWindow {
                                     enabled: !UserSettings.chatMixEnabled && !executableMuteButton.highlighted
                                     opacity: enabled ? 1 : 0.5
                                     Layout.fillWidth: true
+                                    //audioLevel: individualAppLayout.model.audioLevel || 0
 
                                     // Break the binding loop by only updating when not being dragged
                                     value: pressed ? value : appDelegateRoot.model.averageVolume

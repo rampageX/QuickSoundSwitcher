@@ -114,25 +114,46 @@ Rectangle {
             ColumnLayout {
                 spacing: -4
 
-                //Label {
-                //    visible: UserSettings.displayDevAppLabel
-                //    opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
-                //    elide: Text.ElideRight
-                //    Layout.preferredWidth: 200
-                //    Layout.leftMargin: 18
-                //    Layout.rightMargin: 25
-                //    text: {
-                //        let name = individualAppLayout.model.name
-                //        if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(name)) {
-                //            name += " (Comm)"
-                //        }
-//
-                //        if (name === "System sounds") {
-                //            return qsTr("System sounds")
-                //        }
-                //        return name
-                //    }
-                //}
+                Label {
+                    visible: UserSettings.displayDevAppLabel
+                    opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
+                    elide: Text.ElideRight
+                    Layout.preferredWidth: 200
+                    Layout.leftMargin: 18
+                    Layout.rightMargin: 25
+                    text: {
+                        let originalName = individualAppLayout.model.name
+                        let streamIndex = individualAppLayout.model.streamIndex
+
+                        if (originalName === "System sounds") {
+                            return qsTr("System sounds")
+                        }
+
+                        // Get custom display name from AudioBridge
+                        let displayName = AudioBridge.getDisplayNameForApplication(originalName, streamIndex)
+
+                        if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(originalName)) {
+                            displayName += " (Comm)"
+                        }
+
+                        return displayName
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.RightButton
+                        onClicked: {
+                            if (mouse.button === Qt.RightButton && individualAppLayout.model.name !== "System sounds") {
+                                renameContextMenu.originalName = individualAppLayout.model.name
+                                renameContextMenu.streamIndex = individualAppLayout.model.streamIndex
+                                renameContextMenu.currentCustomName = AudioBridge.getCustomApplicationName(individualAppLayout.model.name, individualAppLayout.model.streamIndex)
+                                renameContextMenu.popup()
+
+                                console.log(individualAppLayout.model.streamIndex)
+                            }
+                        }
+                    }
+                }
 
                 ProgressSlider {
                     id: volumeSlider
@@ -212,6 +233,103 @@ Rectangle {
             } else {
                 root.contentOpacity = 0
             }
+        }
+    }
+
+    // Context menu for renaming applications
+    Menu {
+        id: renameContextMenu
+
+        property string originalName: ""
+        property int streamIndex: 0
+        property string currentCustomName: ""
+
+        MenuItem {
+            text: qsTr("Rename Application")
+            onTriggered: renameDialog.open()
+        }
+
+        MenuItem {
+            text: qsTr("Reset to Original Name")
+            enabled: renameContextMenu.currentCustomName !== renameContextMenu.originalName
+            onTriggered: {
+                AudioBridge.setCustomApplicationName(renameContextMenu.originalName, renameContextMenu.streamIndex, "")
+            }
+        }
+    }
+
+    // Rename dialog
+    Dialog {
+        id: renameDialog
+        title: qsTr("Rename Application")
+        modal: true
+        width: 400
+        anchors.centerIn: parent
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 15
+
+            Label {
+                text: qsTr("Original name: ") + renameContextMenu.originalName
+                font.bold: true
+            }
+
+            Label {
+                text: qsTr("Stream index: ") + renameContextMenu.streamIndex
+                opacity: 0.7
+            }
+
+            Label {
+                text: qsTr("Custom name:")
+            }
+
+            TextField {
+                id: customNameField
+                Layout.fillWidth: true
+                placeholderText: renameContextMenu.originalName
+                text: renameContextMenu.currentCustomName
+
+                Keys.onReturnPressed: {
+                    AudioBridge.setCustomApplicationName(
+                        renameContextMenu.originalName,
+                        renameContextMenu.streamIndex,
+                        customNameField.text.trim()
+                    )
+                    renameDialog.close()
+                }
+            }
+
+            RowLayout {
+                spacing: 15
+                Layout.topMargin: 10
+
+                Button {
+                    text: qsTr("Cancel")
+                    onClicked: renameDialog.close()
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: qsTr("Save")
+                    highlighted: true
+                    Layout.fillWidth: true
+                    onClicked: {
+                        AudioBridge.setCustomApplicationName(
+                            renameContextMenu.originalName,
+                            renameContextMenu.streamIndex,
+                            customNameField.text.trim()
+                        )
+                        renameDialog.close()
+                    }
+                }
+            }
+        }
+
+        onOpened: {
+            customNameField.text = renameContextMenu.currentCustomName
+            customNameField.forceActiveFocus()
+            customNameField.selectAll()
         }
     }
 }

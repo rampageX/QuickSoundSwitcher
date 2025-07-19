@@ -24,8 +24,9 @@ struct AudioApplication {
     int volume;              // 0-100
     bool isMuted;            // Mute state
     int audioLevel;          // Current audio level 0-100
+    int streamIndex;         // Index within the same executable (0, 1, 2, ...)
 
-    AudioApplication() : volume(0), isMuted(false), audioLevel(0) {}
+    AudioApplication() : volume(0), isMuted(false), audioLevel(0), streamIndex(0) {}
 
     bool operator==(const AudioApplication& other) const {
         return id == other.id;

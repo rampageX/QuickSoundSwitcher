@@ -27,7 +27,8 @@ public:
         IconPathRole,
         VolumeRole,
         IsMutedRole,
-        AudioLevelRole
+        AudioLevelRole,
+        StreamIndexRole
     };
     Q_ENUM(ApplicationRoles)
 
@@ -154,7 +155,8 @@ public:
         IconPathRole,
         VolumeRole,
         IsMutedRole,
-        AudioLevelRole
+        AudioLevelRole,
+        StreamIndexRole
     };
     Q_ENUM(SessionRoles)
 
@@ -244,6 +246,10 @@ public:
 
     Q_INVOKABLE int getApplicationAudioLevel(const QString& appId) const;
 
+    Q_INVOKABLE QString getDisplayNameForApplication(const QString& appName, int streamIndex) const;
+    Q_INVOKABLE void setCustomApplicationName(const QString& originalName, int streamIndex, const QString& customName);
+    Q_INVOKABLE QString getCustomApplicationName(const QString& originalName, int streamIndex) const;
+
 signals:
     void outputVolumeChanged();
     void inputVolumeChanged();
@@ -311,6 +317,18 @@ private:
 
     void updateGroupForApplication(const QString& appId);
     int findGroupIndex(const QString& executableName) const;
+
+    struct AppRename {
+        QString originalName;
+        QString customName;
+        int streamIndex;
+    };
+    QList<AppRename> m_appRenames;
+
+    void loadAppRenamesFromFile();
+    void saveAppRenamesToFile();
+    QString getAppRenamesFilePath() const;
+    void createDefaultAppRenames();
 };
 
 #endif // AUDIOBRIDGE_H

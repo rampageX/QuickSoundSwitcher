@@ -39,6 +39,8 @@ QVariant ApplicationModel::data(const QModelIndex &index, int role) const
         return app.isMuted;
     case AudioLevelRole:
         return app.audioLevel;
+    case StreamIndexRole:
+        return app.streamIndex;
     default:
         return QVariant();
     }
@@ -54,6 +56,7 @@ QHash<int, QByteArray> ApplicationModel::roleNames() const
     roles[VolumeRole] = "volume";
     roles[IsMutedRole] = "isMuted";
     roles[AudioLevelRole] = "audioLevel";
+    roles[StreamIndexRole] = "streamIndex";
     return roles;
 }
 
@@ -84,8 +87,12 @@ void ApplicationModel::setApplications(const QList<AudioApplication>& applicatio
         }
     }
 
+    // Sort by name first, then by streamIndex for apps with the same name
     std::sort(sortedApplications.begin(), sortedApplications.end(),
               [](const AudioApplication& a, const AudioApplication& b) {
+                  if (a.name.toLower() == b.name.toLower()) {
+                      return a.streamIndex < b.streamIndex;
+                  }
                   return a.name.toLower() < b.name.toLower();
               });
 
@@ -344,6 +351,13 @@ QVariant ExecutableSessionModel::data(const QModelIndex &index, int role) const
 
     const AudioApplication& session = m_sessions.at(index.row());
 
+    // Debug for Discord streamIndex requests
+    if (role == StreamIndexRole && session.executableName == "Discord") {
+        qDebug() << "ExecutableSessionModel::data - Discord StreamIndexRole requested for row" << index.row()
+        << "returning:" << session.streamIndex
+        << "AppId:" << session.id;
+    }
+
     switch (role) {
     case IdRole:
         return session.id;
@@ -359,6 +373,8 @@ QVariant ExecutableSessionModel::data(const QModelIndex &index, int role) const
         return session.isMuted;
     case AudioLevelRole:
         return session.audioLevel;
+    case StreamIndexRole:
+        return session.streamIndex;
     default:
         return QVariant();
     }
@@ -398,6 +414,7 @@ QHash<int, QByteArray> ExecutableSessionModel::roleNames() const
     roles[VolumeRole] = "volume";
     roles[IsMutedRole] = "isMuted";
     roles[AudioLevelRole] = "audioLevel";
+    roles[StreamIndexRole] = "streamIndex";
     return roles;
 }
 
@@ -405,6 +422,17 @@ void ExecutableSessionModel::setSessions(const QList<AudioApplication>& sessions
 {
     beginResetModel();
     m_sessions = sessions;
+
+    // Debug output for Discord sessions
+    for (int i = 0; i < m_sessions.count(); ++i) {
+        if (m_sessions[i].executableName == "Discord") {
+            qDebug() << "ExecutableSessionModel::setSessions - Discord session" << i
+                     << "Name:" << m_sessions[i].name
+                     << "StreamIndex:" << m_sessions[i].streamIndex
+                     << "AppId:" << m_sessions[i].id;
+        }
+    }
+
     endResetModel();
 }
 
@@ -452,6 +480,7 @@ AudioBridge::AudioBridge(QObject *parent)
     // Load comm apps
     loadCommAppsFromFile();
 
+    loadAppRenamesFromFile();
     // Initialize the manager
     manager->initialize();
 }
@@ -506,7 +535,38 @@ ExecutableSessionModel* AudioBridge::getSessionsForExecutable(const QString& exe
             app.volume = m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
             app.isMuted = m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool();
             app.audioLevel = m_applicationModel->data(index, ApplicationModel::AudioLevelRole).toInt();
+
+            // Debug the streamIndex retrieval step by step
+            QVariant streamIndexVariant = m_applicationModel->data(index, ApplicationModel::StreamIndexRole);
+            int streamIndexValue = streamIndexVariant.toInt();
+            app.streamIndex = streamIndexValue;
+
+            // Debug output for Discord
+            if (executableName == "Discord") {
+                qDebug() << "getSessionsForExecutable - Discord app from main model:"
+                         << "Row:" << i
+                         << "Name:" << app.name
+                         << "StreamIndexVariant:" << streamIndexVariant
+                         << "StreamIndexValue:" << streamIndexValue
+                         << "app.streamIndex:" << app.streamIndex
+                         << "AppId:" << app.id;
+            }
+
             sessions.append(app);
+        }
+    }
+
+    // Sort sessions by stream index to maintain consistent order
+    std::sort(sessions.begin(), sessions.end(),
+              [](const AudioApplication& a, const AudioApplication& b) {
+                  return a.streamIndex < b.streamIndex;
+              });
+
+    // Debug the final sorted sessions for Discord
+    if (executableName == "Discord") {
+        qDebug() << "getSessionsForExecutable - Final sorted Discord sessions:";
+        for (int i = 0; i < sessions.count(); ++i) {
+            qDebug() << "  Session" << i << "StreamIndex:" << sessions[i].streamIndex << "AppId:" << sessions[i].id;
         }
     }
 
@@ -594,6 +654,7 @@ void AudioBridge::updateGroupedApplications()
         bool muted = m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool();
         QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
         int audioLevel = m_applicationModel->data(index, ApplicationModel::AudioLevelRole).toInt();
+        int streamIndex = m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt(); // ADD THIS LINE
 
         AudioApplication app;
         app.id = appId;
@@ -603,6 +664,7 @@ void AudioBridge::updateGroupedApplications()
         app.volume = volume;
         app.isMuted = muted;
         app.audioLevel = audioLevel;
+        app.streamIndex = streamIndex; // ADD THIS LINE
 
         if (!groups.contains(executableName)) {
             ApplicationGroup group;
@@ -648,6 +710,13 @@ void AudioBridge::updateGroupedApplications()
     // Update session models for each executable
     for (const auto& group : groupList) {
         if (m_sessionModels.contains(group.executableName)) {
+            // Debug for Discord
+            if (group.executableName == "Discord") {
+                qDebug() << "updateGroupedApplications - Updating Discord sessions:";
+                for (int i = 0; i < group.sessions.count(); ++i) {
+                    qDebug() << "  Session" << i << "StreamIndex:" << group.sessions[i].streamIndex << "AppId:" << group.sessions[i].id;
+                }
+            }
             m_sessionModels[group.executableName]->setSessions(group.sessions);
         }
     }
@@ -1068,6 +1137,20 @@ int AudioBridge::getApplicationAudioLevel(const QString& appId) const
 
 void AudioBridge::updateGroupForApplication(const QString& appId)
 {
+    // Debug: Check if the main model still has correct streamIndex values for Discord
+    if (appId.contains("11008") || appId.contains("20868")) {
+        qDebug() << "updateGroupForApplication called for Discord appId:" << appId;
+        for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+            QModelIndex index = m_applicationModel->index(i, 0);
+            QString execName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+            if (execName == "Discord") {
+                qDebug() << "  Discord in main model - Row:" << i
+                         << "StreamIndex:" << m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt()
+                         << "AppId:" << m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+            }
+        }
+    }
+
     // Find the executable name for this appId
     QString executableName;
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
@@ -1123,4 +1206,165 @@ void AudioBridge::updateGroupForApplication(const QString& appId)
         m_groupedApplicationModel->updateGroupVolume(executableName, averageVolume);
         m_groupedApplicationModel->updateGroupMute(executableName, anyMuted, allMuted);
     }
+}
+
+QString AudioBridge::getDisplayNameForApplication(const QString& appName, int streamIndex) const
+{
+    // Debug output
+    if (appName == "Discord") {
+        qDebug() << "getDisplayNameForApplication called - Name:" << appName << "StreamIndex:" << streamIndex;
+        qDebug() << "Available renames:";
+        for (const AppRename& rename : m_appRenames) {
+            qDebug() << "  - Original:" << rename.originalName << "Custom:" << rename.customName << "Index:" << rename.streamIndex;
+        }
+    }
+
+    // Check if we have a custom name for this app and stream index
+    for (const AppRename& rename : m_appRenames) {
+        if (rename.originalName.compare(appName, Qt::CaseInsensitive) == 0 &&
+            rename.streamIndex == streamIndex) {
+            qDebug() << "Found match! Returning:" << rename.customName;
+            return rename.customName;
+        }
+    }
+
+    // Return original name if no custom name found
+    qDebug() << "No match found, returning original:" << appName;
+    return appName;
+}
+
+void AudioBridge::setCustomApplicationName(const QString& originalName, int streamIndex, const QString& customName)
+{
+    // Check if we already have a rename for this app and index
+    for (int i = 0; i < m_appRenames.count(); ++i) {
+        if (m_appRenames[i].originalName.compare(originalName, Qt::CaseInsensitive) == 0 &&
+            m_appRenames[i].streamIndex == streamIndex) {
+
+            if (customName.isEmpty() || customName == originalName) {
+                // Remove the rename if custom name is empty or same as original
+                m_appRenames.removeAt(i);
+            } else {
+                // Update existing rename
+                m_appRenames[i].customName = customName;
+            }
+            saveAppRenamesToFile();
+            return;
+        }
+    }
+
+    // Add new rename if custom name is not empty and different from original
+    if (!customName.isEmpty() && customName != originalName) {
+        AppRename newRename;
+        newRename.originalName = originalName;
+        newRename.customName = customName;
+        newRename.streamIndex = streamIndex;
+        m_appRenames.append(newRename);
+        saveAppRenamesToFile();
+    }
+}
+
+QString AudioBridge::getCustomApplicationName(const QString& originalName, int streamIndex) const
+{
+    for (const AppRename& rename : m_appRenames) {
+        if (rename.originalName.compare(originalName, Qt::CaseInsensitive) == 0 &&
+            rename.streamIndex == streamIndex) {
+            return rename.customName;
+        }
+    }
+    return originalName;
+}
+
+QString AudioBridge::getAppRenamesFilePath() const
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/apprenames.json";
+}
+
+void AudioBridge::createDefaultAppRenames()
+{
+    m_appRenames.clear();
+
+    // Add default Discord renames
+    AppRename discordVoip;
+    discordVoip.originalName = "Discord";
+    discordVoip.customName = "Discord (VoIP)";
+    discordVoip.streamIndex = 0;
+    m_appRenames.append(discordVoip);
+
+    AppRename discordUi;
+    discordUi.originalName = "Discord";
+    discordUi.customName = "Discord (UI)";
+    discordUi.streamIndex = 1;
+    m_appRenames.append(discordUi);
+
+    saveAppRenamesToFile();
+}
+
+void AudioBridge::loadAppRenamesFromFile()
+{
+    QString filePath = getAppRenamesFilePath();
+    QFile file(filePath);
+
+    if (!file.exists()) {
+        createDefaultAppRenames();
+        return;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        createDefaultAppRenames();
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        createDefaultAppRenames();
+        return;
+    }
+
+    QJsonObject root = doc.object();
+    QJsonArray renamesArray = root["appRenames"].toArray();
+
+    m_appRenames.clear();
+    for (const QJsonValue& value : renamesArray) {
+        QJsonObject renameObj = value.toObject();
+        AppRename rename;
+        rename.originalName = renameObj["originalName"].toString();
+        rename.customName = renameObj["customName"].toString();
+        rename.streamIndex = renameObj["streamIndex"].toInt();
+        m_appRenames.append(rename);
+    }
+
+    // If file was empty or had no renames, create defaults
+    if (m_appRenames.isEmpty()) {
+        createDefaultAppRenames();
+    }
+}
+
+void AudioBridge::saveAppRenamesToFile()
+{
+    QString filePath = getAppRenamesFilePath();
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        return;
+    }
+
+    QJsonArray renamesArray;
+    for (const AppRename& rename : m_appRenames) {
+        QJsonObject renameObj;
+        renameObj["originalName"] = rename.originalName;
+        renameObj["customName"] = rename.customName;
+        renameObj["streamIndex"] = rename.streamIndex;
+        renamesArray.append(renameObj);
+    }
+
+    QJsonObject root;
+    root["appRenames"] = renamesArray;
+
+    QJsonDocument doc(root);
+    file.write(doc.toJson());
 }
