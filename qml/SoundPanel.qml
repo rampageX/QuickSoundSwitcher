@@ -826,6 +826,18 @@ ApplicationWindow {
                                         }
                                         return name
                                     }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        acceptedButtons: Qt.RightButton
+                                        onClicked: function(mouse) {
+                                            if (mouse.button === Qt.RightButton && appDelegateRoot.model.executableName !== "System sounds") {
+                                                executableRenameContextMenu.originalName = appDelegateRoot.model.executableName
+                                                executableRenameContextMenu.currentCustomName = AudioBridge.getCustomExecutableName(appDelegateRoot.model.executableName)
+                                                executableRenameContextMenu.popup()
+                                            }
+                                        }
+                                    }
                                 }
 
                                 Slider {
@@ -1071,6 +1083,94 @@ ApplicationWindow {
                     }
                 }
             }
+        }
+    }
+
+    Menu {
+        id: executableRenameContextMenu
+
+        property string originalName: ""
+        property string currentCustomName: ""
+
+        MenuItem {
+            text: qsTr("Rename Application")
+            onTriggered: executableRenameDialog.open()
+        }
+
+        MenuItem {
+            text: qsTr("Reset to Original Name")
+            enabled: executableRenameContextMenu.currentCustomName !== executableRenameContextMenu.originalName
+            onTriggered: {
+                AudioBridge.setCustomExecutableName(executableRenameContextMenu.originalName, "")
+            }
+        }
+    }
+
+    // Rename dialog for executables
+    Dialog {
+        id: executableRenameDialog
+        title: qsTr("Rename Application")
+        modal: true
+        width: 300
+        dim: false
+        anchors.centerIn: parent
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 15
+
+            Label {
+                text: qsTr("Original name: ") + executableRenameContextMenu.originalName
+                font.bold: true
+            }
+
+            Label {
+                text: qsTr("Custom name:")
+            }
+
+            TextField {
+                id: executableCustomNameField
+                Layout.fillWidth: true
+                placeholderText: executableRenameContextMenu.originalName
+
+                Keys.onReturnPressed: {
+                    AudioBridge.setCustomExecutableName(
+                        executableRenameContextMenu.originalName,
+                        executableCustomNameField.text.trim()
+                    )
+                    executableRenameDialog.close()
+                }
+            }
+
+            RowLayout {
+                spacing: 15
+                Layout.topMargin: 10
+
+                Button {
+                    text: qsTr("Cancel")
+                    onClicked: executableRenameDialog.close()
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: qsTr("Save")
+                    highlighted: true
+                    Layout.fillWidth: true
+                    onClicked: {
+                        AudioBridge.setCustomExecutableName(
+                            executableRenameContextMenu.originalName,
+                            executableCustomNameField.text.trim()
+                        )
+                        executableRenameDialog.close()
+                    }
+                }
+            }
+        }
+
+        onOpened: {
+            executableCustomNameField.text = executableRenameContextMenu.currentCustomName
+            executableCustomNameField.forceActiveFocus()
+            executableCustomNameField.selectAll()
         }
     }
 }

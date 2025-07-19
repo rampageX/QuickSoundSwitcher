@@ -433,17 +433,14 @@ AudioBridge::AudioBridge(QObject *parent)
     connect(manager, &AudioManager::deviceAdded, this, &AudioBridge::onDeviceAdded);
     connect(manager, &AudioManager::deviceRemoved, this, &AudioBridge::onDeviceRemoved);
     connect(manager, &AudioManager::defaultDeviceChanged, this, &AudioBridge::onDefaultDeviceChanged);
-
     connect(manager, &AudioManager::initializationComplete, this, &AudioBridge::onInitializationComplete);
-
     connect(manager, &AudioManager::outputAudioLevelChanged, this, &AudioBridge::onOutputAudioLevelChanged);
     connect(manager, &AudioManager::inputAudioLevelChanged, this, &AudioBridge::onInputAudioLevelChanged);
 
-    // Load comm apps
     loadCommAppsFromFile();
-
     loadAppRenamesFromFile();
-    // Initialize the manager
+    loadExecutableRenamesFromFile();
+
     manager->initialize();
 }
 
@@ -584,7 +581,6 @@ void AudioBridge::updateGroupedApplications()
 {
     QMap<QString, ApplicationGroup> groups;
 
-    // Group applications by executable name
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
         QModelIndex index = m_applicationModel->index(i, 0);
 
@@ -608,7 +604,8 @@ void AudioBridge::updateGroupedApplications()
         if (!groups.contains(executableName)) {
             ApplicationGroup group;
             group.executableName = executableName;
-            group.displayName = executableName;
+            // Use custom name if available
+            group.displayName = getCustomExecutableName(executableName);
             group.iconPath = iconPath;
             group.sessions.append(app);
             groups[executableName] = group;
@@ -1291,6 +1288,124 @@ void AudioBridge::saveAppRenamesToFile()
 
     QJsonObject root;
     root["appRenames"] = renamesArray;
+
+    QJsonDocument doc(root);
+    file.write(doc.toJson());
+}
+
+QString AudioBridge::getCustomExecutableName(const QString& executableName) const
+{
+    for (const ExecutableRename& rename : m_executableRenames) {
+        if (rename.originalName.compare(executableName, Qt::CaseInsensitive) == 0) {
+            return rename.customName;
+        }
+    }
+    return executableName;
+}
+
+void AudioBridge::setCustomExecutableName(const QString& executableName, const QString& customName)
+{
+    bool changed = false;
+
+    // Check if we already have a rename for this executable
+    for (int i = 0; i < m_executableRenames.count(); ++i) {
+        if (m_executableRenames[i].originalName.compare(executableName, Qt::CaseInsensitive) == 0) {
+            if (customName.isEmpty() || customName == executableName) {
+                // Remove the rename if custom name is empty or same as original
+                m_executableRenames.removeAt(i);
+                changed = true;
+            } else if (m_executableRenames[i].customName != customName) {
+                // Update existing rename only if it's different
+                m_executableRenames[i].customName = customName;
+                changed = true;
+            }
+            break;
+        }
+    }
+
+    // Add new rename if custom name is not empty and different from original
+    if (!changed && !customName.isEmpty() && customName != executableName) {
+        ExecutableRename newRename;
+        newRename.originalName = executableName;
+        newRename.customName = customName;
+        m_executableRenames.append(newRename);
+        changed = true;
+    }
+
+    if (changed) {
+        saveExecutableRenamesToFile();
+
+        // Update the grouped applications to reflect the new name
+        refreshExecutableDisplayName(executableName);
+    }
+}
+
+void AudioBridge::refreshExecutableDisplayName(const QString& executableName)
+{
+    // Update the grouped applications model
+    updateGroupedApplications();
+}
+
+QString AudioBridge::getExecutableRenamesFilePath() const
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/executablenames.json";
+}
+
+void AudioBridge::loadExecutableRenamesFromFile()
+{
+    QString filePath = getExecutableRenamesFilePath();
+    QFile file(filePath);
+
+    if (!file.exists()) {
+        return;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        return;
+    }
+
+    QJsonObject root = doc.object();
+    QJsonArray renamesArray = root["executableRenames"].toArray();
+
+    m_executableRenames.clear();
+    for (const QJsonValue& value : renamesArray) {
+        QJsonObject renameObj = value.toObject();
+        ExecutableRename rename;
+        rename.originalName = renameObj["originalName"].toString();
+        rename.customName = renameObj["customName"].toString();
+        m_executableRenames.append(rename);
+    }
+}
+
+void AudioBridge::saveExecutableRenamesToFile()
+{
+    QString filePath = getExecutableRenamesFilePath();
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        return;
+    }
+
+    QJsonArray renamesArray;
+    for (const ExecutableRename& rename : m_executableRenames) {
+        QJsonObject renameObj;
+        renameObj["originalName"] = rename.originalName;
+        renameObj["customName"] = rename.customName;
+        renamesArray.append(renameObj);
+    }
+
+    QJsonObject root;
+    root["executableRenames"] = renamesArray;
 
     QJsonDocument doc(root);
     file.write(doc.toJson());

@@ -568,6 +568,30 @@
         <source>System sounds</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Rename Application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset to Original Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Original name: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Custom name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Annuler</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SoundPanelBridge</name>

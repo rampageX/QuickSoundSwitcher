@@ -243,6 +243,9 @@ public:
     Q_INVOKABLE void setCustomApplicationName(const QString& originalName, int streamIndex, const QString& customName);
     Q_INVOKABLE QString getCustomApplicationName(const QString& originalName, int streamIndex) const;
 
+    Q_INVOKABLE QString getCustomExecutableName(const QString& executableName) const;
+    Q_INVOKABLE void setCustomExecutableName(const QString& executableName, const QString& customName);
+
 signals:
     void outputVolumeChanged();
     void inputVolumeChanged();
@@ -313,6 +316,18 @@ private:
         QString customName;
         int streamIndex;
     };
+
+    struct ExecutableRename {
+        QString originalName;
+        QString customName;
+    };
+    QList<ExecutableRename> m_executableRenames;
+
+    // Add these methods
+    void loadExecutableRenamesFromFile();
+    void saveExecutableRenamesToFile();
+    QString getExecutableRenamesFilePath() const;
+
     QList<AppRename> m_appRenames;
 
     void loadAppRenamesFromFile();
@@ -320,6 +335,7 @@ private:
     QString getAppRenamesFilePath() const;
     void createDefaultAppRenames();
     void refreshApplicationDisplayNames(const QString& originalName, int streamIndex);
+    void refreshExecutableDisplayName(const QString& executableName);
 };
 
 #endif // AUDIOBRIDGE_H
