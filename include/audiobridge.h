@@ -27,7 +27,6 @@ public:
         IconPathRole,
         VolumeRole,
         IsMutedRole,
-        AudioLevelRole,
         StreamIndexRole
     };
     Q_ENUM(ApplicationRoles)
@@ -43,9 +42,6 @@ public:
     void setApplications(const QList<AudioApplication>& applications);
     void updateApplicationVolume(const QString& appId, int volume);
     void updateApplicationMute(const QString& appId, bool muted);
-
-public slots:
-    void updateApplicationAudioLevel(const QString& appId, int level);
 
 private:
     QList<AudioApplication> m_applications;
@@ -155,7 +151,6 @@ public:
         IconPathRole,
         VolumeRole,
         IsMutedRole,
-        AudioLevelRole,
         StreamIndexRole
     };
     Q_ENUM(SessionRoles)
@@ -244,8 +239,6 @@ public:
     Q_INVOKABLE void startAudioLevelMonitoring();
     Q_INVOKABLE void stopAudioLevelMonitoring();
 
-    Q_INVOKABLE int getApplicationAudioLevel(const QString& appId) const;
-
     Q_INVOKABLE QString getDisplayNameForApplication(const QString& appName, int streamIndex) const;
     Q_INVOKABLE void setCustomApplicationName(const QString& originalName, int streamIndex, const QString& customName);
     Q_INVOKABLE QString getCustomApplicationName(const QString& originalName, int streamIndex) const;
@@ -262,7 +255,6 @@ signals:
     void commAppsListChanged();
     void outputAudioLevelChanged();
     void inputAudioLevelChanged();
-    void applicationAudioLevelChanged(const QString& appId, int level);
 
 private slots:
     void onOutputVolumeChanged(int volume);
@@ -279,7 +271,6 @@ private slots:
     void onInitializationComplete();
     void onOutputAudioLevelChanged(int level);
     void onInputAudioLevelChanged(int level);
-    void onApplicationAudioLevelChanged(const QString& appId, int level);
 
 private:
     int m_outputVolume;
@@ -313,7 +304,6 @@ private:
 
     int m_outputAudioLevel = 0;
     int m_inputAudioLevel = 0;
-    QMap<QString, int> m_applicationAudioLevels;
 
     void updateGroupForApplication(const QString& appId);
     int findGroupIndex(const QString& executableName) const;

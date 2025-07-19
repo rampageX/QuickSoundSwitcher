@@ -604,11 +604,6 @@ void AudioWorker::updateAudioLevels()
 
     emit outputAudioLevelChanged(outputLevel);
     emit inputAudioLevelChanged(inputLevel);
-
-    for (const AudioApplication& app : m_applications) {
-        int appLevel = getApplicationAudioLevel(app.id);
-        emit applicationAudioLevelChanged(app.id, appLevel);
-    }
 }
 
 // Add these helper methods to AudioWorker
@@ -1223,7 +1218,6 @@ void AudioWorker::enumerateApplications()
             app.iconPath = tempData->iconPath;
             app.volume = tempData->volume;
             app.isMuted = tempData->isMuted;
-            app.audioLevel = 0;
             app.streamIndex = tempData->isSystemSounds ? 0 : streamIndex;
 
             // Debug output for Discord streams
@@ -1264,7 +1258,6 @@ void AudioWorker::enumerateApplications()
         systemApp.executableName = "System sounds";
         systemApp.volume = 100; // Default volume
         systemApp.isMuted = false;
-        systemApp.audioLevel = 0;
         systemApp.iconPath = "";
         systemApp.streamIndex = 0;
 
@@ -1611,7 +1604,6 @@ void AudioManager::initialize()
     connect(m_worker, &AudioWorker::initializationComplete, this, &AudioManager::initializationComplete, Qt::QueuedConnection);
     connect(m_worker, &AudioWorker::outputAudioLevelChanged, this, &AudioManager::outputAudioLevelChanged, Qt::QueuedConnection);
     connect(m_worker, &AudioWorker::inputAudioLevelChanged, this, &AudioManager::inputAudioLevelChanged, Qt::QueuedConnection);
-    connect(m_worker, &AudioWorker::applicationAudioLevelChanged, this, &AudioManager::applicationAudioLevelChanged, Qt::QueuedConnection);
 
     m_worker->moveToThread(m_workerThread);
     connect(m_workerThread, &QThread::started, m_worker, &AudioWorker::initialize);

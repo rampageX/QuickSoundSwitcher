@@ -37,8 +37,6 @@ QVariant ApplicationModel::data(const QModelIndex &index, int role) const
         return app.volume;
     case IsMutedRole:
         return app.isMuted;
-    case AudioLevelRole:
-        return app.audioLevel;
     case StreamIndexRole:
         return app.streamIndex;
     default:
@@ -55,19 +53,8 @@ QHash<int, QByteArray> ApplicationModel::roleNames() const
     roles[IconPathRole] = "iconPath";
     roles[VolumeRole] = "volume";
     roles[IsMutedRole] = "isMuted";
-    roles[AudioLevelRole] = "audioLevel";
     roles[StreamIndexRole] = "streamIndex";
     return roles;
-}
-
-void ApplicationModel::updateApplicationAudioLevel(const QString& appId, int level)
-{
-    int index = findApplicationIndex(appId);
-    if (index >= 0) {
-        m_applications[index].audioLevel = level;
-        QModelIndex modelIndex = createIndex(index, 0);
-        emit dataChanged(modelIndex, modelIndex, {AudioLevelRole});
-    }
 }
 
 void ApplicationModel::setApplications(const QList<AudioApplication>& applications)
@@ -364,8 +351,6 @@ QVariant ExecutableSessionModel::data(const QModelIndex &index, int role) const
         return session.volume;
     case IsMutedRole:
         return session.isMuted;
-    case AudioLevelRole:
-        return session.audioLevel;
     case StreamIndexRole:
         return session.streamIndex;
     default:
@@ -406,7 +391,6 @@ QHash<int, QByteArray> ExecutableSessionModel::roleNames() const
     roles[IconPathRole] = "iconPath";
     roles[VolumeRole] = "volume";
     roles[IsMutedRole] = "isMuted";
-    roles[AudioLevelRole] = "audioLevel";
     roles[StreamIndexRole] = "streamIndex";
     return roles;
 }
@@ -454,10 +438,6 @@ AudioBridge::AudioBridge(QObject *parent)
 
     connect(manager, &AudioManager::outputAudioLevelChanged, this, &AudioBridge::onOutputAudioLevelChanged);
     connect(manager, &AudioManager::inputAudioLevelChanged, this, &AudioBridge::onInputAudioLevelChanged);
-    connect(manager, &AudioManager::applicationAudioLevelChanged, this, &AudioBridge::onApplicationAudioLevelChanged);
-
-    connect(this, &AudioBridge::applicationAudioLevelChanged,
-            m_applicationModel, &ApplicationModel::updateApplicationAudioLevel);
 
     // Load comm apps
     loadCommAppsFromFile();
@@ -516,7 +496,6 @@ ExecutableSessionModel* AudioBridge::getSessionsForExecutable(const QString& exe
             app.iconPath = m_applicationModel->data(index, ApplicationModel::IconPathRole).toString();
             app.volume = m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
             app.isMuted = m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool();
-            app.audioLevel = m_applicationModel->data(index, ApplicationModel::AudioLevelRole).toInt();
 
             // Debug the streamIndex retrieval step by step
             QVariant streamIndexVariant = m_applicationModel->data(index, ApplicationModel::StreamIndexRole);
@@ -616,8 +595,7 @@ void AudioBridge::updateGroupedApplications()
         int volume = m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
         bool muted = m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool();
         QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
-        int audioLevel = m_applicationModel->data(index, ApplicationModel::AudioLevelRole).toInt();
-        int streamIndex = m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt(); // ADD THIS LINE
+        int streamIndex = m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt();
 
         AudioApplication app;
         app.id = appId;
@@ -626,8 +604,7 @@ void AudioBridge::updateGroupedApplications()
         app.iconPath = iconPath;
         app.volume = volume;
         app.isMuted = muted;
-        app.audioLevel = audioLevel;
-        app.streamIndex = streamIndex; // ADD THIS LINE
+        app.streamIndex = streamIndex;
 
         if (!groups.contains(executableName)) {
             ApplicationGroup group;
@@ -1067,28 +1044,6 @@ void AudioBridge::onInputAudioLevelChanged(int level)
         m_inputAudioLevel = level;
         emit inputAudioLevelChanged();
     }
-}
-
-void AudioBridge::onApplicationAudioLevelChanged(const QString& appId, int level)
-{
-    m_applicationAudioLevels[appId] = level;
-
-    // Update the application model
-    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
-        QModelIndex index = m_applicationModel->index(i, 0);
-        QString modelAppId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
-
-        if (modelAppId == appId) {
-            // Update the model with new audio level
-            emit applicationAudioLevelChanged(appId, level);
-            break;
-        }
-    }
-}
-
-int AudioBridge::getApplicationAudioLevel(const QString& appId) const
-{
-    return m_applicationAudioLevels.value(appId, 0);
 }
 
 void AudioBridge::updateGroupForApplication(const QString& appId)
