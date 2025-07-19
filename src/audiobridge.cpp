@@ -1470,7 +1470,7 @@ void AudioBridge::stopApplicationAudioLevelMonitoring()
 
 void AudioBridge::updateSingleGroupAudioLevel(const QString& executableName)
 {
-    int totalLevel = 0;
+    int maxLevel = 0;
     int sessionCount = 0;
 
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
@@ -1479,11 +1479,11 @@ void AudioBridge::updateSingleGroupAudioLevel(const QString& executableName)
 
         if (appExecutableName == executableName) {
             QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
-            totalLevel += getApplicationAudioLevel(appId);
+            int currentLevel = getApplicationAudioLevel(appId);
+            maxLevel = qMax(maxLevel, currentLevel);
             sessionCount++;
         }
     }
 
-    int averageLevel = sessionCount > 0 ? totalLevel / sessionCount : 0;
-    m_groupedApplicationModel->updateGroupAudioLevel(executableName, averageLevel);
+    m_groupedApplicationModel->updateGroupAudioLevel(executableName, maxLevel);
 }
