@@ -491,16 +491,15 @@ ExecutableSessionModel* AudioBridge::getSessionsForExecutable(const QString& exe
         if (appExecutableName == executableName) {
             AudioApplication app;
             app.id = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
-            app.name = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
             app.executableName = appExecutableName;
             app.iconPath = m_applicationModel->data(index, ApplicationModel::IconPathRole).toString();
             app.volume = m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
             app.isMuted = m_applicationModel->data(index, ApplicationModel::IsMutedRole).toBool();
+            app.streamIndex = m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt();
 
-            // Debug the streamIndex retrieval step by step
-            QVariant streamIndexVariant = m_applicationModel->data(index, ApplicationModel::StreamIndexRole);
-            int streamIndexValue = streamIndexVariant.toInt();
-            app.streamIndex = streamIndexValue;
+            // Use the original name first, then get the display name (which includes custom names)
+            QString originalName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+            app.name = getDisplayNameForApplication(originalName, app.streamIndex);
 
             sessions.append(app);
         }
@@ -1133,6 +1132,8 @@ QString AudioBridge::getDisplayNameForApplication(const QString& appName, int st
 
 void AudioBridge::setCustomApplicationName(const QString& originalName, int streamIndex, const QString& customName)
 {
+    bool changed = false;
+
     // Check if we already have a rename for this app and index
     for (int i = 0; i < m_appRenames.count(); ++i) {
         if (m_appRenames[i].originalName.compare(originalName, Qt::CaseInsensitive) == 0 &&
@@ -1141,23 +1142,51 @@ void AudioBridge::setCustomApplicationName(const QString& originalName, int stre
             if (customName.isEmpty() || customName == originalName) {
                 // Remove the rename if custom name is empty or same as original
                 m_appRenames.removeAt(i);
-            } else {
-                // Update existing rename
+                changed = true;
+            } else if (m_appRenames[i].customName != customName) {
+                // Update existing rename only if it's different
                 m_appRenames[i].customName = customName;
+                changed = true;
             }
-            saveAppRenamesToFile();
-            return;
+            break;
         }
     }
 
     // Add new rename if custom name is not empty and different from original
-    if (!customName.isEmpty() && customName != originalName) {
+    if (!changed && !customName.isEmpty() && customName != originalName) {
         AppRename newRename;
         newRename.originalName = originalName;
         newRename.customName = customName;
         newRename.streamIndex = streamIndex;
         m_appRenames.append(newRename);
+        changed = true;
+    }
+
+    if (changed) {
         saveAppRenamesToFile();
+
+        // Update the individual session models
+        refreshApplicationDisplayNames(originalName, streamIndex);
+    }
+}
+
+void AudioBridge::refreshApplicationDisplayNames(const QString& originalName, int streamIndex)
+{
+    // Find and update the session model that contains this application
+    for (auto it = m_sessionModels.begin(); it != m_sessionModels.end(); ++it) {
+        ExecutableSessionModel* sessionModel = it.value();
+
+        // Check if this session model contains the application we just renamed
+        for (int i = 0; i < sessionModel->rowCount(); ++i) {
+            QModelIndex index = sessionModel->index(i, 0);
+            QString appName = sessionModel->data(index, ExecutableSessionModel::NameRole).toString();
+            int appStreamIndex = sessionModel->data(index, ExecutableSessionModel::StreamIndexRole).toInt();
+
+            if (appName.compare(originalName, Qt::CaseInsensitive) == 0 && appStreamIndex == streamIndex) {
+                // Force the model to update this item
+                emit sessionModel->dataChanged(index, index, {ExecutableSessionModel::NameRole});
+            }
+        }
     }
 }
 

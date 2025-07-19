@@ -319,6 +319,7 @@ private:
     void saveAppRenamesToFile();
     QString getAppRenamesFilePath() const;
     void createDefaultAppRenames();
+    void refreshApplicationDisplayNames(const QString& originalName, int streamIndex);
 };
 
 #endif // AUDIOBRIDGE_H
