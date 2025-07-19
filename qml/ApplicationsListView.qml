@@ -31,6 +31,12 @@ Rectangle {
     Layout.rightMargin: -14
     color: Constants.footerColor
 
+    function closeContextMenus() {
+        if (renameContextMenu.visible) {
+            renameContextMenu.close()
+        }
+    }
+
     Behavior on Layout.preferredHeight {
         NumberAnimation {
             duration: 150

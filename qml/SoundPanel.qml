@@ -111,21 +111,6 @@ ApplicationWindow {
 
     onVisibleChanged: {
         if (!visible) {
-            outputDevicesRect.expanded = false
-            inputDevicesRect.expanded = false
-
-            for (let i = 0; i < appRepeater.count; ++i) {
-                let item = appRepeater.itemAt(i)
-                if (item && item.children) {
-                    for (let j = 0; j < item.children.length; ++j) {
-                        let child = item.children[j]
-                        if (child && child.hasOwnProperty('expanded')) {
-                            child.expanded = false
-                        }
-                    }
-                }
-            }
-
             if (UserSettings.opacityAnimations) {
                 mediaLayout.opacity = 0
                 mainLayout.opacity = 0
@@ -316,6 +301,38 @@ ApplicationWindow {
     function hidePanel() {
         if (isAnimatingIn || isAnimatingOut) {
             return
+        }
+
+        if (executableRenameContextMenu.visible) {
+            executableRenameContextMenu.close()
+        }
+
+        // Close context menus in application lists
+        for (let i = 0; i < appRepeater.count; ++i) {
+            let item = appRepeater.itemAt(i)
+            if (item && item.children) {
+                for (let j = 0; j < item.children.length; ++j) {
+                    let child = item.children[j]
+                    if (child && child.hasOwnProperty('closeContextMenus')) {
+                        child.closeContextMenus()
+                    }
+                }
+            }
+        }
+
+        outputDevicesRect.expanded = false
+        inputDevicesRect.expanded = false
+
+        for (let i = 0; i < appRepeater.count; ++i) {
+            let item = appRepeater.itemAt(i)
+            if (item && item.children) {
+                for (let j = 0; j < item.children.length; ++j) {
+                    let child = item.children[j]
+                    if (child && child.hasOwnProperty('expanded')) {
+                        child.expanded = false
+                    }
+                }
+            }
         }
 
         isAnimatingOut = true
