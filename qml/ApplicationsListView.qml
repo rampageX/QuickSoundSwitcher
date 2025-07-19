@@ -142,13 +142,12 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.RightButton
-                        onClicked: {
+                        onClicked: function(mouse) {
                             if (mouse.button === Qt.RightButton && individualAppLayout.model.name !== "System sounds") {
                                 renameContextMenu.originalName = individualAppLayout.model.name
                                 renameContextMenu.streamIndex = individualAppLayout.model.streamIndex
                                 renameContextMenu.currentCustomName = AudioBridge.getCustomApplicationName(individualAppLayout.model.name, individualAppLayout.model.streamIndex)
                                 renameContextMenu.popup()
-
                                 console.log(individualAppLayout.model.streamIndex)
                             }
                         }
@@ -263,7 +262,8 @@ Rectangle {
         id: renameDialog
         title: qsTr("Rename Application")
         modal: true
-        width: 400
+        width: 300
+        dim: false
         anchors.centerIn: parent
 
         ColumnLayout {
