@@ -155,15 +155,15 @@ Rectangle {
                     }
                 }
 
-                ProgressSlider {
+                Slider {
                     id: volumeSlider
                     from: 0
                     to: 100
                     enabled: !UserSettings.chatMixEnabled && !muteButton.highlighted
                     opacity: enabled ? 1 : 0.5
-                    audioLevel: {
-                        return AudioBridge.getApplicationAudioLevel(individualAppLayout.model.appId)
-                    }
+                    //audioLevel: {
+                    //    return AudioBridge.getApplicationAudioLevel(individualAppLayout.model.appId)
+                    //}
                     Layout.fillWidth: true
 
                     // Break binding loop for individual sessions too

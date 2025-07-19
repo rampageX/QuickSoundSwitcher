@@ -16,6 +16,23 @@
 #pragma comment(lib, "psapi.lib")
 #pragma comment(lib, "shell32.lib")
 
+SIZE_T getProcessMemoryUsage(DWORD processId) {
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
+    if (!hProcess) {
+        return 0;
+    }
+
+    PROCESS_MEMORY_COUNTERS_EX memCounters;
+    SIZE_T memoryUsage = 0;
+
+    if (GetProcessMemoryInfo(hProcess, (PROCESS_MEMORY_COUNTERS*)&memCounters, sizeof(memCounters))) {
+        memoryUsage = memCounters.WorkingSetSize; // Current physical memory usage
+    }
+
+    CloseHandle(hProcess);
+    return memoryUsage;
+}
+
 QString extractShortName(const QString& fullName) {
     int firstOpenParenIndex = fullName.indexOf('(');
     int lastCloseParenIndex = fullName.lastIndexOf(')');
@@ -1173,23 +1190,25 @@ void AudioWorker::enumerateApplications()
 
     // Sort sessions within each executable group by session control pointer for stability
     for (auto& group : executableGroups) {
+        // Debug memory usage for Discord
+        if (!group.isEmpty() && group.first()->executableName == "Discord") {
+            qDebug() << "Discord Memory Analysis:";
+            for (const TempSessionData* session : group) {
+                SIZE_T memory = getProcessMemoryUsage(session->processId);
+                qDebug() << "  ProcessId:" << session->processId
+                         << "Memory:" << (memory / 1024 / 1024) << "MB";
+            }
+        }
+
         std::sort(group.begin(), group.end(),
                   [](const TempSessionData* a, const TempSessionData* b) {
-                      return a->processId < b->processId;
-                  });
-    }
+                      // Get memory usage for both processes
+                      SIZE_T memoryA = getProcessMemoryUsage(a->processId);
+                      SIZE_T memoryB = getProcessMemoryUsage(b->processId);
 
-    // Debug output for Discord
-    if (executableGroups.contains("Discord")) {
-        qDebug() << "=== Discord Sessions ===";
-        const auto& discordGroup = executableGroups["Discord"];
-        for (int i = 0; i < discordGroup.count(); ++i) {
-            qDebug() << "Stream" << i << ":"
-                     << "DisplayName:" << discordGroup[i]->sessionDisplayName
-                     << "SessionIndex:" << discordGroup[i]->sessionIndex
-                     << "ProcessId:" << discordGroup[i]->processId
-                     << "SessionPtr:" << QString::number(discordGroup[i]->sessionControlPtr, 16);
-        }
+                      // Sort by memory usage descending (bigger memory = lower index)
+                      return memoryA > memoryB;
+                  });
     }
 
     // Third pass: create final applications with proper stream indices

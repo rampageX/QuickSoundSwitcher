@@ -828,7 +828,7 @@ ApplicationWindow {
                                     }
                                 }
 
-                                ProgressSlider {
+                                Slider {
                                     id: executableVolumeSlider
                                     from: 0
                                     to: 100

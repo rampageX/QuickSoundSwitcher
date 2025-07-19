@@ -351,13 +351,6 @@ QVariant ExecutableSessionModel::data(const QModelIndex &index, int role) const
 
     const AudioApplication& session = m_sessions.at(index.row());
 
-    // Debug for Discord streamIndex requests
-    if (role == StreamIndexRole && session.executableName == "Discord") {
-        qDebug() << "ExecutableSessionModel::data - Discord StreamIndexRole requested for row" << index.row()
-        << "returning:" << session.streamIndex
-        << "AppId:" << session.id;
-    }
-
     switch (role) {
     case IdRole:
         return session.id;
@@ -422,17 +415,6 @@ void ExecutableSessionModel::setSessions(const QList<AudioApplication>& sessions
 {
     beginResetModel();
     m_sessions = sessions;
-
-    // Debug output for Discord sessions
-    for (int i = 0; i < m_sessions.count(); ++i) {
-        if (m_sessions[i].executableName == "Discord") {
-            qDebug() << "ExecutableSessionModel::setSessions - Discord session" << i
-                     << "Name:" << m_sessions[i].name
-                     << "StreamIndex:" << m_sessions[i].streamIndex
-                     << "AppId:" << m_sessions[i].id;
-        }
-    }
-
     endResetModel();
 }
 
@@ -541,17 +523,6 @@ ExecutableSessionModel* AudioBridge::getSessionsForExecutable(const QString& exe
             int streamIndexValue = streamIndexVariant.toInt();
             app.streamIndex = streamIndexValue;
 
-            // Debug output for Discord
-            if (executableName == "Discord") {
-                qDebug() << "getSessionsForExecutable - Discord app from main model:"
-                         << "Row:" << i
-                         << "Name:" << app.name
-                         << "StreamIndexVariant:" << streamIndexVariant
-                         << "StreamIndexValue:" << streamIndexValue
-                         << "app.streamIndex:" << app.streamIndex
-                         << "AppId:" << app.id;
-            }
-
             sessions.append(app);
         }
     }
@@ -561,14 +532,6 @@ ExecutableSessionModel* AudioBridge::getSessionsForExecutable(const QString& exe
               [](const AudioApplication& a, const AudioApplication& b) {
                   return a.streamIndex < b.streamIndex;
               });
-
-    // Debug the final sorted sessions for Discord
-    if (executableName == "Discord") {
-        qDebug() << "getSessionsForExecutable - Final sorted Discord sessions:";
-        for (int i = 0; i < sessions.count(); ++i) {
-            qDebug() << "  Session" << i << "StreamIndex:" << sessions[i].streamIndex << "AppId:" << sessions[i].id;
-        }
-    }
 
     model->setSessions(sessions);
     return model;
@@ -710,13 +673,6 @@ void AudioBridge::updateGroupedApplications()
     // Update session models for each executable
     for (const auto& group : groupList) {
         if (m_sessionModels.contains(group.executableName)) {
-            // Debug for Discord
-            if (group.executableName == "Discord") {
-                qDebug() << "updateGroupedApplications - Updating Discord sessions:";
-                for (int i = 0; i < group.sessions.count(); ++i) {
-                    qDebug() << "  Session" << i << "StreamIndex:" << group.sessions[i].streamIndex << "AppId:" << group.sessions[i].id;
-                }
-            }
             m_sessionModels[group.executableName]->setSessions(group.sessions);
         }
     }
@@ -1210,26 +1166,13 @@ void AudioBridge::updateGroupForApplication(const QString& appId)
 
 QString AudioBridge::getDisplayNameForApplication(const QString& appName, int streamIndex) const
 {
-    // Debug output
-    if (appName == "Discord") {
-        qDebug() << "getDisplayNameForApplication called - Name:" << appName << "StreamIndex:" << streamIndex;
-        qDebug() << "Available renames:";
-        for (const AppRename& rename : m_appRenames) {
-            qDebug() << "  - Original:" << rename.originalName << "Custom:" << rename.customName << "Index:" << rename.streamIndex;
-        }
-    }
-
-    // Check if we have a custom name for this app and stream index
     for (const AppRename& rename : m_appRenames) {
         if (rename.originalName.compare(appName, Qt::CaseInsensitive) == 0 &&
             rename.streamIndex == streamIndex) {
-            qDebug() << "Found match! Returning:" << rename.customName;
             return rename.customName;
         }
     }
 
-    // Return original name if no custom name found
-    qDebug() << "No match found, returning original:" << appName;
     return appName;
 }
 
