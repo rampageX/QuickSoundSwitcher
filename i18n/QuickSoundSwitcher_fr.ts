@@ -124,42 +124,42 @@
     <name>ApplicationsListView</name>
     <message>
         <source>System sounds</source>
-        <translation type="unfinished"></translation>
+        <translation>Sons système</translation>
     </message>
     <message>
         <source>Rename Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Renommer</translation>
     </message>
     <message>
         <source>Reset to Original Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Par défaut</translation>
     </message>
     <message>
         <source>Original name: </source>
-        <translation type="unfinished"></translation>
+        <translation>Nom original: </translation>
     </message>
     <message>
         <source>Stream index: </source>
-        <translation type="unfinished"></translation>
+        <translation>Indexe du flux: </translation>
     </message>
     <message>
         <source>Custom name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom personnalisé:</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuler</translation>
+        <translation>Annuler</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Sauvegarder</translation>
     </message>
 </context>
 <context>
     <name>AudioWorker</name>
     <message>
         <source>System sounds</source>
-        <translation type="unfinished"></translation>
+        <translation>Sons système</translation>
     </message>
 </context>
 <context>
@@ -566,31 +566,31 @@
     </message>
     <message>
         <source>System sounds</source>
-        <translation type="unfinished"></translation>
+        <translation>Sons système</translation>
     </message>
     <message>
         <source>Rename Application</source>
-        <translation type="unfinished"></translation>
+        <translation>Renommer</translation>
     </message>
     <message>
         <source>Reset to Original Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Par défaut</translation>
     </message>
     <message>
         <source>Original name: </source>
-        <translation type="unfinished"></translation>
+        <translation>Nom original: </translation>
     </message>
     <message>
         <source>Custom name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nom personnalisé:</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuler</translation>
+        <translation>Annuler</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Sauvegarder</translation>
     </message>
 </context>
 <context>
@@ -612,15 +612,15 @@
     <name>SystemTray</name>
     <message>
         <source>Output: </source>
-        <translation type="unfinished"></translation>
+        <translation>Sortie: </translation>
     </message>
     <message>
         <source>Input: </source>
-        <translation type="unfinished"></translation>
+        <translation>Entrée: </translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished">Quitter</translation>
+        <translation>Quitter</translation>
     </message>
     <message>
         <source>Quick Sound Switcher</source>
@@ -632,11 +632,11 @@
     </message>
     <message>
         <source>Windows sound settings (Legacy)</source>
-        <translation type="unfinished">Paramètres audio Windows (Herité)</translation>
+        <translation>Paramètres audio Windows (Herité)</translation>
     </message>
     <message>
         <source>Windows sound settings (Modern)</source>
-        <translation type="unfinished">Paramètres audio Windows (Moderne)</translation>
+        <translation>Paramètres audio Windows (Moderne)</translation>
     </message>
 </context>
 </TS>

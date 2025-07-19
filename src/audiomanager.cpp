@@ -626,53 +626,6 @@ int AudioWorker::getDeviceAudioLevel(EDataFlow dataFlow)
     return static_cast<int>(peakLevel * 100);
 }
 
-int AudioWorker::getApplicationAudioLevel(const QString& appId)
-{
-    if (!m_sessionManager) return 0;
-
-    DWORD processId = 0;
-    if (appId == "system_sounds") {
-        processId = 0;
-    } else {
-        processId = appId.toULong();
-    }
-
-    CComPtr<IAudioSessionEnumerator> sessionEnumerator;
-    HRESULT hr = m_sessionManager->GetSessionEnumerator(&sessionEnumerator);
-    if (FAILED(hr)) return 0;
-
-    int sessionCount = 0;
-    sessionEnumerator->GetCount(&sessionCount);
-
-    for (int i = 0; i < sessionCount; ++i) {
-        CComPtr<IAudioSessionControl> sessionControl;
-        hr = sessionEnumerator->GetSession(i, &sessionControl);
-        if (FAILED(hr)) continue;
-
-        CComPtr<IAudioSessionControl2> sessionControl2;
-        hr = sessionControl->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sessionControl2);
-        if (FAILED(hr)) continue;
-
-        DWORD pid = 0;
-        hr = sessionControl2->GetProcessId(&pid);
-        if (FAILED(hr)) continue;
-
-        if (pid == processId || (processId == 0 && pid == 0)) {
-            CComPtr<IAudioMeterInformation> meterInfo;
-            hr = sessionControl->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&meterInfo);
-            if (SUCCEEDED(hr)) {
-                float peakLevel = 0.0f;
-                hr = meterInfo->GetPeakValue(&peakLevel);
-                if (SUCCEEDED(hr)) {
-                    return static_cast<int>(peakLevel * 100);
-                }
-            }
-        }
-    }
-
-    return 0;
-}
-
 HRESULT AudioWorker::initializeCOM()
 {
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);

@@ -209,7 +209,6 @@ private:
     QList<AudioApplication> m_cachedApplications;
 
     int getDeviceAudioLevel(EDataFlow dataFlow);
-    int getApplicationAudioLevel(const QString& appId);
 };
 
 // Device change notification callback
