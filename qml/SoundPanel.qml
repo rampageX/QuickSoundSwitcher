@@ -820,7 +820,7 @@ ApplicationWindow {
 
                                 onClicked: {
                                     // Mute/unmute all sessions for this executable
-                                    AudioBridge.setExecutableMute(appDelegateRoot.model.executableName, !checked)
+                                    AudioBridge.setExecutableMute(appDelegateRoot.model.executableName, checked)
                                 }
 
                                 Component.onCompleted: {
