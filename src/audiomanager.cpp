@@ -491,6 +491,14 @@ void AudioWorker::cleanup()
         m_audioLevelTimer = nullptr;
     }
 
+    for (auto it = m_sessionMeterControls.begin(); it != m_sessionMeterControls.end(); ++it) {
+        if (it.value()) {
+            it.value()->Release();
+        }
+    }
+    m_sessionMeterControls.clear();
+    m_applicationAudioLevels.clear();
+
     // Clean up volume controls cache
     for (auto it = m_sessionVolumeControls.begin(); it != m_sessionVolumeControls.end(); ++it) {
         if (it.value()) {
@@ -604,6 +612,9 @@ void AudioWorker::updateAudioLevels()
 
     emit outputAudioLevelChanged(outputLevel);
     emit inputAudioLevelChanged(inputLevel);
+
+    // Add application levels
+    updateApplicationAudioLevels();
 }
 
 // Add these helper methods to AudioWorker
@@ -715,6 +726,50 @@ void AudioWorker::setupSessionNotifications()
         qDebug() << "ERROR: Failed to register session notifications, HRESULT:" << QString::number(hr, 16);
         m_sessionNotificationClient->Release();
         m_sessionNotificationClient = nullptr;
+    }
+}
+
+int AudioWorker::getApplicationAudioLevel(const QString& appId)
+{
+    auto it = m_sessionMeterControls.find(appId);
+    if (it == m_sessionMeterControls.end()) {
+        return 0;
+    }
+
+    float peakLevel = 0.0f;
+    HRESULT hr = it.value()->GetPeakValue(&peakLevel);
+    if (FAILED(hr)) {
+        return 0;
+    }
+
+    return static_cast<int>(peakLevel * 100);
+}
+
+void AudioWorker::updateApplicationAudioLevels()
+{
+    for (auto it = m_sessionMeterControls.begin(); it != m_sessionMeterControls.end(); ++it) {
+        int newLevel = getApplicationAudioLevel(it.key());
+        int cachedLevel = m_applicationAudioLevels.value(it.key(), -1);
+
+        if (newLevel != cachedLevel) {
+            m_applicationAudioLevels[it.key()] = newLevel;
+            emit applicationAudioLevelChanged(it.key(), newLevel);
+        }
+    }
+}
+
+void AudioWorker::startApplicationAudioLevelMonitoring()
+{
+    if (!m_audioLevelTimer) {
+        initializeAudioLevelTimer();
+    }
+    m_audioLevelTimer->start(100);
+}
+
+void AudioWorker::stopApplicationAudioLevelMonitoring()
+{
+    if (m_audioLevelTimer) {
+        m_audioLevelTimer->stop();
     }
 }
 
@@ -926,6 +981,14 @@ void AudioWorker::enumerateApplications()
     }
     m_sessionVolumeControls.clear();
 
+    // Clean up existing meter controls
+    for (auto it = m_sessionMeterControls.begin(); it != m_sessionMeterControls.end(); ++it) {
+        if (it.value()) {
+            it.value()->Release();
+        }
+    }
+    m_sessionMeterControls.clear();
+
     // Clean up existing sessions
     for (auto& sessionInfo : m_activeSessions) {
         if (sessionInfo.sessionControl && sessionInfo.eventsClient) {
@@ -986,6 +1049,7 @@ void AudioWorker::enumerateApplications()
     struct TempSessionData {
         IAudioSessionControl* sessionControl;
         ISimpleAudioVolume* volumeControl;
+        IAudioMeterInformation* meterControl; // Add meter control
         QString appId;
         QString executableName;
         QString finalAppName;
@@ -995,8 +1059,8 @@ void AudioWorker::enumerateApplications()
         bool isSystemSounds;
         DWORD processId;
         int sessionIndex;
-        QString sessionDisplayName; // Add this for debugging
-        uintptr_t sessionControlPtr; // Add this for stable sorting
+        QString sessionDisplayName;
+        uintptr_t sessionControlPtr;
     };
 
     QList<TempSessionData> tempSessions;
@@ -1049,6 +1113,14 @@ void AudioWorker::enumerateApplications()
             continue;
         }
 
+        // Get meter info for audio levels
+        CComPtr<IAudioMeterInformation> pMeterInfo;
+        hr = sessionControl->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&pMeterInfo);
+        if (FAILED(hr)) {
+            qDebug() << "Failed to get meter info for session" << i;
+            // Don't fail the entire session, just set meter to nullptr
+        }
+
         BOOL isMuted = FALSE;
         pSimpleAudioVolume->GetMute(&isMuted);
 
@@ -1059,13 +1131,14 @@ void AudioWorker::enumerateApplications()
         TempSessionData tempData;
         tempData.sessionControl = sessionControl;
         tempData.volumeControl = pSimpleAudioVolume.Detach(); // Detach from CComPtr
+        tempData.meterControl = pMeterInfo.Detach(); // Detach meter control
         tempData.volume = static_cast<int>(volumeLevel * 100);
         tempData.isMuted = isMuted;
         tempData.isSystemSounds = isSystemSounds;
         tempData.processId = processId;
         tempData.sessionIndex = i;
         tempData.sessionDisplayName = sessionDisplayName;
-        tempData.sessionControlPtr = reinterpret_cast<uintptr_t>(sessionControl); // For stable sorting
+        tempData.sessionControlPtr = reinterpret_cast<uintptr_t>(sessionControl);
 
         QString executablePath;
         QString executableName;
@@ -1183,6 +1256,11 @@ void AudioWorker::enumerateApplications()
 
             // Cache the volume control
             m_sessionVolumeControls[app.id] = tempData->volumeControl;
+
+            // Cache the meter control for audio levels
+            if (tempData->meterControl) {
+                m_sessionMeterControls[app.id] = tempData->meterControl;
+            }
 
             // Register session events for real-time updates
             SessionEventsClient* eventsClient = new SessionEventsClient(this, app.id);
@@ -1558,6 +1636,9 @@ void AudioManager::initialize()
     connect(m_worker, &AudioWorker::outputAudioLevelChanged, this, &AudioManager::outputAudioLevelChanged, Qt::QueuedConnection);
     connect(m_worker, &AudioWorker::inputAudioLevelChanged, this, &AudioManager::inputAudioLevelChanged, Qt::QueuedConnection);
 
+    connect(m_worker, &AudioWorker::applicationAudioLevelChanged,
+            this, &AudioManager::applicationAudioLevelChanged, Qt::QueuedConnection);
+
     m_worker->moveToThread(m_workerThread);
     connect(m_workerThread, &QThread::started, m_worker, &AudioWorker::initialize);
     m_workerThread->start();
@@ -1636,6 +1717,19 @@ void AudioManager::cleanup()
     m_cachedDevices.clear();
 }
 
+void AudioManager::startApplicationAudioLevelMonitoring()
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "startApplicationAudioLevelMonitoring", Qt::QueuedConnection);
+    }
+}
+
+void AudioManager::stopApplicationAudioLevelMonitoring()
+{
+    if (m_worker) {
+        QMetaObject::invokeMethod(m_worker, "stopApplicationAudioLevelMonitoring", Qt::QueuedConnection);
+    }
+}
 
 void AudioManager::startAudioLevelMonitoring()
 {

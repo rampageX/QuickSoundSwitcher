@@ -269,6 +269,8 @@ QVariant GroupedApplicationModel::data(const QModelIndex &index, int role) const
         return group.allMuted;
     case SessionCountRole:
         return group.sessionCount;
+    case AverageAudioLevelRole:
+        return group.averageAudioLevel;
     default:
         return QVariant();
     }
@@ -285,6 +287,7 @@ void GroupedApplicationModel::updateGroupVolume(const QString& executableName, i
         }
     }
 }
+
 
 void GroupedApplicationModel::updateGroupMute(const QString& executableName, bool anyMuted, bool allMuted)
 {
@@ -309,7 +312,22 @@ QHash<int, QByteArray> GroupedApplicationModel::roleNames() const
     roles[AnyMutedRole] = "anyMuted";
     roles[AllMutedRole] = "allMuted";
     roles[SessionCountRole] = "sessionCount";
+    roles[AverageAudioLevelRole] = "averageAudioLevel";
     return roles;
+}
+
+void GroupedApplicationModel::updateGroupAudioLevel(const QString& executableName, int averageAudioLevel)
+{
+    for (int i = 0; i < m_groups.count(); ++i) {
+        if (m_groups[i].executableName == executableName) {
+            if (m_groups[i].averageAudioLevel != averageAudioLevel) {
+                m_groups[i].averageAudioLevel = averageAudioLevel;
+                QModelIndex modelIndex = createIndex(i, 0);
+                emit dataChanged(modelIndex, modelIndex, {AverageAudioLevelRole});
+            }
+            break;
+        }
+    }
 }
 
 void GroupedApplicationModel::setGroups(const QList<ApplicationGroup>& groups)
@@ -436,6 +454,9 @@ AudioBridge::AudioBridge(QObject *parent)
     connect(manager, &AudioManager::initializationComplete, this, &AudioBridge::onInitializationComplete);
     connect(manager, &AudioManager::outputAudioLevelChanged, this, &AudioBridge::onOutputAudioLevelChanged);
     connect(manager, &AudioManager::inputAudioLevelChanged, this, &AudioBridge::onInputAudioLevelChanged);
+
+    connect(manager, &AudioManager::applicationAudioLevelChanged,
+            this, &AudioBridge::onApplicationAudioLevelChanged);
 
     loadCommAppsFromFile();
     loadAppRenamesFromFile();
@@ -1409,4 +1430,60 @@ void AudioBridge::saveExecutableRenamesToFile()
 
     QJsonDocument doc(root);
     file.write(doc.toJson());
+}
+
+void AudioBridge::onApplicationAudioLevelChanged(const QString& appId, int level)
+{
+    m_applicationAudioLevels[appId] = level;
+
+    // Find which executable this app belongs to
+    QString executableName;
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        if (m_applicationModel->data(index, ApplicationModel::IdRole).toString() == appId) {
+            executableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+            break;
+        }
+    }
+
+    if (!executableName.isEmpty()) {
+        updateSingleGroupAudioLevel(executableName);
+    }
+
+    emit applicationAudioLevelsChanged();
+}
+
+int AudioBridge::getApplicationAudioLevel(const QString& appId) const
+{
+    return m_applicationAudioLevels.value(appId, 0).toInt();
+}
+
+void AudioBridge::startApplicationAudioLevelMonitoring()
+{
+    AudioManager::instance()->startApplicationAudioLevelMonitoring();
+}
+
+void AudioBridge::stopApplicationAudioLevelMonitoring()
+{
+    AudioManager::instance()->stopApplicationAudioLevelMonitoring();
+}
+
+void AudioBridge::updateSingleGroupAudioLevel(const QString& executableName)
+{
+    int totalLevel = 0;
+    int sessionCount = 0;
+
+    for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
+        QModelIndex index = m_applicationModel->index(i, 0);
+        QString appExecutableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
+
+        if (appExecutableName == executableName) {
+            QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
+            totalLevel += getApplicationAudioLevel(appId);
+            sessionCount++;
+        }
+    }
+
+    int averageLevel = sessionCount > 0 ? totalLevel / sessionCount : 0;
+    m_groupedApplicationModel->updateGroupAudioLevel(executableName, averageLevel);
 }

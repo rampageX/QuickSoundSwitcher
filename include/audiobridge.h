@@ -27,7 +27,7 @@ public:
         IconPathRole,
         VolumeRole,
         IsMutedRole,
-        StreamIndexRole
+        StreamIndexRole,
     };
     Q_ENUM(ApplicationRoles)
 
@@ -42,6 +42,7 @@ public:
     void setApplications(const QList<AudioApplication>& applications);
     void updateApplicationVolume(const QString& appId, int volume);
     void updateApplicationMute(const QString& appId, bool muted);
+    void updateApplicationAudioLevel(const QString& appId, int audioLevel);
 
 private:
     QList<AudioApplication> m_applications;
@@ -101,6 +102,7 @@ struct ApplicationGroup {
     bool anyMuted;
     bool allMuted;
     int sessionCount;
+    int averageAudioLevel;
 };
 
 class GroupedApplicationModel : public QAbstractListModel
@@ -116,7 +118,8 @@ public:
         AverageVolumeRole,
         AnyMutedRole,
         AllMutedRole,
-        SessionCountRole
+        SessionCountRole,
+        AverageAudioLevelRole
     };
     Q_ENUM(GroupRoles)
 
@@ -132,7 +135,7 @@ public:
     QList<ApplicationGroup> getGroups() const { return m_groups; }
     void updateGroupVolume(const QString& executableName, int averageVolume);
     void updateGroupMute(const QString& executableName, bool anyMuted, bool allMuted);
-
+    void updateGroupAudioLevel(const QString& executableName, int averageAudioLevel);
 
 private:
     QList<ApplicationGroup> m_groups;
@@ -190,6 +193,7 @@ class AudioBridge : public QObject
 
     Q_PROPERTY(int outputAudioLevel READ outputAudioLevel NOTIFY outputAudioLevelChanged)
     Q_PROPERTY(int inputAudioLevel READ inputAudioLevel NOTIFY inputAudioLevelChanged)
+    Q_PROPERTY(QVariantMap applicationAudioLevels READ applicationAudioLevels NOTIFY applicationAudioLevelsChanged)
 
 public:
     explicit AudioBridge(QObject *parent = nullptr);
@@ -246,6 +250,11 @@ public:
     Q_INVOKABLE QString getCustomExecutableName(const QString& executableName) const;
     Q_INVOKABLE void setCustomExecutableName(const QString& executableName, const QString& customName);
 
+    QVariantMap applicationAudioLevels() const { return m_applicationAudioLevels; }
+    Q_INVOKABLE int getApplicationAudioLevel(const QString& appId) const;
+    Q_INVOKABLE void startApplicationAudioLevelMonitoring();
+    Q_INVOKABLE void stopApplicationAudioLevelMonitoring();
+
 signals:
     void outputVolumeChanged();
     void inputVolumeChanged();
@@ -258,6 +267,7 @@ signals:
     void commAppsListChanged();
     void outputAudioLevelChanged();
     void inputAudioLevelChanged();
+    void applicationAudioLevelsChanged();
 
 private slots:
     void onOutputVolumeChanged(int volume);
@@ -274,6 +284,7 @@ private slots:
     void onInitializationComplete();
     void onOutputAudioLevelChanged(int level);
     void onInputAudioLevelChanged(int level);
+    void onApplicationAudioLevelChanged(const QString& appId, int level);
 
 private:
     int m_outputVolume;
@@ -336,6 +347,8 @@ private:
     void createDefaultAppRenames();
     void refreshApplicationDisplayNames(const QString& originalName, int streamIndex);
     void refreshExecutableDisplayName(const QString& executableName);
+    QVariantMap m_applicationAudioLevels;
+    void updateSingleGroupAudioLevel(const QString& executableName);
 };
 
 #endif // AUDIOBRIDGE_H

@@ -160,12 +160,17 @@ Rectangle {
                     }
                 }
 
-                Slider {
+                ProgressSlider {
                     id: volumeSlider
                     from: 0
                     to: 100
                     enabled: !UserSettings.chatMixEnabled && !muteButton.highlighted
                     opacity: enabled ? 1 : 0.5
+                    audioLevel: {
+                        // Force re-evaluation when applicationAudioLevels changes
+                        AudioBridge.applicationAudioLevels
+                        return AudioBridge.getApplicationAudioLevel(individualAppLayout.model.appId)
+                    }
                     //audioLevel: {
                     //    return AudioBridge.getApplicationAudioLevel(individualAppLayout.model.appId)
                     //}
@@ -201,18 +206,31 @@ Rectangle {
 
                     onPressedChanged: {
                         if (!pressed && !UserSettings.chatMixEnabled) {
-                            // Final update when releasing
                             root.applicationVolumeChanged(individualAppLayout.model.appId, value)
                         }
 
                         if (!UserSettings.showAudioLevel) return
 
                         if (pressed) {
-                            AudioBridge.stopAudioLevelMonitoring()
+                            AudioBridge.stopApplicationAudioLevelMonitoring()
                         } else {
-                            AudioBridge.startAudioLevelMonitoring()
+                            AudioBridge.startApplicationAudioLevelMonitoring()
                         }
                     }
+                    //onPressedChanged: {
+                    //    if (!pressed && !UserSettings.chatMixEnabled) {
+                    //        // Final update when releasing
+                    //        root.applicationVolumeChanged(individualAppLayout.model.appId, value)
+                    //    }
+//
+                    //    if (!UserSettings.showAudioLevel) return
+//
+                    //    if (pressed) {
+                    //        AudioBridge.stopAudioLevelMonitoring()
+                    //    } else {
+                    //        AudioBridge.startAudioLevelMonitoring()
+                    //    }
+                    //}
                 }
             }
         }

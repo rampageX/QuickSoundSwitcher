@@ -150,9 +150,13 @@ signals:
     void outputAudioLevelChanged(int level);
     void inputAudioLevelChanged(int level);
 
+    void applicationAudioLevelChanged(const QString& appId, int level);
+
 private slots:
     void updateAudioLevels();
     void initializeAudioLevelTimer();
+    void startApplicationAudioLevelMonitoring();
+    void stopApplicationAudioLevelMonitoring();
 
 private:
     // COM objects
@@ -209,6 +213,12 @@ private:
     QList<AudioApplication> m_cachedApplications;
 
     int getDeviceAudioLevel(EDataFlow dataFlow);
+
+    QMap<QString, IAudioMeterInformation*> m_sessionMeterControls;
+    QMap<QString, int> m_applicationAudioLevels; // Cache levels
+
+    int getApplicationAudioLevel(const QString& appId);
+    void updateApplicationAudioLevels();
 };
 
 // Device change notification callback
@@ -335,6 +345,9 @@ public:
     void startAudioLevelMonitoring();
     void stopAudioLevelMonitoring();
 
+    void startApplicationAudioLevelMonitoring();
+    void stopApplicationAudioLevelMonitoring();
+
 signals:
     void outputVolumeChanged(int volume);
     void inputVolumeChanged(int volume);
@@ -351,6 +364,7 @@ signals:
 
     void outputAudioLevelChanged(int level);
     void inputAudioLevelChanged(int level);
+    void applicationAudioLevelChanged(const QString& appId, int level);
 
 private slots:
     void onWorkerOutputVolumeChanged(int volume);

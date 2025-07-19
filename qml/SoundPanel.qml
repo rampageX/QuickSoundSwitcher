@@ -118,10 +118,12 @@ ApplicationWindow {
 
             if (UserSettings.showAudioLevel) {
                 AudioBridge.stopAudioLevelMonitoring()
+                AudioBridge.stopApplicationAudioLevelMonitoring() // Add this
             }
         } else {
             if (UserSettings.showAudioLevel) {
                 AudioBridge.startAudioLevelMonitoring()
+                AudioBridge.startApplicationAudioLevelMonitoring() // Add this
             }
         }
     }
@@ -857,14 +859,14 @@ ApplicationWindow {
                                     }
                                 }
 
-                                Slider {
+                                ProgressSlider {
                                     id: executableVolumeSlider
                                     from: 0
                                     to: 100
                                     enabled: !UserSettings.chatMixEnabled && !executableMuteButton.highlighted
                                     opacity: enabled ? 1 : 0.5
                                     Layout.fillWidth: true
-                                    //audioLevel: individualAppLayout.model.audioLevel || 0
+                                    audioLevel: appDelegateRoot.model.averageAudioLevel || 0
 
                                     // Break the binding loop by only updating when not being dragged
                                     value: pressed ? value : appDelegateRoot.model.averageVolume
