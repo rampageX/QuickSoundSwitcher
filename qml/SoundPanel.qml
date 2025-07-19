@@ -1003,10 +1003,6 @@ ApplicationWindow {
 
                             onValueChanged: {
                                 UserSettings.chatMixValue = value
-                            }
-
-                            onPressedChanged: {
-                                if (pressed) return
                                 if (UserSettings.chatMixEnabled) {
                                     AudioBridge.applyChatMixToApplications(Math.round(value))
                                 }
