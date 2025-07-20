@@ -10,10 +10,10 @@
         <file>tray_dark_100.png</file>
         <file>mic.png</file>
         <file>mic_muted.png</file>
-        <file>panel_volume_100.png</file>
-        <file>panel_volume_66.png</file>
-        <file>panel_volume_33.png</file>
-        <file>panel_volume_0.png</file>
+        <file>panel_volume_100.svg</file>
+        <file>panel_volume_66.svg</file>
+        <file>panel_volume_33.svg</file>
+        <file>panel_volume_0.svg</file>
         <file>system_dark.png</file>
         <file>system_light.png</file>
         <file>settings.svg</file>

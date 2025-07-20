@@ -550,13 +550,13 @@ ApplicationWindow {
                         flat: true
                         property string volumeIcon: {
                             if (AudioBridge.outputMuted || AudioBridge.outputVolume === 0) {
-                                return "qrc:/icons/panel_volume_0.png"
+                                return "qrc:/icons/panel_volume_0.svg"
                             } else if (AudioBridge.outputVolume <= 33) {
-                                return "qrc:/icons/panel_volume_33.png"
+                                return "qrc:/icons/panel_volume_33.svg"
                             } else if (AudioBridge.outputVolume <= 66) {
-                                return "qrc:/icons/panel_volume_66.png"
+                                return "qrc:/icons/panel_volume_66.svg"
                             } else {
-                                return "qrc:/icons/panel_volume_100.png"
+                                return "qrc:/icons/panel_volume_100.svg"
                             }
                         }
 
