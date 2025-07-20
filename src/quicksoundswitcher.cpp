@@ -32,7 +32,10 @@ QuickSoundSwitcher::QuickSoundSwitcher(QWidget *parent)
     instance = this;
     initializeQMLEngine();
     setupLocalServer();
-    installKeyboardHook();
+
+    if (settings.value("globalShortcutsEnabled").toBool()) {
+        installKeyboardHook();
+    }
 
     if (SoundPanelBridge::instance()) {
         connect(SoundPanelBridge::instance(), &SoundPanelBridge::languageChanged,
