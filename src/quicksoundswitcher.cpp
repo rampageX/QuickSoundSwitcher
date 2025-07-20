@@ -56,7 +56,7 @@ QuickSoundSwitcher::~QuickSoundSwitcher()
 void QuickSoundSwitcher::initializeQMLEngine()
 {
     if (engine) {
-        return; // Already initialized
+        return;
     }
 
     engine = new QQmlApplicationEngine(this);
@@ -67,10 +67,21 @@ void QuickSoundSwitcher::initializeQMLEngine()
         if (panelWindow) {
             panelWindow->setProperty("visible", false);
 
-            // Connect to visibility changes
             connect(panelWindow, &QWindow::visibleChanged,
                     this, &QuickSoundSwitcher::onPanelVisibilityChanged);
+
+            connect(panelWindow, SIGNAL(globalShortcutsToggled(bool)),
+                    this, SLOT(onGlobalShortcutsToggled(bool)));
         }
+    }
+}
+
+void QuickSoundSwitcher::onGlobalShortcutsToggled(bool enabled)
+{
+    if (enabled) {
+        installKeyboardHook();
+    } else {
+        uninstallKeyboardHook();
     }
 }
 

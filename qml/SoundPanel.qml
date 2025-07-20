@@ -24,6 +24,8 @@ ApplicationWindow {
         return newHeight
     }
 
+    signal globalShortcutsToggled(bool enabled)
+
     Component.onCompleted: {
         SoundPanelBridge.startMediaMonitoring()
     }
@@ -40,6 +42,10 @@ ApplicationWindow {
                 mediaLayout.opacity = 1
                 mainLayout.opacity = 1
             }
+        }
+
+        function onGlobalShortcutsEnabledChanged() {
+            panel.globalShortcutsToggled(UserSettings.globalShortcutsEnabled)
         }
     }
 

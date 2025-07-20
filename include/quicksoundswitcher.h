@@ -23,6 +23,7 @@ private slots:
     void onNewConnection();
     void onClientDisconnected();
     void onPanelVisibilityChanged(bool visible);
+    void onGlobalShortcutsToggled(bool enabled);
 
 private:
     QQmlApplicationEngine* engine;
