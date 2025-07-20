@@ -1,1 +1,39 @@
-<svg class="svg-icon" style="width: 1em; height: 1em;vertical-align: middle;fill: currentColor;overflow: hidden;" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M967.111111 22.755556l-711.111111 170.666666v557.511111c-28.444444 0-62.577778 5.688889-93.866667 19.911111-88.177778 36.977778-136.533333 113.777778-113.777777 170.666667s113.777778 76.8 201.955555 39.822222c76.8-31.288889 128-96.711111 119.466667-150.755555V281.6l483.555555-113.777778v440.888889c-28.444444 0-62.577778 5.688889-93.866666 19.911111-88.177778 36.977778-136.533333 113.777778-113.777778 170.666667s113.777778 76.8 201.955555 39.822222c76.8-31.288889 128-96.711111 119.466667-150.755555V22.755556z" fill="" /></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   class="svg-icon"
+   style="width: 1em; height: 1em;vertical-align: middle;fill: currentColor;overflow: hidden;"
+   viewBox="0 0 1024 1024"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="music.svg"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="1.1396484"
+     inkscape:cx="511.56127"
+     inkscape:cy="512"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <path
+     d="M 986.17752,2.5738936 244.42167,180.59529 v 581.53659 c -29.67023,0 -65.27452,5.93405 -97.91178,20.76916 C 54.53217,821.47236 4.0927724,901.58198 27.828961,960.92246 51.565149,1020.2629 146.50989,1041.0321 238.48762,1002.4608 318.59725,969.82353 372.00368,901.58198 363.10261,845.20854 V 272.57302 L 867.49658,153.89208 v 459.88863 c -29.67023,0 -65.27451,5.93405 -97.91177,20.76916 -91.97772,38.57131 -142.41712,118.68094 -118.68093,178.02142 23.73618,59.34046 118.68093,80.10962 210.65866,41.53832 80.10962,-32.63725 133.51605,-100.8788 124.61498,-157.25224 z"
+     fill=""
+     id="path1"
+     style="stroke-width:1.04309" />
+</svg>

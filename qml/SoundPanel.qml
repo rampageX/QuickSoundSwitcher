@@ -959,8 +959,8 @@ ApplicationWindow {
                     ToolButton {
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
-                        icon.width: 14
-                        icon.height: 14
+                        icon.width: 15
+                        icon.height: 15
                         icon.source: "qrc:/icons/headset.svg"
                         icon.color: palette.text
                         checkable: true
@@ -1015,8 +1015,8 @@ ApplicationWindow {
                     IconImage {
                         Layout.preferredWidth: 35
                         Layout.preferredHeight: 35
-                        sourceSize.width: 14
-                        sourceSize.height: 14
+                        sourceSize.width: 15
+                        sourceSize.height: 15
                         color: palette.text
                         source: "qrc:/icons/music.svg"
                         enabled: UserSettings.chatMixEnabled

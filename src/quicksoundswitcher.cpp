@@ -232,16 +232,16 @@ int QuickSoundSwitcher::qtKeyToVirtualKey(int qtKey)
     }
 }
 
-// Update the KeyboardProc function
 LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     if (nCode == HC_ACTION) {
         PKBDLLHOOKSTRUCT pKeyboard = reinterpret_cast<PKBDLLHOOKSTRUCT>(lParam);
 
         if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-            // Check for custom shortcuts
             if (instance->settings.value("globalShortcutsEnabled", true).toBool()) {
-                instance->handleCustomShortcut(pKeyboard->vkCode);
+                if (instance->handleCustomShortcut(pKeyboard->vkCode)) {
+                    return 1; // Block the key event
+                }
             }
         }
     }
@@ -249,35 +249,33 @@ LRESULT CALLBACK QuickSoundSwitcher::KeyboardProc(int nCode, WPARAM wParam, LPAR
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
 
-void QuickSoundSwitcher::handleCustomShortcut(DWORD vkCode)
+bool QuickSoundSwitcher::handleCustomShortcut(DWORD vkCode)
 {
-    // Check if global shortcuts are enabled in settings
     if (!settings.value("globalShortcutsEnabled", true).toBool()) {
-        return;
+        return false;
     }
 
-    // Check if shortcuts are temporarily suspended (e.g., dialog open)
     if (SoundPanelBridge::instance() && SoundPanelBridge::instance()->areGlobalShortcutsSuspended()) {
-        return;
+        return false;
     }
 
-    // Panel shortcut
     int panelKey = qtKeyToVirtualKey(settings.value("panelShortcutKey", static_cast<int>(Qt::Key_S)).toInt());
     int panelModifiers = settings.value("panelShortcutModifiers", static_cast<int>(Qt::ControlModifier | Qt::ShiftModifier)).toInt();
 
     if (vkCode == panelKey && isModifierPressed(panelModifiers)) {
         togglePanel();
-        return;
+        return true;
     }
 
-    // ChatMix shortcut
     int chatMixKey = qtKeyToVirtualKey(settings.value("chatMixShortcutKey", static_cast<int>(Qt::Key_M)).toInt());
     int chatMixModifiers = settings.value("chatMixShortcutModifiers", static_cast<int>(Qt::ControlModifier | Qt::ShiftModifier)).toInt();
 
     if (vkCode == chatMixKey && isModifierPressed(chatMixModifiers)) {
         toggleChatMix();
-        return;
+        return true;
     }
+
+    return false;
 }
 
 void QuickSoundSwitcher::toggleChatMix()

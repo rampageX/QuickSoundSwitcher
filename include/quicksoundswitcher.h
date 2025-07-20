@@ -50,7 +50,7 @@ private:
     void installKeyboardHook();
     void uninstallKeyboardHook();
 
-    void handleCustomShortcut(DWORD vkCode);
+    bool handleCustomShortcut(DWORD vkCode);
     void toggleChatMix();
     bool isModifierPressed(int qtModifier);
     int qtKeyToVirtualKey(int qtKey);
