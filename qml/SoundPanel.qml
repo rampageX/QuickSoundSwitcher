@@ -669,7 +669,9 @@ ApplicationWindow {
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         flat: true
-                        icon.source: AudioBridge.inputMuted ? "qrc:/icons/mic_muted.png" : "qrc:/icons/mic.png"
+                        icon.source: AudioBridge.inputMuted ? "qrc:/icons/mic_muted.svg" : "qrc:/icons/mic.svg"
+                        icon.height: 16
+                        icon.width: 16
                         onClicked: {
                             AudioBridge.setInputMute(!AudioBridge.inputMuted)
                         }

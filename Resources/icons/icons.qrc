@@ -8,8 +8,8 @@
         <file>tray_dark_66.png</file>
         <file>tray_light_100.png</file>
         <file>tray_dark_100.png</file>
-        <file>mic.png</file>
-        <file>mic_muted.png</file>
+        <file>mic.svg</file>
+        <file>mic_muted.svg</file>
         <file>panel_volume_100.svg</file>
         <file>panel_volume_66.svg</file>
         <file>panel_volume_33.svg</file>
