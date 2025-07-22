@@ -138,8 +138,9 @@ Rectangle {
                         // Get custom display name from AudioBridge
                         let displayName = AudioBridge.getDisplayNameForApplication(originalName, streamIndex)
 
-                        if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(originalName)) {
-                            displayName += " (Comm)"
+                        // Add lock indicator
+                        if (AudioBridge.isApplicationLocked(originalName, streamIndex)) {
+                            displayName += " 🔒"
                         }
 
                         return displayName
@@ -165,21 +166,22 @@ Rectangle {
                     from: 0
                     to: 100
                     enabled: !UserSettings.chatMixEnabled && !muteButton.highlighted
-                    opacity: enabled ? 1 : 0.5
+                    //opacity: enabled ? 1 : 0.5
                     audioLevel: {
-                        // Force re-evaluation when applicationAudioLevels changes
                         AudioBridge.applicationAudioLevels
                         return AudioBridge.getApplicationAudioLevel(individualAppLayout.model.appId)
                     }
-                    //audioLevel: {
-                    //    return AudioBridge.getApplicationAudioLevel(individualAppLayout.model.appId)
-                    //}
+                    opacity: AudioBridge.isApplicationLocked(individualAppLayout.model.name, individualAppLayout.model.streamIndex) ? 0.5 : (enabled ? 1 : 0.5)
+
+                    onActiveFocusChanged: {
+                        focus = false
+                    }
+
                     Layout.fillWidth: true
 
-                    // Break binding loop for individual sessions too
                     value: {
                         if (pressed) {
-                            return value // Keep current value while dragging
+                            return value
                         }
 
                         if (!UserSettings.chatMixEnabled) {
@@ -190,6 +192,13 @@ Rectangle {
                         let isCommApp = AudioBridge.isCommApp(appName)
 
                         return isCommApp ? 100 : UserSettings.chatMixValue
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.Linear
+                        }
                     }
 
                     ToolTip {
@@ -217,20 +226,6 @@ Rectangle {
                             AudioBridge.startApplicationAudioLevelMonitoring()
                         }
                     }
-                    //onPressedChanged: {
-                    //    if (!pressed && !UserSettings.chatMixEnabled) {
-                    //        // Final update when releasing
-                    //        root.applicationVolumeChanged(individualAppLayout.model.appId, value)
-                    //    }
-//
-                    //    if (!UserSettings.showAudioLevel) return
-//
-                    //    if (pressed) {
-                    //        AudioBridge.stopAudioLevelMonitoring()
-                    //    } else {
-                    //        AudioBridge.startAudioLevelMonitoring()
-                    //    }
-                    //}
                 }
             }
         }
@@ -267,6 +262,18 @@ Rectangle {
         property int streamIndex: 0
         property string currentCustomName: ""
 
+        Connections {
+            target: AudioBridge
+            function onApplicationLockChanged(originalName, streamIndex, isLocked) {
+                // Check if this signal is for our menu item
+                if (originalName === renameContextMenu.originalName &&
+                    streamIndex === renameContextMenu.streamIndex) {
+                    // Force the menu item to update by toggling a property
+                    lockMenuItem.text = isLocked ? qsTr("Unlock") : qsTr("Lock")
+                }
+            }
+        }
+
         MenuItem {
             text: qsTr("Rename Application")
             onTriggered: renameDialog.open()
@@ -277,6 +284,16 @@ Rectangle {
             enabled: renameContextMenu.currentCustomName !== renameContextMenu.originalName
             onTriggered: {
                 AudioBridge.setCustomApplicationName(renameContextMenu.originalName, renameContextMenu.streamIndex, "")
+            }
+        }
+
+        MenuItem {
+            id: lockMenuItem
+            text: AudioBridge.isApplicationLocked(renameContextMenu.originalName, renameContextMenu.streamIndex)
+                  ? qsTr("Unlock") : qsTr("Lock")
+            onTriggered: {
+                let isCurrentlyLocked = AudioBridge.isApplicationLocked(renameContextMenu.originalName, renameContextMenu.streamIndex)
+                AudioBridge.setApplicationLocked(renameContextMenu.originalName, renameContextMenu.streamIndex, !isCurrentlyLocked)
             }
         }
     }

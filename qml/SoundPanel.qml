@@ -868,6 +868,9 @@ ApplicationWindow {
                                 }
 
                                 ProgressSlider {
+                                    onActiveFocusChanged: {
+                                        focus = false
+                                    }
                                     id: executableVolumeSlider
                                     from: 0
                                     to: 100
@@ -905,6 +908,10 @@ ApplicationWindow {
                             }
 
                             ToolButton {
+                                onActiveFocusChanged: {
+                                    focus = false
+                                }
+
                                 icon.source: "qrc:/icons/arrow.svg"
                                 rotation: individualAppsRect.expanded ? 90 : 0
                                 visible: appDelegateRoot.model.sessionCount > 1 // Only show if multiple sessions

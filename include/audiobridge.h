@@ -255,6 +255,9 @@ public:
     Q_INVOKABLE void startApplicationAudioLevelMonitoring();
     Q_INVOKABLE void stopApplicationAudioLevelMonitoring();
 
+    Q_INVOKABLE bool isApplicationLocked(const QString& originalName, int streamIndex) const;
+    Q_INVOKABLE void setApplicationLocked(const QString& originalName, int streamIndex, bool locked);
+
 signals:
     void outputVolumeChanged();
     void inputVolumeChanged();
@@ -268,6 +271,7 @@ signals:
     void outputAudioLevelChanged();
     void inputAudioLevelChanged();
     void applicationAudioLevelsChanged();
+    void applicationLockChanged(const QString& originalName, int streamIndex, bool isLocked);
 
 private slots:
     void onOutputVolumeChanged(int volume);
@@ -332,6 +336,14 @@ private:
         QString originalName;
         QString customName;
     };
+
+    struct AppLock {
+        QString originalName;
+        int streamIndex;
+        bool isLocked;
+    };
+
+    QList<AppLock> m_appLocks;
     QList<ExecutableRename> m_executableRenames;
 
     // Add these methods
@@ -349,6 +361,10 @@ private:
     void refreshExecutableDisplayName(const QString& executableName);
     QVariantMap m_applicationAudioLevels;
     void updateSingleGroupAudioLevel(const QString& executableName);
+
+    void loadAppLocksFromFile();
+    void saveAppLocksToFile();
+    QString getAppLocksFilePath() const;
 };
 
 #endif // AUDIOBRIDGE_H

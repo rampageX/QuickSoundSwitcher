@@ -461,6 +461,7 @@ AudioBridge::AudioBridge(QObject *parent)
     loadCommAppsFromFile();
     loadAppRenamesFromFile();
     loadExecutableRenamesFromFile();
+    loadAppLocksFromFile();
 
     manager->initialize();
 }
@@ -538,23 +539,30 @@ void AudioBridge::setExecutableVolume(const QString& executableName, int volume)
     // Temporarily disable individual update signals to avoid loops
     bool wasBlocked = blockSignals(true);
 
-    // Set volume for all sessions of this executable
+    // Set volume for all UNLOCKED sessions of this executable
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
         QModelIndex index = m_applicationModel->index(i, 0);
         QString appExecutableName = m_applicationModel->data(index, ApplicationModel::ExecutableNameRole).toString();
 
         if (appExecutableName == executableName) {
             QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
-            setApplicationVolume(appId, volume);
+            QString originalName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+            int streamIndex = m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt();
+
+            // Only set volume if this stream is not locked
+            if (!isApplicationLocked(originalName, streamIndex)) {
+                setApplicationVolume(appId, volume);
+            }
         }
     }
 
     blockSignals(wasBlocked);
 
-    // Update models directly without triggering the change handlers
+    // Update the grouped model to show the volume we just set (for unlocked streams)
+    // This way the slider shows the volume that will be applied to unlocked streams
     m_groupedApplicationModel->updateGroupVolume(executableName, volume);
 
-    // Update session model
+    // Update session model with actual current volumes
     if (m_sessionModels.contains(executableName)) {
         for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
             QModelIndex index = m_applicationModel->index(i, 0);
@@ -562,7 +570,8 @@ void AudioBridge::setExecutableVolume(const QString& executableName, int volume)
 
             if (appExecutableName == executableName) {
                 QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
-                m_sessionModels[executableName]->updateSessionVolume(appId, volume);
+                int currentVolume = m_applicationModel->data(index, ApplicationModel::VolumeRole).toInt();
+                m_sessionModels[executableName]->updateSessionVolume(appId, currentVolume);
             }
         }
     }
@@ -1486,4 +1495,123 @@ void AudioBridge::updateSingleGroupAudioLevel(const QString& executableName)
     }
 
     m_groupedApplicationModel->updateGroupAudioLevel(executableName, maxLevel);
+}
+
+bool AudioBridge::isApplicationLocked(const QString& originalName, int streamIndex) const
+{
+    for (const AppLock& lock : m_appLocks) {
+        if (lock.originalName.compare(originalName, Qt::CaseInsensitive) == 0 &&
+            lock.streamIndex == streamIndex) {
+            return lock.isLocked;
+        }
+    }
+    return false;
+}
+
+void AudioBridge::setApplicationLocked(const QString& originalName, int streamIndex, bool locked)
+{
+    bool changed = false;
+
+    // Check if we already have a lock entry for this app and index
+    for (int i = 0; i < m_appLocks.count(); ++i) {
+        if (m_appLocks[i].originalName.compare(originalName, Qt::CaseInsensitive) == 0 &&
+            m_appLocks[i].streamIndex == streamIndex) {
+
+            if (!locked) {
+                // Remove the lock if unlocking
+                m_appLocks.removeAt(i);
+                changed = true;
+            } else if (m_appLocks[i].isLocked != locked) {
+                // Update existing lock
+                m_appLocks[i].isLocked = locked;
+                changed = true;
+            }
+            break;
+        }
+    }
+
+    // Add new lock if locking and not found
+    if (!changed && locked) {
+        AppLock newLock;
+        newLock.originalName = originalName;
+        newLock.streamIndex = streamIndex;
+        newLock.isLocked = true;
+        m_appLocks.append(newLock);
+        changed = true;
+    }
+
+    if (changed) {
+        saveAppLocksToFile();
+        // Force refresh similar to rename functionality
+        refreshApplicationDisplayNames(originalName, streamIndex);
+        // Emit signal for real-time updates
+        emit applicationLockChanged(originalName, streamIndex, locked);
+    }
+}
+
+QString AudioBridge::getAppLocksFilePath() const
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/applocks.json";
+}
+
+void AudioBridge::loadAppLocksFromFile()
+{
+    QString filePath = getAppLocksFilePath();
+    QFile file(filePath);
+
+    if (!file.exists()) {
+        return;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        return;
+    }
+
+    QJsonObject root = doc.object();
+    QJsonArray locksArray = root["appLocks"].toArray();
+
+    m_appLocks.clear();
+    for (const QJsonValue& value : locksArray) {
+        QJsonObject lockObj = value.toObject();
+        AppLock lock;
+        lock.originalName = lockObj["originalName"].toString();
+        lock.streamIndex = lockObj["streamIndex"].toInt();
+        lock.isLocked = lockObj["isLocked"].toBool();
+        m_appLocks.append(lock);
+    }
+}
+
+void AudioBridge::saveAppLocksToFile()
+{
+    QString filePath = getAppLocksFilePath();
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        return;
+    }
+
+    QJsonArray locksArray;
+    for (const AppLock& lock : m_appLocks) {
+        QJsonObject lockObj;
+        lockObj["originalName"] = lock.originalName;
+        lockObj["streamIndex"] = lock.streamIndex;
+        lockObj["isLocked"] = lock.isLocked;
+        locksArray.append(lockObj);
+    }
+
+    QJsonObject root;
+    root["appLocks"] = locksArray;
+
+    QJsonDocument doc(root);
+    file.write(doc.toJson());
 }
