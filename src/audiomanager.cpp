@@ -327,12 +327,39 @@ ULONG STDMETHODCALLTYPE SessionNotificationClient::Release()
 
 HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSessionControl *NewSession)
 {
+    qDebug() << "SessionNotificationClient::OnSessionCreated - checking if we need to enumerate";
 
+    if (!NewSession) {
+        return S_OK;
+    }
+
+    // Get the process ID of the new session
+    CComPtr<IAudioSessionControl2> sessionControl2;
+    HRESULT hr = NewSession->QueryInterface(__uuidof(IAudioSessionControl2), (void**)&sessionControl2);
+    if (SUCCEEDED(hr)) {
+        DWORD processId = 0;
+        hr = sessionControl2->GetProcessId(&processId);
+
+        if (SUCCEEDED(hr)) {
+            // Skip enumeration if this is our own process (likely the audio feedback)
+            if (processId == GetCurrentProcessId()) {
+                qDebug() << "Skipping enumeration - new session is our own process (audio feedback)";
+                return S_OK;
+            }
+
+            // Skip enumeration if this process already exists in our list
+            if (m_worker && m_worker->hasProcessId(processId)) {
+                qDebug() << "Skipping enumeration - process" << processId << "already exists";
+                return S_OK;
+            }
+        }
+    }
+
+    qDebug() << "Proceeding with enumeration - genuinely new session";
     if (m_worker) {
         QMetaObject::invokeMethod(m_worker, "enumerateApplications", Qt::QueuedConnection);
-    } else {
-        qDebug() << "ERROR: No worker available!";
     }
+
     return S_OK;
 }
 
@@ -579,6 +606,18 @@ void AudioWorker::cleanup()
     }
 
     CoUninitialize();
+}
+
+bool AudioWorker::hasProcessId(DWORD processId)
+{
+    for (const AudioApplication& app : m_applications) {
+        // Extract process ID from app.id (format: "processId_sessionPtr")
+        QString pidStr = app.id.section('_', 0, 0);
+        if (pidStr.toUInt() == processId) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void AudioWorker::initializeAudioLevelTimer()

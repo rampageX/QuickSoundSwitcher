@@ -109,6 +109,8 @@ public:
         return (flow == Output) ? eRender : eCapture;
     }
 
+    bool hasProcessId(DWORD processId);
+
 public slots:
     void initialize();
     void cleanup();
