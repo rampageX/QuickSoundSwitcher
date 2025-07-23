@@ -8,9 +8,6 @@
 #include <QImage>
 #include <QPainter>
 #include <QPainterPath>
-#include <windows.h>
-#include <winrt/Windows.Media.Control.h>
-#include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Storage.Streams.h>
 
 using namespace winrt;
@@ -125,6 +122,75 @@ void MediaWorker::initializeTimer() {
     connect(m_updateTimer, &QTimer::timeout, this, &MediaWorker::queryMediaInfo);
 }
 
+bool MediaWorker::ensureCurrentSession() {
+    try {
+        init_apartment();
+        auto sessionManager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+        auto currentSession = sessionManager.GetCurrentSession();
+
+        // If session changed, update notifications
+        if (m_currentSession != currentSession) {
+            cleanupSessionNotifications();
+            m_currentSession = currentSession;
+            if (m_currentSession) {
+                setupSessionNotifications();
+            }
+        }
+
+        return m_currentSession != nullptr;
+    } catch (...) {
+        qDebug() << "Failed to get current session";
+        return false;
+    }
+}
+
+void MediaWorker::setupSessionNotifications() {
+    if (!m_currentSession) {
+        return;
+    }
+
+    try {
+        // Register for media properties changes (title, artist, album art)
+        m_propertiesChangedToken = m_currentSession.MediaPropertiesChanged(
+            [this](GlobalSystemMediaTransportControlsSession const& session,
+                   MediaPropertiesChangedEventArgs const& args) {
+                Q_UNUSED(session)
+                Q_UNUSED(args)
+                QMetaObject::invokeMethod(this, "queryMediaInfo", Qt::QueuedConnection);
+            });
+
+        // Register for playback info changes (play/pause state)
+        m_playbackInfoChangedToken = m_currentSession.PlaybackInfoChanged(
+            [this](GlobalSystemMediaTransportControlsSession const& session,
+                   PlaybackInfoChangedEventArgs const& args) {
+                Q_UNUSED(session)
+                Q_UNUSED(args)
+                QMetaObject::invokeMethod(this, "queryMediaInfo", Qt::QueuedConnection);
+            });
+
+        qDebug() << "Session notifications registered successfully";
+    } catch (...) {
+        qDebug() << "Failed to register session notifications";
+    }
+}
+
+void MediaWorker::cleanupSessionNotifications() {
+    if (m_currentSession) {
+        try {
+            if (m_propertiesChangedToken.value != 0) {
+                m_currentSession.MediaPropertiesChanged(m_propertiesChangedToken);
+                m_propertiesChangedToken = {};
+            }
+            if (m_playbackInfoChangedToken.value != 0) {
+                m_currentSession.PlaybackInfoChanged(m_playbackInfoChangedToken);
+                m_playbackInfoChangedToken = {};
+            }
+        } catch (...) {
+            qDebug() << "Error cleaning up session notifications";
+        }
+    }
+}
+
 void MediaWorker::queryMediaInfo() {
     MediaInfo info = queryMediaInfoImpl();
     emit mediaInfoChanged(info);
@@ -134,25 +200,31 @@ void MediaWorker::startMonitoring() {
     if (!m_updateTimer) {
         initializeTimer();
     }
-    m_updateTimer->start(1000); // Update every 1 second
+
+    // Ensure we have a session and notifications are set up
+    ensureCurrentSession();
+
+    // Start a slower timer as backup (since we now have event-driven updates)
+    m_updateTimer->start(5000); // Update every 5 seconds as fallback
+
+    // Get initial state
+    queryMediaInfo();
 }
 
 void MediaWorker::stopMonitoring() {
     if (m_updateTimer) {
         m_updateTimer->stop();
     }
+
+    cleanupSessionNotifications();
+    m_currentSession = nullptr;
 }
 
 void MediaWorker::playPause() {
     try {
-        init_apartment();
-        auto sessionManager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
-        auto currentSession = sessionManager.GetCurrentSession();
-
-        if (currentSession) {
-            currentSession.TryTogglePlayPauseAsync().get();
-            // Immediately fetch updated state
-            QMetaObject::invokeMethod(this, "queryMediaInfo", Qt::QueuedConnection);
+        if (ensureCurrentSession() && m_currentSession) {
+            m_currentSession.TryTogglePlayPauseAsync().get();
+            // No need to manually query - the event will trigger automatically
         }
     } catch (...) {
         qDebug() << "Failed to toggle play/pause";
@@ -161,14 +233,9 @@ void MediaWorker::playPause() {
 
 void MediaWorker::nextTrack() {
     try {
-        init_apartment();
-        auto sessionManager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
-        auto currentSession = sessionManager.GetCurrentSession();
-
-        if (currentSession) {
-            currentSession.TrySkipNextAsync().get();
-            // Immediately fetch updated state
-            QMetaObject::invokeMethod(this, "queryMediaInfo", Qt::QueuedConnection);
+        if (ensureCurrentSession() && m_currentSession) {
+            m_currentSession.TrySkipNextAsync().get();
+            // No need to manually query - the event will trigger automatically
         }
     } catch (...) {
         qDebug() << "Failed to skip to next track";
@@ -177,14 +244,9 @@ void MediaWorker::nextTrack() {
 
 void MediaWorker::previousTrack() {
     try {
-        init_apartment();
-        auto sessionManager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
-        auto currentSession = sessionManager.GetCurrentSession();
-
-        if (currentSession) {
-            currentSession.TrySkipPreviousAsync().get();
-            // Immediately fetch updated state
-            QMetaObject::invokeMethod(this, "queryMediaInfo", Qt::QueuedConnection);
+        if (ensureCurrentSession() && m_currentSession) {
+            m_currentSession.TrySkipPreviousAsync().get();
+            // No need to manually query - the event will trigger automatically
         }
     } catch (...) {
         qDebug() << "Failed to skip to previous track";
@@ -206,7 +268,7 @@ void MediaSessionManager::cleanup() {
     QMutexLocker locker(&g_mediaInitMutex);
 
     if (g_mediaWorkerThread) {
-        // Stop any timers before quitting thread
+        // Stop any timers and cleanup notifications before quitting thread
         if (g_mediaWorker) {
             QMetaObject::invokeMethod(g_mediaWorker, "stopMonitoring", Qt::BlockingQueuedConnection);
         }

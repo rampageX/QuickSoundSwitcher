@@ -6,6 +6,13 @@
 #include <QThread>
 #include <QMutex>
 #include <QTimer>
+#include <windows.h>
+#include <winrt/Windows.Media.Control.h>
+#include <winrt/Windows.Foundation.h>
+
+using namespace winrt;
+using namespace Windows::Media::Control;
+using namespace Windows::Foundation;
 
 struct MediaInfo {
     QString title;
@@ -32,7 +39,16 @@ signals:
 
 private:
     QTimer* m_updateTimer = nullptr;
+    GlobalSystemMediaTransportControlsSession m_currentSession{ nullptr };
+
+    // Event tokens for cleanup
+    event_token m_propertiesChangedToken{};
+    event_token m_playbackInfoChangedToken{};
+
     void initializeTimer();
+    void setupSessionNotifications();
+    void cleanupSessionNotifications();
+    bool ensureCurrentSession();
 };
 
 namespace MediaSessionManager
