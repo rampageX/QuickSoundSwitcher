@@ -604,11 +604,11 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             audioLevel: AudioBridge.outputAudioLevel
 
-                            ToolTip {
-                                parent: outputSlider.handle
-                                visible: outputSlider.pressed
-                                text: Math.round(outputSlider.value).toString()
-                            }
+                            //ToolTip {
+                            //    parent: outputSlider.handle
+                            //    visible: outputSlider.pressed
+                            //    text: Math.round(outputSlider.value).toString()
+                            //}
 
                             onValueChanged: {
                                 if (pressed) {
@@ -715,11 +715,11 @@ ApplicationWindow {
                             audioLevel: AudioBridge.inputAudioLevel
                             Layout.fillWidth: true
 
-                            ToolTip {
-                                parent: inputSlider.handle
-                                visible: inputSlider.pressed
-                                text: Math.round(inputSlider.value).toString()
-                            }
+                            //ToolTip {
+                            //    parent: inputSlider.handle
+                            //    visible: inputSlider.pressed
+                            //    text: Math.round(inputSlider.value).toString()
+                            //}
 
                             onValueChanged: {
                                 if (pressed) {
@@ -885,11 +885,11 @@ ApplicationWindow {
                                     // Break the binding loop by only updating when not being dragged
                                     value: pressed ? value : appDelegateRoot.model.averageVolume
 
-                                    ToolTip {
-                                        parent: executableVolumeSlider.handle
-                                        visible: executableVolumeSlider.pressed
-                                        text: Math.round(executableVolumeSlider.value).toString()
-                                    }
+                                    //ToolTip {
+                                    //    parent: executableVolumeSlider.handle
+                                    //    visible: executableVolumeSlider.pressed
+                                    //    text: Math.round(executableVolumeSlider.value).toString()
+                                    //}
 
                                     onValueChanged: {
                                         if (!UserSettings.chatMixEnabled && pressed) {
@@ -1015,6 +1015,13 @@ ApplicationWindow {
                             to: 100
                             Layout.fillWidth: true
                             enabled: UserSettings.chatMixEnabled
+
+                            ToolTip {
+                                parent: chatMixSlider.handle
+                                visible: chatMixSlider.pressed || chatMixSlider.hovered
+                                delay: chatMixSlider.pressed ? 0 : 1000
+                                text: Math.round(chatMixSlider.value).toString()
+                            }
 
                             onValueChanged: {
                                 UserSettings.chatMixValue = value

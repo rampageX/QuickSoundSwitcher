@@ -36,6 +36,13 @@ Slider {
     readonly property bool __isDiscrete: stepSize >= Number.EPSILON
         && Math.abs(Math.round(__steps) - __steps) < Number.EPSILON
 
+    ToolTip {
+        parent: control.handle
+        visible: control.pressed || control.hovered
+        delay: control.pressed ? 0 : 1000
+        text: Math.round(control.value).toString()
+    }
+
     handle: Impl.StyleImage {
         x: Math.round(control.leftPadding + (control.horizontal
             ? control.visualPosition * (control.availableWidth - width)
