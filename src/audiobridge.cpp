@@ -740,15 +740,20 @@ void AudioBridge::setInputDevice(int deviceIndex)
     }
 }
 
-// ChatMix methods (unchanged)
 void AudioBridge::applyChatMixToApplications(int value)
 {
     for (int i = 0; i < m_applicationModel->rowCount(); ++i) {
         QModelIndex index = m_applicationModel->index(i, 0);
         QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
         QString appName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+        int streamIndex = m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt();
 
         if (appName == "System sounds" || appId == "system_sounds") {
+            continue;
+        }
+
+        // Skip locked applications
+        if (isApplicationLocked(appName, streamIndex)) {
             continue;
         }
 
@@ -770,8 +775,14 @@ void AudioBridge::restoreOriginalVolumes()
         QModelIndex index = m_applicationModel->index(i, 0);
         QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
         QString appName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+        int streamIndex = m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt();
 
         if (appName == "System sounds" || appId == "system_sounds") {
+            continue;
+        }
+
+        // Skip locked applications
+        if (isApplicationLocked(appName, streamIndex)) {
             continue;
         }
 
@@ -1033,12 +1044,17 @@ void AudioBridge::restoreOriginalVolumesSync()
         QModelIndex index = m_applicationModel->index(i, 0);
         QString appId = m_applicationModel->data(index, ApplicationModel::IdRole).toString();
         QString appName = m_applicationModel->data(index, ApplicationModel::NameRole).toString();
+        int streamIndex = m_applicationModel->data(index, ApplicationModel::StreamIndexRole).toInt();
 
         if (appName == "System sounds" || appId == "system_sounds") {
             continue;
         }
 
-        // Use blocking call to ensure completion before destructor finishes
+        // Skip locked applications
+        if (isApplicationLocked(appName, streamIndex)) {
+            continue;
+        }
+
         QMetaObject::invokeMethod(worker, "setApplicationVolume",
                                   Qt::BlockingQueuedConnection,
                                   Q_ARG(QString, appId),
