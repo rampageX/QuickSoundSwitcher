@@ -1239,6 +1239,11 @@ void AudioWorker::enumerateApplications()
         tempData.executableName = executableName;
         tempData.finalAppName = finalAppName;
 
+        if (finalAppName.trimmed().isEmpty()) {
+            sessionControl->Release();
+            continue;
+        }
+
         tempSessions.append(tempData);
     }
 
