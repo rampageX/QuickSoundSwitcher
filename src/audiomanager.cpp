@@ -327,9 +327,9 @@ ULONG STDMETHODCALLTYPE SessionNotificationClient::Release()
 
 HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSessionControl *NewSession)
 {
-    qDebug() << "SessionNotificationClient::OnSessionCreated - checking if we need to enumerate";
+    qDebug() << "SessionNotificationClient::OnSessionCreated";
 
-    if (!NewSession) {
+    if (!NewSession || !m_worker) {
         return S_OK;
     }
 
@@ -341,24 +341,18 @@ HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSess
         hr = sessionControl2->GetProcessId(&processId);
 
         if (SUCCEEDED(hr)) {
-            // Skip enumeration if this is our own process (likely the audio feedback)
+            // Only skip our own process (audio feedback)
             if (processId == GetCurrentProcessId()) {
-                qDebug() << "Skipping enumeration - new session is our own process (audio feedback)";
-                return S_OK;
-            }
-
-            // Skip enumeration if this process already exists in our list
-            if (m_worker && m_worker->hasProcessId(processId)) {
-                qDebug() << "Skipping enumeration - process" << processId << "already exists";
+                qDebug() << "Skipping enumeration - new session is our own process";
                 return S_OK;
             }
         }
     }
 
-    qDebug() << "Proceeding with enumeration - genuinely new session";
-    if (m_worker) {
-        QMetaObject::invokeMethod(m_worker, "enumerateApplications", Qt::QueuedConnection);
-    }
+    // Always enumerate when a new session is created
+    // This ensures we don't miss new streams from existing processes
+    qDebug() << "Enumerating applications due to new session";
+    QMetaObject::invokeMethod(m_worker, "enumerateApplications", Qt::QueuedConnection);
 
     return S_OK;
 }
