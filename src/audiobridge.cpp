@@ -634,8 +634,17 @@ void AudioBridge::updateGroupedApplications()
         if (!groups.contains(executableName)) {
             ApplicationGroup group;
             group.executableName = executableName;
-            // Use custom name if available
-            group.displayName = getCustomExecutableName(executableName);
+
+            // Use custom name if available, otherwise try to get the proper display name
+            QString customName = getCustomExecutableName(executableName);
+            if (customName == executableName) {
+                // No custom name set, trying to get proper display name
+                QString properDisplayName = getDisplayNameForApplication(name, streamIndex);
+                group.displayName = properDisplayName;
+            } else {
+                group.displayName = customName;
+            }
+
             group.iconPath = iconPath;
             group.sessions.append(app);
             groups[executableName] = group;

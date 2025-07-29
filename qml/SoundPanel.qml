@@ -988,10 +988,8 @@ ApplicationWindow {
                             UserSettings.chatMixEnabled = !checked
 
                             if (!checked) {
-                                console.log("apply")
                                 AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
                             } else {
-                                console.log("restore")
                                 AudioBridge.restoreOriginalVolumes()
                             }
                         }
