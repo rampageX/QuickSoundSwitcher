@@ -123,13 +123,16 @@ Slider {
                 // Audio level background (add this)
                 property Rectangle audioLevelTrack: Rectangle {
                     parent: control.background._background.groove
-                    y: control.horizontal ? 0 : parent.height - (parent.height * ((control.audioLevel / 100) * control.position))
+                    y: control.horizontal ? 0 : parent.height - (parent.height * ((clampedAudioLevel / 100) * control.position))
                     implicitWidth: control.horizontal ? control.__config.track.width : control.__config.track.height
                     implicitHeight: control.horizontal ? control.__config.track.height : control.__config.track.width
-                    width: control.horizontal ? parent.width * ((control.audioLevel / 100) * control.position) : parent.width
-                    height: control.horizontal ? parent.height : parent.height * ((control.audioLevel / 100) * control.position)
+                    width: control.horizontal ? parent.width * ((clampedAudioLevel / 100) * control.position) : parent.width
+                    height: control.horizontal ? parent.height : parent.height * ((clampedAudioLevel / 100) * control.position)
                     radius: control.__config.track.height * 0.5
                     color: control.palette.accent
+
+                    // Simple fix: if audio level is over 100, set to 0
+                    property int clampedAudioLevel: control.audioLevel > 100 ? 0 : control.audioLevel
 
                     Behavior on width {
                         NumberAnimation {
