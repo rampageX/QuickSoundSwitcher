@@ -449,6 +449,7 @@ AudioWorker::AudioWorker()
     , m_outputMuted(false)
     , m_inputMuted(false)
     , m_audioLevelTimer(nullptr)
+    , m_sessionManagerInvalid(false)
 {
     qRegisterMetaType<AudioApplication>("AudioApplication");
     qRegisterMetaType<QList<AudioApplication>>("QList<AudioApplication>");
@@ -731,6 +732,14 @@ void AudioWorker::setupVolumeNotifications()
 
 void AudioWorker::setupSessionNotifications()
 {
+    // Clean up existing session notifications first
+    if (m_sessionManager && m_sessionNotificationClient) {
+        m_sessionManager->UnregisterSessionNotification(m_sessionNotificationClient);
+        m_sessionNotificationClient->Release();
+        m_sessionNotificationClient = nullptr;
+        m_sessionManager->Release();
+        m_sessionManager = nullptr;
+    }
 
     if (!m_deviceEnumerator) {
         qDebug() << "ERROR: No device enumerator available";
@@ -755,6 +764,8 @@ void AudioWorker::setupSessionNotifications()
 
     hr = m_sessionManager->RegisterSessionNotification(m_sessionNotificationClient);
     if (SUCCEEDED(hr)) {
+        m_sessionManagerInvalid = false; // Clear the invalid flag on successful setup
+        qDebug() << "Session notifications re-established successfully";
     } else {
         qDebug() << "ERROR: Failed to register session notifications, HRESULT:" << QString::number(hr, 16);
         m_sessionNotificationClient->Release();
@@ -1010,6 +1021,11 @@ QString AudioWorker::getDeviceProperty(IMMDevice* device, const PROPERTYKEY& key
 
 void AudioWorker::enumerateApplications()
 {
+    if (!ensureValidSessionManager()) {
+        qDebug() << "Failed to restore session manager, skipping application enumeration";
+        return;
+    }
+
     // Clean up existing volume controls cache
     for (auto it = m_sessionVolumeControls.begin(); it != m_sessionVolumeControls.end(); ++it) {
         if (it.value()) {
@@ -1507,8 +1523,56 @@ void AudioWorker::onDefaultDeviceChanged(DataFlow dataFlow, const QString& devic
     // Re-setup volume notifications for the new default devices
     setupVolumeNotifications();
 
-    // Also emit specific signal
+    // Just mark sessions as invalid for output device changes
+    if (dataFlow == Output) {
+        m_sessionManagerInvalid = true;
+    }
+
     emit defaultDeviceChanged(deviceId, dataFlow == Input);
+}
+
+bool AudioWorker::ensureValidSessionManager()
+{
+    if (!m_sessionManagerInvalid && m_sessionManager) {
+        return true; // Already valid
+    }
+
+    // Clean up old session manager
+    if (m_sessionManager && m_sessionNotificationClient) {
+        m_sessionManager->UnregisterSessionNotification(m_sessionNotificationClient);
+        m_sessionNotificationClient->Release();
+        m_sessionNotificationClient = nullptr;
+        m_sessionManager->Release();
+        m_sessionManager = nullptr;
+    }
+
+    if (!m_deviceEnumerator) {
+        return false;
+    }
+
+    CComPtr<IMMDevice> device;
+    HRESULT hr = m_deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device);
+    if (FAILED(hr)) {
+        return false;
+    }
+
+    hr = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL,
+                          nullptr, (void**)&m_sessionManager);
+    if (FAILED(hr)) {
+        return false;
+    }
+
+    m_sessionNotificationClient = new SessionNotificationClient(this);
+    hr = m_sessionManager->RegisterSessionNotification(m_sessionNotificationClient);
+
+    if (SUCCEEDED(hr)) {
+        m_sessionManagerInvalid = false;
+        return true;
+    } else {
+        m_sessionNotificationClient->Release();
+        m_sessionNotificationClient = nullptr;
+        return false;
+    }
 }
 
 void AudioWorker::onApplicationSessionVolumeChanged(const QString& appId, float volume, bool muted)

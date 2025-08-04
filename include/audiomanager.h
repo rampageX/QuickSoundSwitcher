@@ -221,6 +221,9 @@ private:
 
     int getApplicationAudioLevel(const QString& appId);
     void updateApplicationAudioLevels();
+
+    bool m_sessionManagerInvalid;
+    bool ensureValidSessionManager();
 };
 
 // Device change notification callback
