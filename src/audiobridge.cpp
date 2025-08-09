@@ -454,6 +454,7 @@ AudioBridge::AudioBridge(QObject *parent)
     loadExecutableRenamesFromFile();
     loadAppLocksFromFile();
     loadDeviceRenamesFromFile();
+    loadDeviceIconsFromFile();
 
     manager->initialize();
 }
@@ -1810,5 +1811,128 @@ void AudioBridge::refreshDeviceModelData(const QString& originalName)
         if (deviceName == originalName) {
             emit m_inputDeviceModel->dataChanged(index, index, {FilteredDeviceModel::NameRole});
         }
+    }
+}
+
+void AudioBridge::loadDeviceIconsFromFile()
+{
+    QString filePath = getDeviceIconsFilePath();
+    QFile file(filePath);
+
+    if (!file.exists()) {
+        return;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        return;
+    }
+
+    QJsonObject root = doc.object();
+    QJsonArray iconsArray = root["deviceIcons"].toArray();
+
+    m_deviceIcons.clear();
+    for (const QJsonValue& value : iconsArray) {
+        QJsonObject iconObj = value.toObject();
+        DeviceIcon icon;
+        icon.originalName = iconObj["originalName"].toString();
+        icon.iconName = iconObj["iconName"].toString();
+        m_deviceIcons.append(icon);
+    }
+}
+
+void AudioBridge::saveDeviceIconsToFile()
+{
+    QString filePath = getDeviceIconsFilePath();
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        return;
+    }
+
+    QJsonArray iconsArray;
+    for (const DeviceIcon& icon : m_deviceIcons) {
+        QJsonObject iconObj;
+        iconObj["originalName"] = icon.originalName;
+        iconObj["iconName"] = icon.iconName;
+        iconsArray.append(iconObj);
+    }
+
+    QJsonObject root;
+    root["deviceIcons"] = iconsArray;
+
+    QJsonDocument doc(root);
+    file.write(doc.toJson());
+}
+
+QString AudioBridge::getDeviceIconsFilePath() const
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/deviceicons.json";
+}
+
+void AudioBridge::setCustomDeviceIcon(const QString& originalName, const QString& iconName)
+{
+    bool changed = false;
+
+    for (int i = 0; i < m_deviceIcons.count(); ++i) {
+        if (m_deviceIcons[i].originalName.compare(originalName, Qt::CaseInsensitive) == 0) {
+            if (iconName.isEmpty()) {
+                m_deviceIcons.removeAt(i);
+                changed = true;
+            } else if (m_deviceIcons[i].iconName != iconName) {
+                m_deviceIcons[i].iconName = iconName;
+                changed = true;
+            }
+            break;
+        }
+    }
+
+    if (!changed && !iconName.isEmpty()) {
+        DeviceIcon newIcon;
+        newIcon.originalName = originalName;
+        newIcon.iconName = iconName;
+        m_deviceIcons.append(newIcon);
+        changed = true;
+    }
+
+    if (changed) {
+        saveDeviceIconsToFile();
+        emit deviceIconUpdated();
+        refreshDeviceModelData(originalName);
+    }
+}
+
+QString AudioBridge::getCustomDeviceIcon(const QString& originalName) const
+{
+    for (const DeviceIcon& icon : m_deviceIcons) {
+        if (icon.originalName.compare(originalName, Qt::CaseInsensitive) == 0) {
+            return icon.iconName;
+        }
+    }
+    return QString();
+}
+
+QString AudioBridge::getDisplayIconForDevice(const QString& deviceName, bool isInput) const
+{
+    // Check for custom icon first
+    QString customIcon = getCustomDeviceIcon(deviceName);
+    if (!customIcon.isEmpty()) {
+        return QString("qrc:/icons/devices/%1.png").arg(customIcon);
+    }
+
+    // Return default icon based on device type
+    if (isInput) {
+        return "qrc:/icons/devices/microphone.png";
+    } else {
+        return "qrc:/icons/devices/speaker.png";
     }
 }

@@ -126,6 +126,16 @@ ColumnLayout {
                     onClicked: UserSettings.opacityAnimations = checked
                 }
             }
+
+            Card {
+                Layout.fillWidth: true
+                title: qsTr("Display device icon")
+
+                additionalControl: Switch {
+                    checked: UserSettings.deviceIcon
+                    onClicked: UserSettings.deviceIcon = checked
+                }
+            }
         }
     }
 }

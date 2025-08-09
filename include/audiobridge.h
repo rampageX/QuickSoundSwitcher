@@ -268,6 +268,10 @@ public:
 
     Q_INVOKABLE void refreshDeviceDisplayNames();
 
+    Q_INVOKABLE void setCustomDeviceIcon(const QString& originalName, const QString& iconName);
+    Q_INVOKABLE QString getCustomDeviceIcon(const QString& originalName) const;
+    Q_INVOKABLE QString getDisplayIconForDevice(const QString& deviceName, bool isInput) const;
+
 signals:
     void outputVolumeChanged();
     void inputVolumeChanged();
@@ -285,6 +289,7 @@ signals:
     void outputDeviceDisplayNameChanged();
     void inputDeviceDisplayNameChanged();
     void deviceRenameUpdated();
+    void deviceIconUpdated();
 
 private slots:
     void onOutputVolumeChanged(int volume);
@@ -392,6 +397,17 @@ private:
     QString getDeviceRenamesFilePath() const;
     void updateDeviceDisplayNames();
     void refreshDeviceModelData(const QString& originalName);
+
+    struct DeviceIcon {
+        QString originalName;
+        QString iconName;
+    };
+
+    QList<DeviceIcon> m_deviceIcons;
+
+    void loadDeviceIconsFromFile();
+    void saveDeviceIconsToFile();
+    QString getDeviceIconsFilePath() const;
 };
 
 #endif // AUDIOBRIDGE_H

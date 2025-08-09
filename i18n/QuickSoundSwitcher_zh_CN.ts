@@ -119,6 +119,10 @@
         <source>Opacity animations</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Display device icon</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ApplicationsListView</name>
@@ -307,6 +311,14 @@
     </message>
     <message>
         <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change Device Icon</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

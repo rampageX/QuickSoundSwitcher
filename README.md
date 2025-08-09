@@ -35,3 +35,4 @@ See [here](.github/BUILDING.md).
 
 ## Resources
 - Used OCEAN sound effects from KDE
+- Used icons from FlatIcon

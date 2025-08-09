@@ -30,5 +30,13 @@
         <file>pause.png</file>
         <file>next.png</file>
         <file>prev.png</file>
+        <file>devices/monitor.png</file>
+        <file>devices/microphone.png</file>
+        <file>devices/headset.png</file>
+        <file>devices/headset-mic.png</file>
+        <file>devices/speaker.png</file>
+        <file>devices/earbuds.png</file>
+        <file>devices/webcam.png</file>
+        <file>devices/gamepad.png</file>
     </qresource>
 </RCC>

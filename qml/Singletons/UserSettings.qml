@@ -30,4 +30,6 @@ Settings {
     property bool autoUpdateTranslations: false
     property bool opacityAnimations: true
     property bool firstRun: true
+
+    property bool deviceIcon: true
 }

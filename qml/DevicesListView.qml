@@ -26,11 +26,17 @@ Rectangle {
         if (deviceRenameContextMenu.visible) {
             deviceRenameContextMenu.close()
         }
+        if (deviceIconDialog.visible) {
+            deviceIconDialog.close()
+        }
     }
 
     Connections {
         target: AudioBridge
         function onDeviceRenameUpdated() {
+            devicesList.forceLayout()
+        }
+        function onDeviceIconUpdated() {
             devicesList.forceLayout()
         }
     }
@@ -90,6 +96,12 @@ Rectangle {
 
             highlighted: model.isDefault
 
+            // Add icon display
+            icon.source: UserSettings.deviceIcon ? AudioBridge.getDisplayIconForDevice(model.name || "", model.isInput || false) : ""
+            icon.width: 14
+            icon.height: 14
+            spacing: 6
+
             text: AudioBridge.getDisplayNameForDevice(model.name || "")
 
             MouseArea {
@@ -102,6 +114,7 @@ Rectangle {
                     } else if (mouse.button === Qt.RightButton) {
                         deviceRenameContextMenu.originalName = del.model.name || ""
                         deviceRenameContextMenu.currentCustomName = AudioBridge.getCustomDeviceName(del.model.name || "")
+                        deviceRenameContextMenu.isInput = del.model.isInput || false
                         deviceRenameContextMenu.popup()
                     }
                 }
@@ -137,10 +150,17 @@ Rectangle {
 
         property string originalName: ""
         property string currentCustomName: ""
+        property bool isInput: false
 
         MenuItem {
             text: qsTr("Rename Device")
             onTriggered: deviceRenameDialog.open()
+        }
+
+        MenuItem {
+            text: qsTr("Change Icon")
+            enabled: UserSettings.deviceIcon
+            onTriggered: deviceIconDialog.open()
         }
 
         MenuItem {
@@ -173,7 +193,7 @@ Rectangle {
                     AudioBridge.setCustomDeviceName(
                         deviceRenameContextMenu.originalName,
                         deviceCustomNameField.text.trim()
-                    )
+                        )
                     deviceRenameDialog.close()
                 }
             }
@@ -196,7 +216,7 @@ Rectangle {
                         AudioBridge.setCustomDeviceName(
                             deviceRenameContextMenu.originalName,
                             deviceCustomNameField.text.trim()
-                        )
+                            )
                         deviceRenameDialog.close()
                     }
                 }
@@ -208,6 +228,59 @@ Rectangle {
 
             deviceCustomNameField.text = deviceRenameContextMenu.currentCustomName
             deviceCustomNameField.forceActiveFocus()
+        }
+    }
+
+    Dialog {
+        id: deviceIconDialog
+        title: qsTr("Change Device Icon")
+        modal: true
+        width: 300
+        dim: false
+        anchors.centerIn: parent
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 15
+
+            GridLayout {
+                columns: 4
+                rows: 2
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignHCenter
+
+                property var iconNames: ["monitor", "microphone", "headset", "headset-mic", "speaker", "earbuds", "webcam", "gamepad"]
+
+                Repeater {
+                    model: parent.iconNames
+
+                    delegate: Button {
+                        required property string modelData
+                        required property int index
+
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+
+                        icon.source: "qrc:/icons/devices/" + modelData + ".png"
+                        icon.width: 24
+                        icon.height: 24
+
+                        onClicked: {
+                            AudioBridge.setCustomDeviceIcon(deviceRenameContextMenu.originalName, modelData)
+                            deviceIconDialog.close()
+                        }
+
+                        ToolTip.text: modelData.charAt(0).toUpperCase() + modelData.slice(1).replace('-', ' ')
+                        ToolTip.visible: hovered
+                    }
+                }
+            }
+
+            Button {
+                text: qsTr("Cancel")
+                onClicked: deviceIconDialog.close()
+                Layout.fillWidth: true
+            }
         }
     }
 }
