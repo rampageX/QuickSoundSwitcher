@@ -195,6 +195,9 @@ class AudioBridge : public QObject
     Q_PROPERTY(int inputAudioLevel READ inputAudioLevel NOTIFY inputAudioLevelChanged)
     Q_PROPERTY(QVariantMap applicationAudioLevels READ applicationAudioLevels NOTIFY applicationAudioLevelsChanged)
 
+    Q_PROPERTY(QString outputDeviceDisplayName READ outputDeviceDisplayName NOTIFY outputDeviceDisplayNameChanged)
+    Q_PROPERTY(QString inputDeviceDisplayName READ inputDeviceDisplayName NOTIFY inputDeviceDisplayNameChanged)
+
 public:
     explicit AudioBridge(QObject *parent = nullptr);
     ~AudioBridge();
@@ -258,6 +261,15 @@ public:
     Q_INVOKABLE bool isApplicationLocked(const QString& originalName, int streamIndex) const;
     Q_INVOKABLE void setApplicationLocked(const QString& originalName, int streamIndex, bool locked);
 
+    QString outputDeviceDisplayName() const { return m_outputDeviceDisplayName; }
+    QString inputDeviceDisplayName() const { return m_inputDeviceDisplayName; }
+
+    Q_INVOKABLE void setCustomDeviceName(const QString& originalName, const QString& customName);
+    Q_INVOKABLE QString getCustomDeviceName(const QString& originalName) const;
+    Q_INVOKABLE QString getDisplayNameForDevice(const QString& deviceName) const;
+
+    Q_INVOKABLE void refreshDeviceDisplayNames();
+
 signals:
     void outputVolumeChanged();
     void inputVolumeChanged();
@@ -272,6 +284,9 @@ signals:
     void inputAudioLevelChanged();
     void applicationAudioLevelsChanged();
     void applicationLockChanged(const QString& originalName, int streamIndex, bool isLocked);
+    void outputDeviceDisplayNameChanged();
+    void inputDeviceDisplayNameChanged();
+    void deviceRenameUpdated();
 
 private slots:
     void onOutputVolumeChanged(int volume);
@@ -346,7 +361,6 @@ private:
     QList<AppLock> m_appLocks;
     QList<ExecutableRename> m_executableRenames;
 
-    // Add these methods
     void loadExecutableRenamesFromFile();
     void saveExecutableRenamesToFile();
     QString getExecutableRenamesFilePath() const;
@@ -365,6 +379,21 @@ private:
     void loadAppLocksFromFile();
     void saveAppLocksToFile();
     QString getAppLocksFilePath() const;
+
+    QString m_outputDeviceDisplayName;
+    QString m_inputDeviceDisplayName;
+
+    struct DeviceRename {
+        QString originalName;
+        QString customName;
+    };
+    QList<DeviceRename> m_deviceRenames;
+
+    void loadDeviceRenamesFromFile();
+    void saveDeviceRenamesToFile();
+    QString getDeviceRenamesFilePath() const;
+    void updateDeviceDisplayNames();
+    void refreshDeviceModelData(const QString& originalName);
 };
 
 #endif // AUDIOBRIDGE_H

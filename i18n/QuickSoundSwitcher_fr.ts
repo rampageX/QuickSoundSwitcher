@@ -296,6 +296,33 @@
     </message>
 </context>
 <context>
+    <name>DevicesListView</name>
+    <message>
+        <source>Rename Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset to Original Name</source>
+        <translation type="unfinished">Par défaut</translation>
+    </message>
+    <message>
+        <source>Original name: </source>
+        <translation type="obsolete">Nom original: </translation>
+    </message>
+    <message>
+        <source>Custom name:</source>
+        <translation type="obsolete">Nom personnalisé:</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Annuler</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished">Sauvegarder</translation>
+    </message>
+</context>
+<context>
     <name>GeneralPane</name>
     <message>
         <source>General Settings</source>

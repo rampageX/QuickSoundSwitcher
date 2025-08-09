@@ -432,6 +432,8 @@ AudioBridge::AudioBridge(QObject *parent)
     , m_groupedApplicationModel(new GroupedApplicationModel(this))
     , m_outputDeviceModel(new FilteredDeviceModel(false, this))
     , m_inputDeviceModel(new FilteredDeviceModel(true, this))
+    , m_outputDeviceDisplayName("")
+    , m_inputDeviceDisplayName("")
 {
     auto* manager = AudioManager::instance();
 
@@ -462,6 +464,7 @@ AudioBridge::AudioBridge(QObject *parent)
     loadAppRenamesFromFile();
     loadExecutableRenamesFromFile();
     loadAppLocksFromFile();
+    loadDeviceRenamesFromFile();
 
     manager->initialize();
 }
@@ -993,6 +996,7 @@ void AudioBridge::onDevicesChanged(const QList<AudioDevice>& devices)
 {
     m_outputDeviceModel->setDevices(devices);
     m_inputDeviceModel->setDevices(devices);
+    updateDeviceDisplayNames();
 }
 
 void AudioBridge::onDeviceAdded(const AudioDevice& device)
@@ -1008,6 +1012,7 @@ void AudioBridge::onDeviceRemoved(const QString& deviceId)
 void AudioBridge::onDefaultDeviceChanged(const QString& deviceId, bool isInput)
 {
     emit defaultDeviceChanged(deviceId, isInput);
+    updateDeviceDisplayNames();
 }
 
 void AudioBridge::onInitializationComplete()
@@ -1035,6 +1040,7 @@ void AudioBridge::onInitializationComplete()
     emit isReadyChanged();
 
     applyChatMixIfEnabled();
+    updateDeviceDisplayNames();
 }
 
 void AudioBridge::restoreOriginalVolumesSync()
@@ -1639,4 +1645,185 @@ void AudioBridge::saveAppLocksToFile()
 
     QJsonDocument doc(root);
     file.write(doc.toJson());
+}
+
+void AudioBridge::loadDeviceRenamesFromFile()
+{
+    QString filePath = getDeviceRenamesFilePath();
+    QFile file(filePath);
+
+    if (!file.exists()) {
+        return;
+    }
+
+    if (!file.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+
+    if (error.error != QJsonParseError::NoError) {
+        return;
+    }
+
+    QJsonObject root = doc.object();
+    QJsonArray renamesArray = root["deviceRenames"].toArray();
+
+    m_deviceRenames.clear();
+    for (const QJsonValue& value : renamesArray) {
+        QJsonObject renameObj = value.toObject();
+        DeviceRename rename;
+        rename.originalName = renameObj["originalName"].toString();
+        rename.customName = renameObj["customName"].toString();
+        m_deviceRenames.append(rename);
+    }
+}
+
+void AudioBridge::saveDeviceRenamesToFile()
+{
+    QString filePath = getDeviceRenamesFilePath();
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        return;
+    }
+
+    QJsonArray renamesArray;
+    for (const DeviceRename& rename : m_deviceRenames) {
+        QJsonObject renameObj;
+        renameObj["originalName"] = rename.originalName;
+        renameObj["customName"] = rename.customName;
+        renamesArray.append(renameObj);
+    }
+
+    QJsonObject root;
+    root["deviceRenames"] = renamesArray;
+
+    QJsonDocument doc(root);
+    file.write(doc.toJson());
+}
+
+QString AudioBridge::getDeviceRenamesFilePath() const
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/devicerenames.json";
+}
+
+QString AudioBridge::getDisplayNameForDevice(const QString& deviceName) const
+{
+    for (const DeviceRename& rename : m_deviceRenames) {
+        if (rename.originalName.compare(deviceName, Qt::CaseInsensitive) == 0) {
+            return rename.customName;
+        }
+    }
+    return deviceName;
+}
+
+void AudioBridge::setCustomDeviceName(const QString& originalName, const QString& customName)
+{
+    bool changed = false;
+
+    for (int i = 0; i < m_deviceRenames.count(); ++i) {
+        if (m_deviceRenames[i].originalName.compare(originalName, Qt::CaseInsensitive) == 0) {
+            if (customName.isEmpty() || customName == originalName) {
+                m_deviceRenames.removeAt(i);
+                changed = true;
+            } else if (m_deviceRenames[i].customName != customName) {
+                m_deviceRenames[i].customName = customName;
+                changed = true;
+            }
+            break;
+        }
+    }
+
+    if (!changed && !customName.isEmpty() && customName != originalName) {
+        DeviceRename newRename;
+        newRename.originalName = originalName;
+        newRename.customName = customName;
+        m_deviceRenames.append(newRename);
+        changed = true;
+    }
+
+    if (changed) {
+        saveDeviceRenamesToFile();
+        updateDeviceDisplayNames();
+        emit deviceRenameUpdated();
+        refreshDeviceModelData(originalName);
+    }
+}
+
+QString AudioBridge::getCustomDeviceName(const QString& originalName) const
+{
+    for (const DeviceRename& rename : m_deviceRenames) {
+        if (rename.originalName.compare(originalName, Qt::CaseInsensitive) == 0) {
+            return rename.customName;
+        }
+    }
+    return originalName;
+}
+
+void AudioBridge::updateDeviceDisplayNames()
+{
+    // Update output device display name
+    QString newOutputName = "";
+    if (m_isReady) {
+        int defaultIndex = m_outputDeviceModel->getCurrentDefaultIndex();
+        if (defaultIndex >= 0) {
+            QString originalName = m_outputDeviceModel->getDeviceName(defaultIndex);
+            newOutputName = getDisplayNameForDevice(originalName);
+        }
+    }
+
+    if (m_outputDeviceDisplayName != newOutputName) {
+        m_outputDeviceDisplayName = newOutputName;
+        emit outputDeviceDisplayNameChanged();
+    }
+
+    // Update input device display name
+    QString newInputName = "";
+    if (m_isReady) {
+        int defaultIndex = m_inputDeviceModel->getCurrentDefaultIndex();
+        if (defaultIndex >= 0) {
+            QString originalName = m_inputDeviceModel->getDeviceName(defaultIndex);
+            newInputName = getDisplayNameForDevice(originalName);
+        }
+    }
+
+    if (m_inputDeviceDisplayName != newInputName) {
+        m_inputDeviceDisplayName = newInputName;
+        emit inputDeviceDisplayNameChanged();
+    }
+}
+
+void AudioBridge::refreshDeviceDisplayNames()
+{
+    updateDeviceDisplayNames();
+}
+
+void AudioBridge::refreshDeviceModelData(const QString& originalName)
+{
+    // Check output devices and emit dataChanged for matching devices
+    for (int i = 0; i < m_outputDeviceModel->rowCount(); ++i) {
+        QModelIndex index = m_outputDeviceModel->index(i, 0);
+        QString deviceName = m_outputDeviceModel->data(index, FilteredDeviceModel::NameRole).toString();
+        QString deviceShortName = m_outputDeviceModel->data(index, FilteredDeviceModel::ShortNameRole).toString();
+
+        if (deviceName == originalName || deviceShortName == originalName) {
+            emit m_outputDeviceModel->dataChanged(index, index, {FilteredDeviceModel::NameRole, FilteredDeviceModel::ShortNameRole});
+        }
+    }
+
+    // Check input devices and emit dataChanged for matching devices
+    for (int i = 0; i < m_inputDeviceModel->rowCount(); ++i) {
+        QModelIndex index = m_inputDeviceModel->index(i, 0);
+        QString deviceName = m_inputDeviceModel->data(index, FilteredDeviceModel::NameRole).toString();
+        QString deviceShortName = m_inputDeviceModel->data(index, FilteredDeviceModel::ShortNameRole).toString();
+
+        if (deviceName == originalName || deviceShortName == originalName) {
+            emit m_inputDeviceModel->dataChanged(index, index, {FilteredDeviceModel::NameRole, FilteredDeviceModel::ShortNameRole});
+        }
+    }
 }

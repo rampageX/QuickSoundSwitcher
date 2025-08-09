@@ -60,22 +60,10 @@ Platform.SystemTrayIcon {
     }
 
     function getOutputDeviceInfo() {
-        if (!AudioBridge.isReady) return "Loading..."
-        let defaultIndex = AudioBridge.outputDevices.currentDefaultIndex
-        let deviceName = "Unknown Device"
-        if (defaultIndex >= 0) {
-            deviceName = AudioBridge.outputDevices.getDeviceName(defaultIndex)
-        }
-        return deviceName
+        return AudioBridge.outputDeviceDisplayName || "Unknown Device"
     }
 
     function getInputDeviceInfo() {
-        if (!AudioBridge.isReady) return "Loading..."
-        let defaultIndex = AudioBridge.inputDevices.currentDefaultIndex
-        let deviceName = "Unknown Device"
-        if (defaultIndex >= 0) {
-            deviceName = AudioBridge.inputDevices.getDeviceName(defaultIndex)
-        }
-        return deviceName
+        return AudioBridge.inputDeviceDisplayName || "Unknown Device"
     }
 }

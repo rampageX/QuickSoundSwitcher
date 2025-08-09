@@ -48,6 +48,10 @@ ApplicationWindow {
         function onGlobalShortcutsEnabledChanged() {
             panel.globalShortcutsToggled(UserSettings.globalShortcutsEnabled)
         }
+
+        function onDeviceShortNameChanged() {
+            AudioBridge.refreshDeviceDisplayNames()
+        }
     }
 
     MediaPlayer {
@@ -602,19 +606,7 @@ ApplicationWindow {
                             Layout.preferredWidth: outputSlider.implicitWidth - 30
                             Layout.leftMargin: 18
                             Layout.rightMargin: 25
-                            text: {
-                                if (!AudioBridge.isReady) return ""
-
-                                let defaultIndex = AudioBridge.outputDevices.currentDefaultIndex
-                                if (defaultIndex >= 0) {
-                                    if (UserSettings.deviceShortName) {
-                                        return AudioBridge.outputDevices.getDeviceShortName(defaultIndex)
-                                    } else {
-                                        return AudioBridge.outputDevices.getDeviceName(defaultIndex)
-                                    }
-                                }
-                                return ""
-                            }
+                            text: AudioBridge.outputDeviceDisplayName
                         }
 
                         ProgressSlider {
@@ -624,12 +616,6 @@ ApplicationWindow {
                             to: 100
                             Layout.fillWidth: true
                             audioLevel: AudioBridge.outputAudioLevel
-
-                            //ToolTip {
-                            //    parent: outputSlider.handle
-                            //    visible: outputSlider.pressed
-                            //    text: Math.round(outputSlider.value).toString()
-                            //}
 
                             onValueChanged: {
                                 if (pressed) {
@@ -713,19 +699,7 @@ ApplicationWindow {
                             Layout.preferredWidth: inputSlider.implicitWidth - 30
                             Layout.leftMargin: 18
                             Layout.rightMargin: 25
-                            text: {
-                                if (!AudioBridge.isReady) return ""
-
-                                let defaultIndex = AudioBridge.inputDevices.currentDefaultIndex
-                                if (defaultIndex >= 0) {
-                                    if (UserSettings.deviceShortName) {
-                                        return AudioBridge.inputDevices.getDeviceShortName(defaultIndex)
-                                    } else {
-                                        return AudioBridge.inputDevices.getDeviceName(defaultIndex)
-                                    }
-                                }
-                                return ""
-                            }
+                            text: AudioBridge.inputDeviceDisplayName
                         }
 
                         ProgressSlider {
@@ -735,12 +709,6 @@ ApplicationWindow {
                             to: 100
                             audioLevel: AudioBridge.inputAudioLevel
                             Layout.fillWidth: true
-
-                            //ToolTip {
-                            //    parent: inputSlider.handle
-                            //    visible: inputSlider.pressed
-                            //    text: Math.round(inputSlider.value).toString()
-                            //}
 
                             onValueChanged: {
                                 if (pressed) {

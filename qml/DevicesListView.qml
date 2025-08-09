@@ -12,10 +12,8 @@ Rectangle {
     property bool expanded: false
     property real contentOpacity: 0
 
-    // Export the height needed when fully expanded
     property real expandedNeededHeight: devicesList.contentHeight + 20
 
-    // Signals
     signal deviceClicked(string name, string shortName, int index)
 
     Layout.fillWidth: true
@@ -24,6 +22,13 @@ Rectangle {
     Layout.rightMargin: -14
     color: Constants.footerColor
 
+    Connections {
+        target: AudioBridge
+        function onDeviceRenameUpdated() {
+            devicesList.forceLayout()
+        }
+    }
+
     Behavior on Layout.preferredHeight {
         NumberAnimation {
             duration: 150
@@ -31,7 +36,6 @@ Rectangle {
         }
     }
 
-    // Top border
     Rectangle {
         visible: root.expanded
         anchors.top: parent.top
@@ -42,7 +46,6 @@ Rectangle {
         opacity: 0.1
     }
 
-    // Bottom border
     Rectangle {
         visible: root.expanded
         anchors.bottom: parent.bottom
@@ -82,15 +85,28 @@ Rectangle {
             highlighted: model.isDefault
 
             text: {
-                if (UserSettings.deviceShortName) {
-                    return model.shortName || model.name || ""
-                } else {
-                    return model.name || ""
-                }
+                let originalName = UserSettings.deviceShortName
+                    ? (model.shortName || model.name || "")
+                    : (model.name || "")
+                return AudioBridge.getDisplayNameForDevice(originalName)
             }
 
-            onClicked: {
-                root.deviceClicked(model.name, model.shortName, index)
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+                onClicked: function(mouse) {
+                    if (mouse.button === Qt.LeftButton) {
+                        root.deviceClicked(model.name, model.shortName, index)
+                    } else if (mouse.button === Qt.RightButton) {
+                        let originalName = UserSettings.deviceShortName
+                            ? (model.shortName || model.name || "")
+                            : (model.name || "")
+                        deviceRenameContextMenu.originalName = originalName
+                        deviceRenameContextMenu.currentCustomName = AudioBridge.getCustomDeviceName(originalName)
+                        deviceRenameContextMenu.popup()
+                    }
+                }
             }
         }
     }
@@ -115,6 +131,85 @@ Rectangle {
             } else {
                 root.contentOpacity = 0
             }
+        }
+    }
+
+    Menu {
+        id: deviceRenameContextMenu
+
+        property string originalName: ""
+        property string currentCustomName: ""
+
+        MenuItem {
+            text: qsTr("Rename Device")
+            onTriggered: deviceRenameDialog.open()
+        }
+
+        MenuItem {
+            text: qsTr("Reset to Original Name")
+            enabled: deviceRenameContextMenu.currentCustomName !== deviceRenameContextMenu.originalName
+            onTriggered: {
+                AudioBridge.setCustomDeviceName(deviceRenameContextMenu.originalName, "")
+            }
+        }
+    }
+
+    Dialog {
+        id: deviceRenameDialog
+        title: qsTr("Rename Device")
+        modal: true
+        width: 300
+        dim: false
+        anchors.centerIn: parent
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 15
+
+            TextField {
+                id: deviceCustomNameField
+                Layout.fillWidth: true
+                placeholderText: deviceRenameContextMenu.originalName
+
+                Keys.onReturnPressed: {
+                    AudioBridge.setCustomDeviceName(
+                        deviceRenameContextMenu.originalName,
+                        deviceCustomNameField.text.trim()
+                    )
+                    deviceRenameDialog.close()
+                }
+            }
+
+            RowLayout {
+                spacing: 15
+                Layout.topMargin: 10
+
+                Button {
+                    text: qsTr("Cancel")
+                    onClicked: deviceRenameDialog.close()
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: qsTr("Save")
+                    highlighted: true
+                    Layout.fillWidth: true
+                    onClicked: {
+                        AudioBridge.setCustomDeviceName(
+                            deviceRenameContextMenu.originalName,
+                            deviceCustomNameField.text.trim()
+                        )
+                        deviceRenameDialog.close()
+                    }
+                }
+            }
+        }
+
+        onVisibleChanged: {
+            if(!visible) return
+
+            deviceCustomNameField.text = deviceRenameContextMenu.currentCustomName
+            deviceCustomNameField.forceActiveFocus()
         }
     }
 }
