@@ -9,6 +9,7 @@ import Odizinne.QuickSoundSwitcher
 
 Slider {
     id: control
+    focusPolicy: Qt.NoFocus
 
     property int audioLevel: 0  // Add this property
     property bool displayProgress: true

@@ -92,7 +92,7 @@ Rectangle {
             required property var model
             required property int index
 
-            ToolButton {
+            NFToolButton {
                 id: muteButton
                 Layout.preferredWidth: 40
                 Layout.preferredHeight: 40

@@ -571,7 +571,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
                     spacing: 0
-                    ToolButton {
+                    NFToolButton {
                         Layout.preferredHeight: 40
                         Layout.preferredWidth: 40
                         flat: true
@@ -646,7 +646,7 @@ ApplicationWindow {
                         }
                     }
 
-                    ToolButton {
+                    NFToolButton {
                         icon.source: "qrc:/icons/arrow.svg"
                         rotation: outputDevicesRect.expanded ? 90 : 0
                         visible: AudioBridge.isReady && AudioBridge.outputDevices.rowCount() > 1
@@ -692,7 +692,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
                     spacing: 0
-                    ToolButton {
+                    NFToolButton {
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         flat: true
@@ -756,7 +756,7 @@ ApplicationWindow {
                         }
                     }
 
-                    ToolButton {
+                    NFToolButton {
                         icon.source: "qrc:/icons/arrow.svg"
                         rotation: inputDevicesRect.expanded ? 90 : 0
                         Layout.preferredHeight: 35
@@ -832,7 +832,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             spacing: 0
 
-                            ToolButton {
+                            NFToolButton {
                                 id: executableMuteButton
                                 Layout.preferredWidth: 40
                                 Layout.preferredHeight: 40
@@ -928,7 +928,7 @@ ApplicationWindow {
                                 }
                             }
 
-                            ToolButton {
+                            NFToolButton {
                                 onActiveFocusChanged: {
                                     focus = false
                                 }
@@ -990,7 +990,7 @@ ApplicationWindow {
                     Layout.preferredHeight: 40
                     spacing: 0
 
-                    ToolButton {
+                    NFToolButton {
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         icon.width: 15
@@ -1027,7 +1027,7 @@ ApplicationWindow {
                             Layout.rightMargin: 25
                         }
 
-                        Slider {
+                        NFSlider {
                             id: chatMixSlider
                             value: UserSettings.chatMixValue
                             from: 0
@@ -1130,7 +1130,7 @@ ApplicationWindow {
                         }
                     }
 
-                    ToolButton {
+                    NFToolButton {
                         icon.source: "qrc:/icons/settings.svg"
                         icon.width: 14
                         icon.height: 14

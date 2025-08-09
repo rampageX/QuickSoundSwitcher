@@ -120,6 +120,8 @@ set(QML_FILES
     qml/ChatMixNotification.qml
     qml/ApplicationsListView.qml
     qml/SystemTray.qml
+    qml/NFToolButton.qml
+    qml/NFSlider.qml
 )
 
 set(QML_SINGLETONS
