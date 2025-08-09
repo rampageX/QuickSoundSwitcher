@@ -22,6 +22,12 @@ Rectangle {
     Layout.rightMargin: -14
     color: Constants.footerColor
 
+    function closeContextMenus() {
+        if (deviceRenameContextMenu.visible) {
+            deviceRenameContextMenu.close()
+        }
+    }
+
     Connections {
         target: AudioBridge
         function onDeviceRenameUpdated() {

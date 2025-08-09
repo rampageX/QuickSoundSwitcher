@@ -336,6 +336,9 @@ ApplicationWindow {
             executableRenameContextMenu.close()
         }
 
+        outputDevicesRect.closeContextMenus()
+        inputDevicesRect.closeContextMenus()
+
         // Close context menus in application lists
         for (let i = 0; i < appRepeater.count; ++i) {
             let item = appRepeater.itemAt(i)
