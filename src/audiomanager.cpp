@@ -313,8 +313,6 @@ ULONG STDMETHODCALLTYPE SessionNotificationClient::Release()
 
 HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSessionControl *NewSession)
 {
-    qDebug() << "SessionNotificationClient::OnSessionCreated";
-
     if (!NewSession || !m_worker) {
         return S_OK;
     }
@@ -329,7 +327,6 @@ HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSess
         if (SUCCEEDED(hr)) {
             // Only skip our own process (audio feedback)
             if (processId == GetCurrentProcessId()) {
-                qDebug() << "Skipping enumeration - new session is our own process";
                 return S_OK;
             }
         }
@@ -337,7 +334,6 @@ HRESULT STDMETHODCALLTYPE SessionNotificationClient::OnSessionCreated(IAudioSess
 
     // Always enumerate when a new session is created
     // This ensures we don't miss new streams from existing processes
-    qDebug() << "Enumerating applications due to new session";
     QMetaObject::invokeMethod(m_worker, "enumerateApplications", Qt::QueuedConnection);
 
     return S_OK;
@@ -397,7 +393,6 @@ HRESULT STDMETHODCALLTYPE SessionEventsClient::OnStateChanged(AudioSessionState 
 {
 
     if (NewState == AudioSessionStateExpired) {
-        qDebug() << "Session expired for app:" << m_appId;
         if (m_worker) {
             QMetaObject::invokeMethod(m_worker, "onSessionDisconnected", Qt::QueuedConnection);
         }
@@ -1156,7 +1151,6 @@ void AudioWorker::enumerateApplications()
             hr = sessionControl->QueryInterface(__uuidof(IAudioMeterInformation), (void**)&pMeterInfo);
             if (FAILED(hr)) {
                 qDebug() << "Failed to get meter info for session" << i;
-                // Don't fail the entire session, just continue without meter
             }
         }
 
@@ -1241,10 +1235,8 @@ void AudioWorker::enumerateApplications()
         tempSessions.append(tempData);
     }
 
-    // Second pass: group by executable and assign stream indices
     QMap<QString, QList<TempSessionData*>> executableGroups;
 
-    // Group sessions by executable name
     for (int i = 0; i < tempSessions.count(); ++i) {
         TempSessionData& tempData = tempSessions[i];
         if (!executableGroups.contains(tempData.executableName)) {
@@ -1253,18 +1245,7 @@ void AudioWorker::enumerateApplications()
         executableGroups[tempData.executableName].append(&tempData);
     }
 
-    // Sort sessions within each executable group by session control pointer for stability
     for (auto& group : executableGroups) {
-        // Debug memory usage for Discord
-        if (!group.isEmpty() && group.first()->executableName == "Discord") {
-            qDebug() << "Discord Memory Analysis:";
-            for (const TempSessionData* session : group) {
-                SIZE_T memory = getProcessMemoryUsage(session->processId);
-                qDebug() << "  ProcessId:" << session->processId
-                         << "Memory:" << (memory / 1024 / 1024) << "MB";
-            }
-        }
-
         std::sort(group.begin(), group.end(),
                   [](const TempSessionData* a, const TempSessionData* b) {
                       // Get memory usage for both processes
@@ -1289,14 +1270,6 @@ void AudioWorker::enumerateApplications()
             app.volume = tempData->volume;
             app.isMuted = tempData->isMuted;
             app.streamIndex = tempData->isSystemSounds ? 0 : streamIndex;
-
-            // Debug output for Discord streams
-            if (tempData->executableName == "Discord") {
-                qDebug() << "Creating Discord app:"
-                         << "Name:" << app.name
-                         << "StreamIndex:" << app.streamIndex
-                         << "AppId:" << app.id;
-            }
 
             // Cache the volume control
             m_sessionVolumeControls[app.id] = tempData->volumeControl;
