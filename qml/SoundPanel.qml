@@ -209,7 +209,7 @@ ApplicationWindow {
     PropertyAnimation {
         id: showAnimation
         target: contentTransform
-        duration: 180
+        duration: 220
         easing.type: Easing.OutCubic
         onStarted: {
             contentOpacityTimer.start()
@@ -566,7 +566,7 @@ ApplicationWindow {
                         radius: 12
                         border.width: 1
                         border.color: "#E3E3E3"
-                        opacity: 0.10
+                        opacity: 0.15
                     }
                 }
 
