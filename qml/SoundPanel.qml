@@ -10,7 +10,25 @@ import QtMultimedia
 
 ApplicationWindow {
     id: panel
-    width: 360
+    width: {
+        let baseWidth = 360
+
+        // Add left spacer width
+        if (panel.taskbarPos === "left") {
+            baseWidth += UserSettings.xAxisMargin
+        }
+
+        // Add right spacer width
+        if (panel.taskbarPos === "top" || panel.taskbarPos === "bottom" || panel.taskbarPos === "right") {
+            if (panel.taskbarPos === "right") {
+                baseWidth += UserSettings.xAxisMargin
+            } else {
+                baseWidth += UserSettings.xAxisMargin
+            }
+        }
+
+        return baseWidth
+    }
     height: {
         let baseMargins = 30
         let newHeight = mainLayout.implicitHeight + baseMargins
@@ -21,6 +39,19 @@ ApplicationWindow {
         }
 
         newHeight += panel.maxDeviceListSpace
+
+        // Add top spacer height
+        if (panel.taskbarPos === "top") {
+            newHeight += UserSettings.yAxisMargin
+        }
+
+        // Add bottom spacer height
+        if (panel.taskbarPos === "bottom") {
+            newHeight += UserSettings.yAxisMargin
+        } else if (panel.taskbarPos === "left" || panel.taskbarPos === "right") {
+            newHeight += UserSettings.yAxisMargin
+        }
+
         return newHeight
     }
 
@@ -259,6 +290,18 @@ ApplicationWindow {
 
                 newHeight += appListView
 
+                // Add top spacer height
+                if (panel.taskbarPos === "top") {
+                    newHeight += UserSettings.yAxisMargin
+                }
+
+                // Add bottom spacer height
+                if (panel.taskbarPos === "bottom") {
+                    newHeight += UserSettings.yAxisMargin
+                } else if (panel.taskbarPos === "left" || panel.taskbarPos === "right") {
+                    newHeight += UserSettings.yAxisMargin
+                }
+
                 panel.height = newHeight
                 Qt.callLater(panel.startAnimation)
             })
@@ -271,24 +314,24 @@ ApplicationWindow {
 
         switch (panel.taskbarPos) {
         case "top":
-            panel.x = screenWidth - width - UserSettings.xAxisMargin
-            panel.y = UserSettings.yAxisMargin + UserSettings.taskbarOffset
+            panel.x = screenWidth - width
+            panel.y = UserSettings.taskbarOffset
             break
         case "bottom":
-            panel.x = screenWidth - width - UserSettings.xAxisMargin
-            panel.y = screenHeight - height - UserSettings.yAxisMargin - UserSettings.taskbarOffset
+            panel.x = screenWidth - width
+            panel.y = screenHeight - height - UserSettings.taskbarOffset
             break
         case "left":
-            panel.x = UserSettings.taskbarOffset + UserSettings.xAxisMargin
-            panel.y = screenHeight - height - UserSettings.yAxisMargin
+            panel.x = UserSettings.taskbarOffset
+            panel.y = screenHeight - height
             break
         case "right":
-            panel.x = screenWidth - width - UserSettings.xAxisMargin - UserSettings.taskbarOffset
-            panel.y = screenHeight - height - UserSettings.yAxisMargin
+            panel.x = screenWidth - width - UserSettings.taskbarOffset
+            panel.y = screenHeight - height
             break
         default:
-            panel.x = screenWidth - width - UserSettings.xAxisMargin
-            panel.y = screenHeight - height - UserSettings.yAxisMargin - UserSettings.taskbarOffset
+            panel.x = screenWidth - width
+            panel.y = screenHeight - height - UserSettings.taskbarOffset
             break
         }
     }
@@ -296,23 +339,23 @@ ApplicationWindow {
     function setInitialTransform() {
         switch (panel.taskbarPos) {
         case "top":
-            contentTransform.y = -height
+            contentTransform.y = -cont.height
             contentTransform.x = 0
             break
         case "bottom":
-            contentTransform.y = height
+            contentTransform.y = cont.height
             contentTransform.x = 0
             break
         case "left":
-            contentTransform.x = -width
+            contentTransform.x = -cont.width
             contentTransform.y = 0
             break
         case "right":
-            contentTransform.x = width
+            contentTransform.x = cont.width
             contentTransform.y = 0
             break
         default:
-            contentTransform.y = height
+            contentTransform.y = cont.height
             contentTransform.x = 0
             break
         }
@@ -431,6 +474,26 @@ ApplicationWindow {
             y: contentTransform.y
         }
 
+        width: {
+            let baseWidth = 360 + 30  // Content + cosmetic margins
+
+            // Add left spacer width
+            if (panel.taskbarPos === "left") {
+                baseWidth += UserSettings.xAxisMargin + UserSettings.taskbarOffset
+            }
+
+            // Add right spacer width
+            if (panel.taskbarPos === "top" || panel.taskbarPos === "bottom" || panel.taskbarPos === "right") {
+                if (panel.taskbarPos === "right") {
+                    baseWidth += UserSettings.xAxisMargin + UserSettings.taskbarOffset
+                } else {
+                    baseWidth += UserSettings.xAxisMargin
+                }
+            }
+
+            return baseWidth
+        }
+
         height: {
             let baseMargins = 30
             let newHeight = mainLayout.implicitHeight + baseMargins
@@ -440,448 +503,246 @@ ApplicationWindow {
                 newHeight += spacer.height
             }
 
+            // Add top spacer height
+            if (panel.taskbarPos === "top") {
+                newHeight += UserSettings.yAxisMargin
+            }
+
+            // Add bottom spacer height
+            if (panel.taskbarPos === "bottom") {
+                newHeight += UserSettings.yAxisMargin
+            } else if (panel.taskbarPos === "left" || panel.taskbarPos === "right") {
+                newHeight += UserSettings.yAxisMargin
+            }
+
             return newHeight
         }
 
-        Rectangle {
-            anchors.fill: mainLayout
-            anchors.margins: -15
-            color: Constants.panelColor
-            radius: 12
-            Rectangle {
-                anchors.fill: parent
-                color: "#00000000"
-                radius: 12
-                border.width: 1
-                border.color: "#E3E3E3"
-                opacity: 0.2
-            }
-        }
+        GridLayout {
+            id: mainGrid
+            anchors.fill: parent
+            columns: 3
+            rows: 3
+            columnSpacing: 0
+            rowSpacing: 0
 
-        Rectangle {
-            id: mediaLayoutBackground
-            anchors.fill: mediaLayout
-            anchors.margins: -15
-            color: Constants.panelColor
-            visible: mediaLayout.visible
-            radius: 12
-            opacity: 0
-
-            onVisibleChanged: {
-                if (visible) {
-                    fadeInAnimation.start()
-                } else {
-                    fadeOutAnimation.start()
-                }
-            }
-
-            PropertyAnimation {
-                id: fadeInAnimation
-                target: mediaLayoutBackground
-                property: "opacity"
-                from: 0
-                to: 1
-                duration: 300
-                easing.type: Easing.OutQuad
-            }
-
-            PropertyAnimation {
-                id: fadeOutAnimation
-                target: mediaLayoutBackground
-                property: "opacity"
-                from: 1
-                to: 0
-                duration: 300
-                easing.type: Easing.OutQuad
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#00000000"
-                radius: 12
-                border.width: 1
-                border.color: "#E3E3E3"
-                opacity: 0.2
-            }
-        }
-
-        MediaFlyoutContent {
-            id: mediaLayout
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.topMargin: 15
-            anchors.leftMargin: 15
-            anchors.rightMargin: 15
-            anchors.bottomMargin: 0
-            opacity: 0
-            visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
-            onVisibleChanged: {
-                if (panel.visible) {
-                    opacity = 1
-                }
-            }
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 300
-                    easing.type: Easing.OutQuad
-                }
-            }
-        }
-
-        Item {
-            id: spacer
-            anchors.top: mediaLayout.bottom
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: 42
-            visible: mediaLayout.visible
-            //Rectangle {
-            //    anchors.fill: parent
-            //    color: "transparent"
-            //    border.color: "red"
-            //    border.width: 1
-            //}
-        }
-
-        ColumnLayout {
-            id: mainLayout
-            anchors.top: mediaLayout.visible ? spacer.bottom : parent.top
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.leftMargin: 15
-            anchors.rightMargin: 15
-            anchors.bottomMargin: 15
-            anchors.topMargin: mediaLayout.visible ? 0 : 15  // Remove top margin when media flyout is visible
-            spacing: 10
-            opacity: 0
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 300
-                    easing.type: Easing.OutQuad
-                }
-            }
-
-            ColumnLayout {
-                id: deviceLayout
-                spacing: 5
-                visible: UserSettings.panelMode === 0 || UserSettings.panelMode === 2
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 40
-                    spacing: 0
-                    NFToolButton {
-                        Layout.preferredHeight: 40
-                        Layout.preferredWidth: 40
-                        flat: true
-                        property string volumeIcon: {
-                            if (AudioBridge.outputMuted || AudioBridge.outputVolume === 0) {
-                                return "qrc:/icons/panel_volume_0.svg"
-                            } else if (AudioBridge.outputVolume <= 33) {
-                                return "qrc:/icons/panel_volume_33.svg"
-                            } else if (AudioBridge.outputVolume <= 66) {
-                                return "qrc:/icons/panel_volume_66.svg"
-                            } else {
-                                return "qrc:/icons/panel_volume_100.svg"
-                            }
-                        }
-
-                        icon.source: volumeIcon
-                        onClicked: {
-                            AudioBridge.setOutputMute(!AudioBridge.outputMuted)
-                        }
-                    }
-
-                    ColumnLayout {
-                        spacing: -4
-                        Label {
-                            visible: UserSettings.displayDevAppLabel
-                            opacity: 0.5
-                            elide: Text.ElideRight
-                            Layout.preferredWidth: outputSlider.implicitWidth - 30
-                            Layout.leftMargin: 18
-                            Layout.rightMargin: 25
-                            text: AudioBridge.outputDeviceDisplayName
-                        }
-
-                        ProgressSlider {
-                            id: outputSlider
-                            value: pressed ? value : AudioBridge.outputVolume
-                            from: 0
-                            to: 100
-                            Layout.fillWidth: true
-                            audioLevel: AudioBridge.outputAudioLevel
-
-                            onValueChanged: {
-                                if (pressed) {
-                                    AudioBridge.setOutputVolume(value)
-                                }
-                            }
-
-                            onPressedChanged: {
-                                if (!pressed) {
-                                    AudioBridge.setOutputVolume(value)
-                                    audioFeedback.play()
-                                }
-                            }
-                        }
-                    }
-
-                    NFToolButton {
-                        icon.source: "qrc:/icons/arrow.svg"
-                        rotation: outputDevicesRect.expanded ? 90 : 0
-                        visible: AudioBridge.isReady && AudioBridge.outputDevices.rowCount() > 1
-                        Layout.preferredHeight: 35
-                        Layout.preferredWidth: 35
-                        Behavior on rotation {
-                            NumberAnimation {
-                                duration: 150
-                                easing.type: Easing.Linear
-                            }
-                        }
-
-                        onClicked: {
-                            outputDevicesRect.expanded = !outputDevicesRect.expanded
-                        }
-                    }
-                }
-
-                DevicesListView {
-                    id: outputDevicesRect
-                    model: AudioBridge.outputDevices
-                    onDeviceClicked: function(name, index) {
-                        AudioBridge.setOutputDevice(index)
-                        if (UserSettings.closeDeviceListOnClick) {
-                            expanded = false
-                        }
-                    }
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 40
-                    spacing: 0
-                    NFToolButton {
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 40
-                        flat: true
-                        icon.source: AudioBridge.inputMuted ? "qrc:/icons/mic_muted.svg" : "qrc:/icons/mic.svg"
-                        icon.height: 16
-                        icon.width: 16
-                        onClicked: {
-                            AudioBridge.setInputMute(!AudioBridge.inputMuted)
-                        }
-                    }
-
-                    ColumnLayout {
-                        spacing: -4
-                        Label {
-                            visible: UserSettings.displayDevAppLabel
-                            opacity: 0.5
-                            elide: Text.ElideRight
-                            Layout.preferredWidth: inputSlider.implicitWidth - 30
-                            Layout.leftMargin: 18
-                            Layout.rightMargin: 25
-                            text: AudioBridge.inputDeviceDisplayName
-                        }
-
-                        ProgressSlider {
-                            id: inputSlider
-                            value: pressed ? value : AudioBridge.inputVolume
-                            from: 0
-                            to: 100
-                            audioLevel: AudioBridge.inputAudioLevel
-                            Layout.fillWidth: true
-
-                            onValueChanged: {
-                                if (pressed) {
-                                    AudioBridge.setInputVolume(value)
-                                }
-                            }
-
-                            onPressedChanged: {
-                                if (!pressed) {
-                                    AudioBridge.setInputVolume(value)
-                                }
-                            }
-                        }
-                    }
-
-                    NFToolButton {
-                        icon.source: "qrc:/icons/arrow.svg"
-                        rotation: inputDevicesRect.expanded ? 90 : 0
-                        Layout.preferredHeight: 35
-                        Layout.preferredWidth: 35
-                        visible: AudioBridge.isReady && AudioBridge.inputDevices.rowCount() > 1
-                        Behavior on rotation {
-                            NumberAnimation {
-                                duration: 150
-                                easing.type: Easing.Linear
-                            }
-                        }
-
-                        onClicked: {
-                            inputDevicesRect.expanded = !inputDevicesRect.expanded
-                        }
-                    }
-                }
-
-                DevicesListView {
-                    id: inputDevicesRect
-                    model: AudioBridge.inputDevices
-                    onDeviceClicked: function(name, index) {
-                        AudioBridge.setInputDevice(index)
-                        if (UserSettings.closeDeviceListOnClick) {
-                            expanded = false
-                        }
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.preferredHeight: 1
+            // Row 1: Top spacer (spans 3 columns)
+            Item {
+                id: topSpacer
+                Layout.row: 0
+                Layout.column: 0
+                Layout.columnSpan: 3
                 Layout.fillWidth: true
-                color: Constants.separatorColor
-                opacity: 0.15
-                visible: UserSettings.panelMode === 0 && AudioBridge.isReady && AudioBridge.applications.rowCount() > 0
-                Layout.rightMargin: -14
-                Layout.leftMargin: -14
+                Layout.preferredHeight: (panel.taskbarPos === "top") ? UserSettings.yAxisMargin : 0
+                visible: panel.taskbarPos === "top"
             }
 
-            ColumnLayout {
-                id: appLayout
-                spacing: 5
-                visible: UserSettings.panelMode < 2 && AudioBridge.isReady && AudioBridge.applications.rowCount() > 0
+            // Row 2, Column 1: Left spacer
+            Item {
+                id: leftSpacer
+                Layout.row: 1
+                Layout.column: 0
+                Layout.fillHeight: true
+                Layout.preferredWidth: (panel.taskbarPos === "left") ? UserSettings.xAxisMargin : 0
+                visible: panel.taskbarPos === "left"
+            }
 
-                Repeater {
-                    id: appRepeater
-                    model: AudioBridge.groupedApplications
+            // Row 2, Column 2: Main content area
+            Item {
+                id: contentContainer
+                Layout.row: 1
+                Layout.column: 1
+                Layout.fillHeight: true
+                Layout.preferredWidth: 360
 
-                    delegate: ColumnLayout {
-                        id: appDelegateRoot
+                Rectangle {
+                    anchors.fill: mainLayout
+                    anchors.margins: -15
+                    color: Constants.panelColor
+                    radius: 12
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "#00000000"
+                        radius: 12
+                        border.width: 1
+                        border.color: "#E3E3E3"
+                        opacity: 0.10
+                    }
+                }
+
+                Rectangle {
+                    id: mediaLayoutBackground
+                    anchors.fill: mediaLayout
+                    anchors.margins: -15
+                    color: Constants.panelColor
+                    visible: mediaLayout.visible
+                    radius: 12
+                    opacity: 0
+
+                    onVisibleChanged: {
+                        if (visible) {
+                            fadeInAnimation.start()
+                        } else {
+                            fadeOutAnimation.start()
+                        }
+                    }
+
+                    PropertyAnimation {
+                        id: fadeInAnimation
+                        target: mediaLayoutBackground
+                        property: "opacity"
+                        from: 0
+                        to: 1
+                        duration: 300
+                        easing.type: Easing.OutQuad
+                    }
+
+                    PropertyAnimation {
+                        id: fadeOutAnimation
+                        target: mediaLayoutBackground
+                        property: "opacity"
+                        from: 1
+                        to: 0
+                        duration: 300
+                        easing.type: Easing.OutQuad
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "#00000000"
+                        radius: 12
+                        border.width: 1
+                        border.color: "#E3E3E3"
+                        opacity: 0.2
+                    }
+                }
+
+                MediaFlyoutContent {
+                    id: mediaLayout
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.topMargin: 15
+                    anchors.leftMargin: 15
+                    anchors.rightMargin: 15
+                    anchors.bottomMargin: 0
+                    opacity: 0
+                    visible: UserSettings.mediaMode === 0 && (SoundPanelBridge.mediaTitle !== "")
+                    onVisibleChanged: {
+                        if (panel.visible) {
+                            opacity = 1
+                        }
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.OutQuad
+                        }
+                    }
+                }
+
+                Item {
+                    id: spacer
+                    anchors.top: mediaLayout.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: 42
+                    visible: mediaLayout.visible
+                }
+
+                ColumnLayout {
+                    id: mainLayout
+                    anchors.top: mediaLayout.visible ? spacer.bottom : parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: 15
+                    anchors.rightMargin: 15
+                    anchors.bottomMargin: 15
+                    anchors.topMargin: mediaLayout.visible ? 0 : 15
+                    spacing: 10
+                    opacity: 0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 300
+                            easing.type: Easing.OutQuad
+                        }
+                    }
+
+                    ColumnLayout {
+                        id: deviceLayout
                         spacing: 5
-                        Layout.fillWidth: true
-                        required property var model
-                        required property int index
-
-                        readonly property real applicationListHeight: individualAppsRect.expandedNeededHeight
+                        visible: UserSettings.panelMode === 0 || UserSettings.panelMode === 2
 
                         RowLayout {
-                            Layout.preferredHeight: 40
                             Layout.fillWidth: true
+                            Layout.preferredHeight: 40
                             spacing: 0
-
                             NFToolButton {
-                                id: executableMuteButton
-                                Layout.preferredWidth: 40
                                 Layout.preferredHeight: 40
-                                flat: !checked
-                                checkable: true
-                                highlighted: checked
-                                checked: appDelegateRoot.model.allMuted // Property from your grouped model
-                                ToolTip.text: appDelegateRoot.model.displayName
-                                ToolTip.visible: hovered
-                                ToolTip.delay: 1000
-                                opacity: highlighted ? 0.3 : (enabled ? 1 : 0.5)
-                                icon.color: "transparent"
-                                icon.source: appDelegateRoot.model.displayName === qsTr("System sounds") ? Constants.systemIcon : appDelegateRoot.model.iconPath
-
-                                onClicked: {
-                                    // Mute/unmute all sessions for this executable
-                                    AudioBridge.setExecutableMute(appDelegateRoot.model.executableName, checked)
+                                Layout.preferredWidth: 40
+                                flat: true
+                                property string volumeIcon: {
+                                    if (AudioBridge.outputMuted || AudioBridge.outputVolume === 0) {
+                                        return "qrc:/icons/panel_volume_0.svg"
+                                    } else if (AudioBridge.outputVolume <= 33) {
+                                        return "qrc:/icons/panel_volume_33.svg"
+                                    } else if (AudioBridge.outputVolume <= 66) {
+                                        return "qrc:/icons/panel_volume_66.svg"
+                                    } else {
+                                        return "qrc:/icons/panel_volume_100.svg"
+                                    }
                                 }
 
-                                Component.onCompleted: {
-                                    palette.accent = palette.button
+                                icon.source: volumeIcon
+                                onClicked: {
+                                    AudioBridge.setOutputMute(!AudioBridge.outputMuted)
                                 }
                             }
 
                             ColumnLayout {
                                 spacing: -4
-
                                 Label {
                                     visible: UserSettings.displayDevAppLabel
-                                    opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
+                                    opacity: 0.5
                                     elide: Text.ElideRight
-                                    Layout.preferredWidth: 200
+                                    Layout.preferredWidth: outputSlider.implicitWidth - 30
                                     Layout.leftMargin: 18
                                     Layout.rightMargin: 25
-                                    text: {
-                                        let name = appDelegateRoot.model.displayName
-                                        if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(name)) {
-                                            name += " (Comm)"
-                                        }
-                                        return name
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        acceptedButtons: Qt.RightButton
-                                        onClicked: function(mouse) {
-                                            if (mouse.button === Qt.RightButton && appDelegateRoot.model.executableName !== "System sounds") {
-                                                executableRenameContextMenu.originalName = appDelegateRoot.model.executableName
-                                                executableRenameContextMenu.currentCustomName = AudioBridge.getCustomExecutableName(appDelegateRoot.model.executableName)
-                                                executableRenameContextMenu.popup()
-                                            }
-                                        }
-                                    }
+                                    text: AudioBridge.outputDeviceDisplayName
                                 }
 
                                 ProgressSlider {
-                                    onActiveFocusChanged: {
-                                        focus = false
-                                    }
-                                    id: executableVolumeSlider
+                                    id: outputSlider
+                                    value: pressed ? value : AudioBridge.outputVolume
                                     from: 0
                                     to: 100
-                                    enabled: !UserSettings.chatMixEnabled && !executableMuteButton.highlighted
-                                    opacity: enabled ? 1 : 0.5
                                     Layout.fillWidth: true
-                                    displayProgress: appDelegateRoot.model.displayName !== qsTr("System sounds")
-                                    audioLevel: appDelegateRoot.model.displayName !== qsTr("System sounds")
-                                               ? (appDelegateRoot.model.averageAudioLevel || 0)
-                                               : 0
-
-                                    // Break the binding loop by only updating when not being dragged
-                                    value: pressed ? value : appDelegateRoot.model.averageVolume
-
-                                    //ToolTip {
-                                    //    parent: executableVolumeSlider.handle
-                                    //    visible: executableVolumeSlider.pressed
-                                    //    text: Math.round(executableVolumeSlider.value).toString()
-                                    //}
+                                    audioLevel: AudioBridge.outputAudioLevel
 
                                     onValueChanged: {
-                                        if (!UserSettings.chatMixEnabled && pressed) {
-                                            // Set volume for all sessions of this executable
-                                            AudioBridge.setExecutableVolume(appDelegateRoot.model.executableName, value)
+                                        if (pressed) {
+                                            AudioBridge.setOutputVolume(value)
                                         }
                                     }
 
                                     onPressedChanged: {
-                                        if (!pressed && !UserSettings.chatMixEnabled) {
-                                            // Final update when releasing
-                                            AudioBridge.setExecutableVolume(appDelegateRoot.model.executableName, value)
+                                        if (!pressed) {
+                                            AudioBridge.setOutputVolume(value)
+                                            audioFeedback.play()
                                         }
                                     }
                                 }
                             }
 
                             NFToolButton {
-                                onActiveFocusChanged: {
-                                    focus = false
-                                }
-
                                 icon.source: "qrc:/icons/arrow.svg"
-                                rotation: individualAppsRect.expanded ? 90 : 0
-                                visible: appDelegateRoot.model.sessionCount > 1 // Only show if multiple sessions
+                                rotation: outputDevicesRect.expanded ? 90 : 0
+                                visible: AudioBridge.isReady && AudioBridge.outputDevices.rowCount() > 1
                                 Layout.preferredHeight: 35
                                 Layout.preferredWidth: 35
-
                                 Behavior on rotation {
                                     NumberAnimation {
                                         duration: 150
@@ -890,200 +751,469 @@ ApplicationWindow {
                                 }
 
                                 onClicked: {
-                                    individualAppsRect.expanded = !individualAppsRect.expanded
+                                    outputDevicesRect.expanded = !outputDevicesRect.expanded
                                 }
                             }
                         }
 
-                        // Individual applications list
-                        ApplicationsListView {
-                            id: individualAppsRect
-                            model: AudioBridge.getSessionsForExecutable(appDelegateRoot.model.executableName)
-                            executableName: appDelegateRoot.model.executableName
-
-                            onApplicationVolumeChanged: function(appId, volume) {
-                                AudioBridge.setApplicationVolume(appId, volume)
-                            }
-
-                            onApplicationMuteChanged: function(appId, muted) {
-                                AudioBridge.setApplicationMute(appId, muted)
+                        DevicesListView {
+                            id: outputDevicesRect
+                            model: AudioBridge.outputDevices
+                            onDeviceClicked: function(name, index) {
+                                AudioBridge.setOutputDevice(index)
+                                if (UserSettings.closeDeviceListOnClick) {
+                                    expanded = false
+                                }
                             }
                         }
-                    }
-                }
-            }
 
-            Rectangle {
-                visible: UserSettings.activateChatmix
-                Layout.preferredHeight: 1
-                Layout.fillWidth: true
-                color: Constants.separatorColor
-                opacity: 0.15
-                Layout.rightMargin: -14
-                Layout.leftMargin: -14
-            }
-
-            ColumnLayout {
-                visible: UserSettings.activateChatmix
-                id: chatMixLayout
-                spacing: 5
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 40
-                    spacing: 0
-
-                    NFToolButton {
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 40
-                        icon.width: 15
-                        icon.height: 15
-                        icon.source: "qrc:/icons/headset.svg"
-                        icon.color: palette.text
-                        checkable: true
-                        checked: !UserSettings.chatMixEnabled
-                        opacity: checked ? 0.3 : 1
-
-                        Component.onCompleted: {
-                            palette.accent = palette.button
-                        }
-
-                        onClicked: {
-                            UserSettings.chatMixEnabled = !checked
-
-                            if (!checked) {
-                                AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
-                            } else {
-                                AudioBridge.restoreOriginalVolumes()
-                            }
-                        }
-                    }
-
-                    ColumnLayout {
-                        spacing: -4
-
-                        Label {
-                            visible: UserSettings.displayDevAppLabel
-                            opacity: 0.5
-                            text: qsTr("ChatMix")
-                            Layout.leftMargin: 18
-                            Layout.rightMargin: 25
-                        }
-
-                        NFSlider {
-                            id: chatMixSlider
-                            value: UserSettings.chatMixValue
-                            from: 0
-                            to: 100
+                        RowLayout {
                             Layout.fillWidth: true
-                            enabled: UserSettings.chatMixEnabled
-
-                            ToolTip {
-                                parent: chatMixSlider.handle
-                                visible: chatMixSlider.pressed || chatMixSlider.hovered
-                                delay: chatMixSlider.pressed ? 0 : 1000
-                                text: Math.round(chatMixSlider.value).toString()
+                            Layout.preferredHeight: 40
+                            spacing: 0
+                            NFToolButton {
+                                Layout.preferredWidth: 40
+                                Layout.preferredHeight: 40
+                                flat: true
+                                icon.source: AudioBridge.inputMuted ? "qrc:/icons/mic_muted.svg" : "qrc:/icons/mic.svg"
+                                icon.height: 16
+                                icon.width: 16
+                                onClicked: {
+                                    AudioBridge.setInputMute(!AudioBridge.inputMuted)
+                                }
                             }
 
-                            onValueChanged: {
-                                UserSettings.chatMixValue = value
-                                if (UserSettings.chatMixEnabled) {
-                                    AudioBridge.applyChatMixToApplications(Math.round(value))
+                            ColumnLayout {
+                                spacing: -4
+                                Label {
+                                    visible: UserSettings.displayDevAppLabel
+                                    opacity: 0.5
+                                    elide: Text.ElideRight
+                                    Layout.preferredWidth: inputSlider.implicitWidth - 30
+                                    Layout.leftMargin: 18
+                                    Layout.rightMargin: 25
+                                    text: AudioBridge.inputDeviceDisplayName
+                                }
+
+                                ProgressSlider {
+                                    id: inputSlider
+                                    value: pressed ? value : AudioBridge.inputVolume
+                                    from: 0
+                                    to: 100
+                                    audioLevel: AudioBridge.inputAudioLevel
+                                    Layout.fillWidth: true
+
+                                    onValueChanged: {
+                                        if (pressed) {
+                                            AudioBridge.setInputVolume(value)
+                                        }
+                                    }
+
+                                    onPressedChanged: {
+                                        if (!pressed) {
+                                            AudioBridge.setInputVolume(value)
+                                        }
+                                    }
+                                }
+                            }
+
+                            NFToolButton {
+                                icon.source: "qrc:/icons/arrow.svg"
+                                rotation: inputDevicesRect.expanded ? 90 : 0
+                                Layout.preferredHeight: 35
+                                Layout.preferredWidth: 35
+                                visible: AudioBridge.isReady && AudioBridge.inputDevices.rowCount() > 1
+                                Behavior on rotation {
+                                    NumberAnimation {
+                                        duration: 150
+                                        easing.type: Easing.Linear
+                                    }
+                                }
+
+                                onClicked: {
+                                    inputDevicesRect.expanded = !inputDevicesRect.expanded
+                                }
+                            }
+                        }
+
+                        DevicesListView {
+                            id: inputDevicesRect
+                            model: AudioBridge.inputDevices
+                            onDeviceClicked: function(name, index) {
+                                AudioBridge.setInputDevice(index)
+                                if (UserSettings.closeDeviceListOnClick) {
+                                    expanded = false
                                 }
                             }
                         }
                     }
 
-                    IconImage {
-                        Layout.preferredWidth: 35
-                        Layout.preferredHeight: 35
-                        sourceSize.width: 15
-                        sourceSize.height: 15
-                        color: palette.text
-                        source: "qrc:/icons/music.svg"
-                        enabled: UserSettings.chatMixEnabled
-                    }
-                }
-            }
-
-            Rectangle {
-                color: Constants.footerColor
-                Layout.fillWidth: true
-                Layout.fillHeight: false
-                bottomLeftRadius: 12
-                bottomRightRadius: 12
-                Layout.preferredHeight: 50
-                Layout.leftMargin: -14
-                Layout.rightMargin: -14
-                Layout.bottomMargin: -14
-
-                Rectangle {
-                    height: 1
-                    color: Constants.footerBorderColor
-                    opacity: 0.15
-                    visible: UserSettings.panelMode === 0
-                    anchors.top: parent.top
-                    anchors.right: parent.right
-                    anchors.left: parent.left
-                }
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 10
-                    spacing: 10
-
-                    Image {
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
-                        Layout.alignment: Qt.AlignVCenter
-                        source: SoundPanelBridge.mediaArt || ""
-                        fillMode: Image.PreserveAspectCrop
-                        visible: SoundPanelBridge.mediaArt !== "" && UserSettings.mediaMode === 1
-                    }
-
-                    ColumnLayout {
-                        spacing: 2
+                    Rectangle {
+                        Layout.preferredHeight: 1
                         Layout.fillWidth: true
-                        Item {
-                            Layout.fillHeight: true
-                            Layout.fillWidth: true
-                        }
+                        color: Constants.separatorColor
+                        opacity: 0.15
+                        visible: UserSettings.panelMode === 0 && AudioBridge.isReady && AudioBridge.applications.rowCount() > 0
+                        Layout.rightMargin: -14
+                        Layout.leftMargin: -14
+                    }
 
-                        Label {
-                            text: SoundPanelBridge.mediaTitle || ""
-                            font.pixelSize: 14
-                            font.bold: true
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                            visible: UserSettings.mediaMode === 1
-                        }
+                    ColumnLayout {
+                        id: appLayout
+                        spacing: 5
+                        visible: UserSettings.panelMode < 2 && AudioBridge.isReady && AudioBridge.applications.rowCount() > 0
 
-                        Label {
-                            text: SoundPanelBridge.mediaArtist || ""
-                            font.pixelSize: 12
-                            opacity: 0.7
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                            visible: UserSettings.mediaMode === 1
-                        }
+                        Repeater {
+                            id: appRepeater
+                            model: AudioBridge.groupedApplications
 
-                        Item {
-                            Layout.fillHeight: true
+                            delegate: ColumnLayout {
+                                id: appDelegateRoot
+                                spacing: 5
+                                Layout.fillWidth: true
+                                required property var model
+                                required property int index
+
+                                readonly property real applicationListHeight: individualAppsRect.expandedNeededHeight
+
+                                RowLayout {
+                                    Layout.preferredHeight: 40
+                                    Layout.fillWidth: true
+                                    spacing: 0
+
+                                    NFToolButton {
+                                        id: executableMuteButton
+                                        Layout.preferredWidth: 40
+                                        Layout.preferredHeight: 40
+                                        flat: !checked
+                                        checkable: true
+                                        highlighted: checked
+                                        checked: appDelegateRoot.model.allMuted
+                                        ToolTip.text: appDelegateRoot.model.displayName
+                                        ToolTip.visible: hovered
+                                        ToolTip.delay: 1000
+                                        opacity: highlighted ? 0.3 : (enabled ? 1 : 0.5)
+                                        icon.color: "transparent"
+                                        icon.source: appDelegateRoot.model.displayName === qsTr("System sounds") ? Constants.systemIcon : appDelegateRoot.model.iconPath
+
+                                        onClicked: {
+                                            AudioBridge.setExecutableMute(appDelegateRoot.model.executableName, checked)
+                                        }
+
+                                        Component.onCompleted: {
+                                            palette.accent = palette.button
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        spacing: -4
+
+                                        Label {
+                                            visible: UserSettings.displayDevAppLabel
+                                            opacity: UserSettings.chatMixEnabled ? 0.3 : 0.5
+                                            elide: Text.ElideRight
+                                            Layout.preferredWidth: 200
+                                            Layout.leftMargin: 18
+                                            Layout.rightMargin: 25
+                                            text: {
+                                                let name = appDelegateRoot.model.displayName
+                                                if (UserSettings.chatMixEnabled && AudioBridge.isCommApp(name)) {
+                                                    name += " (Comm)"
+                                                }
+                                                return name
+                                            }
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                acceptedButtons: Qt.RightButton
+                                                onClicked: function(mouse) {
+                                                    if (mouse.button === Qt.RightButton && appDelegateRoot.model.executableName !== "System sounds") {
+                                                        executableRenameContextMenu.originalName = appDelegateRoot.model.executableName
+                                                        executableRenameContextMenu.currentCustomName = AudioBridge.getCustomExecutableName(appDelegateRoot.model.executableName)
+                                                        executableRenameContextMenu.popup()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        ProgressSlider {
+                                            onActiveFocusChanged: {
+                                                focus = false
+                                            }
+                                            id: executableVolumeSlider
+                                            from: 0
+                                            to: 100
+                                            enabled: !UserSettings.chatMixEnabled && !executableMuteButton.highlighted
+                                            opacity: enabled ? 1 : 0.5
+                                            Layout.fillWidth: true
+                                            displayProgress: appDelegateRoot.model.displayName !== qsTr("System sounds")
+                                            audioLevel: appDelegateRoot.model.displayName !== qsTr("System sounds")
+                                                       ? (appDelegateRoot.model.averageAudioLevel || 0)
+                                                       : 0
+
+                                            value: pressed ? value : appDelegateRoot.model.averageVolume
+
+                                            onValueChanged: {
+                                                if (!UserSettings.chatMixEnabled && pressed) {
+                                                    AudioBridge.setExecutableVolume(appDelegateRoot.model.executableName, value)
+                                                }
+                                            }
+
+                                            onPressedChanged: {
+                                                if (!pressed && !UserSettings.chatMixEnabled) {
+                                                    AudioBridge.setExecutableVolume(appDelegateRoot.model.executableName, value)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    NFToolButton {
+                                        onActiveFocusChanged: {
+                                            focus = false
+                                        }
+
+                                        icon.source: "qrc:/icons/arrow.svg"
+                                        rotation: individualAppsRect.expanded ? 90 : 0
+                                        visible: appDelegateRoot.model.sessionCount > 1
+                                        Layout.preferredHeight: 35
+                                        Layout.preferredWidth: 35
+
+                                        Behavior on rotation {
+                                            NumberAnimation {
+                                                duration: 150
+                                                easing.type: Easing.Linear
+                                            }
+                                        }
+
+                                        onClicked: {
+                                            individualAppsRect.expanded = !individualAppsRect.expanded
+                                        }
+                                    }
+                                }
+
+                                ApplicationsListView {
+                                    id: individualAppsRect
+                                    model: AudioBridge.getSessionsForExecutable(appDelegateRoot.model.executableName)
+                                    executableName: appDelegateRoot.model.executableName
+
+                                    onApplicationVolumeChanged: function(appId, volume) {
+                                        AudioBridge.setApplicationVolume(appId, volume)
+                                    }
+
+                                    onApplicationMuteChanged: function(appId, muted) {
+                                        AudioBridge.setApplicationMute(appId, muted)
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    NFToolButton {
-                        icon.source: "qrc:/icons/settings.svg"
-                        icon.width: 14
-                        icon.height: 14
-                        antialiasing: true
-                        onClicked: {
-                            settingsWindow.show()
-                            panel.hidePanel()
+                    Rectangle {
+                        visible: UserSettings.activateChatmix
+                        Layout.preferredHeight: 1
+                        Layout.fillWidth: true
+                        color: Constants.separatorColor
+                        opacity: 0.15
+                        Layout.rightMargin: -14
+                        Layout.leftMargin: -14
+                    }
+
+                    ColumnLayout {
+                        visible: UserSettings.activateChatmix
+                        id: chatMixLayout
+                        spacing: 5
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            spacing: 0
+
+                            NFToolButton {
+                                Layout.preferredWidth: 40
+                                Layout.preferredHeight: 40
+                                icon.width: 15
+                                icon.height: 15
+                                icon.source: "qrc:/icons/headset.svg"
+                                icon.color: palette.text
+                                checkable: true
+                                checked: !UserSettings.chatMixEnabled
+                                opacity: checked ? 0.3 : 1
+
+                                Component.onCompleted: {
+                                    palette.accent = palette.button
+                                }
+
+                                onClicked: {
+                                    UserSettings.chatMixEnabled = !checked
+
+                                    if (!checked) {
+                                        AudioBridge.applyChatMixToApplications(UserSettings.chatMixValue)
+                                    } else {
+                                        AudioBridge.restoreOriginalVolumes()
+                                    }
+                                }
+                            }
+
+                            ColumnLayout {
+                                spacing: -4
+
+                                Label {
+                                    visible: UserSettings.displayDevAppLabel
+                                    opacity: 0.5
+                                    text: qsTr("ChatMix")
+                                    Layout.leftMargin: 18
+                                    Layout.rightMargin: 25
+                                }
+
+                                NFSlider {
+                                    id: chatMixSlider
+                                    value: UserSettings.chatMixValue
+                                    from: 0
+                                    to: 100
+                                    Layout.fillWidth: true
+                                    enabled: UserSettings.chatMixEnabled
+
+                                    ToolTip {
+                                        parent: chatMixSlider.handle
+                                        visible: chatMixSlider.pressed || chatMixSlider.hovered
+                                        delay: chatMixSlider.pressed ? 0 : 1000
+                                        text: Math.round(chatMixSlider.value).toString()
+                                    }
+
+                                    onValueChanged: {
+                                        UserSettings.chatMixValue = value
+                                        if (UserSettings.chatMixEnabled) {
+                                            AudioBridge.applyChatMixToApplications(Math.round(value))
+                                        }
+                                    }
+                                }
+                            }
+
+                            IconImage {
+                                Layout.preferredWidth: 35
+                                Layout.preferredHeight: 35
+                                sourceSize.width: 15
+                                sourceSize.height: 15
+                                color: palette.text
+                                source: "qrc:/icons/music.svg"
+                                enabled: UserSettings.chatMixEnabled
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        color: Constants.footerColor
+                        Layout.fillWidth: true
+                        Layout.fillHeight: false
+                        bottomLeftRadius: 12
+                        bottomRightRadius: 12
+                        Layout.preferredHeight: 50
+                        Layout.leftMargin: -14
+                        Layout.rightMargin: -14
+                        Layout.bottomMargin: -14
+
+                        Rectangle {
+                            height: 1
+                            color: Constants.footerBorderColor
+                            opacity: 0.15
+                            visible: UserSettings.panelMode === 0
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.left: parent.left
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+                            spacing: 10
+
+                            Image {
+                                Layout.preferredWidth: 32
+                                Layout.preferredHeight: 32
+                                Layout.alignment: Qt.AlignVCenter
+                                source: SoundPanelBridge.mediaArt || ""
+                                fillMode: Image.PreserveAspectCrop
+                                visible: SoundPanelBridge.mediaArt !== "" && UserSettings.mediaMode === 1
+                            }
+
+                            ColumnLayout {
+                                spacing: 2
+                                Layout.fillWidth: true
+                                Item {
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+                                }
+
+                                Label {
+                                    text: SoundPanelBridge.mediaTitle || ""
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                    visible: UserSettings.mediaMode === 1
+                                }
+
+                                Label {
+                                    text: SoundPanelBridge.mediaArtist || ""
+                                    font.pixelSize: 12
+                                    opacity: 0.7
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                    visible: UserSettings.mediaMode === 1
+                                }
+
+                                Item {
+                                    Layout.fillHeight: true
+                                }
+                            }
+
+                            NFToolButton {
+                                icon.source: "qrc:/icons/settings.svg"
+                                icon.width: 14
+                                icon.height: 14
+                                antialiasing: true
+                                onClicked: {
+                                    settingsWindow.show()
+                                    panel.hidePanel()
+                                }
+                            }
                         }
                     }
                 }
+            }
+
+            // Row 2, Column 3: Right spacer
+            Item {
+                id: rightSpacer
+                Layout.row: 1
+                Layout.column: 2
+                Layout.fillHeight: true
+                Layout.preferredWidth: {
+                    if (panel.taskbarPos === "top" || panel.taskbarPos === "bottom" || panel.taskbarPos === "right") {
+                        return UserSettings.xAxisMargin
+                    } else {
+                        return 0
+                    }
+                }
+                visible: panel.taskbarPos === "top" || panel.taskbarPos === "bottom" || panel.taskbarPos === "right"
+            }
+
+            // Row 3: Bottom spacer (spans 3 columns)
+            Item {
+                id: bottomSpacer
+                Layout.row: 2
+                Layout.column: 0
+                Layout.columnSpan: 3
+                Layout.fillWidth: true
+                Layout.preferredHeight: {
+                    if (panel.taskbarPos === "bottom" || panel.taskbarPos === "left" || panel.taskbarPos === "right") {
+                        return UserSettings.yAxisMargin
+                    } else {
+                        return 0
+                    }
+                }
+                visible: panel.taskbarPos === "bottom" || panel.taskbarPos === "left" || panel.taskbarPos === "right"
             }
         }
     }
