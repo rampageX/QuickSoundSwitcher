@@ -35,7 +35,6 @@ struct AudioApplication {
 struct AudioDevice {
     QString id;                  // Device ID
     QString name;                // Friendly name
-    QString shortName;           // Short name extracted from parentheses
     QString description;         // Device description
     bool isDefault;              // Is default device
     bool isDefaultCommunication; // Is default communication device
@@ -60,7 +59,6 @@ public:
     enum DeviceRoles {
         IdRole = Qt::UserRole + 1,
         NameRole,
-        ShortNameRole,
         DescriptionRole,
         IsDefaultRole,
         IsDefaultCommunicationRole,

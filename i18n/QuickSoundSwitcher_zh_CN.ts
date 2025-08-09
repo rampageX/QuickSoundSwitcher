@@ -57,11 +57,11 @@
     </message>
     <message>
         <source>Use short device names</source>
-        <translation>对设备使用短名称</translation>
+        <translation type="vanished">对设备使用短名称</translation>
     </message>
     <message>
         <source>Shorten device names by shrinking description</source>
-        <translation>只显示主设备名称，忽略端口以及描述等其他信息</translation>
+        <translation type="vanished">只显示主设备名称，忽略端口以及描述等其他信息</translation>
     </message>
     <message>
         <source>Volume value display mode</source>
@@ -338,11 +338,11 @@
     </message>
     <message>
         <source>Link same input and output devices</source>
-        <translation>链接输入输出设备</translation>
+        <translation type="vanished">链接输入输出设备</translation>
     </message>
     <message>
         <source>Try to match input / output from the same device</source>
-        <translation>尝试使用同一硬件上的输入输出设备</translation>
+        <translation type="vanished">尝试使用同一硬件上的输入输出设备</translation>
     </message>
     <message>
         <source>Sound keepalive</source>

@@ -14,7 +14,7 @@ Rectangle {
 
     property real expandedNeededHeight: devicesList.contentHeight + 20
 
-    signal deviceClicked(string name, string shortName, int index)
+    signal deviceClicked(string name, int index)
 
     Layout.fillWidth: true
     Layout.preferredHeight: expanded ? expandedNeededHeight : 0
@@ -72,11 +72,11 @@ Rectangle {
         }
 
         delegate: ItemDelegate {
+            id: del
             width: devicesList.width
             height: 40
             required property var model
             required property string name
-            required property string shortName
             required property string description
             required property bool isDefault
             required property string deviceId
@@ -84,12 +84,7 @@ Rectangle {
 
             highlighted: model.isDefault
 
-            text: {
-                let originalName = UserSettings.deviceShortName
-                    ? (model.shortName || model.name || "")
-                    : (model.name || "")
-                return AudioBridge.getDisplayNameForDevice(originalName)
-            }
+            text: AudioBridge.getDisplayNameForDevice(model.name || "")
 
             MouseArea {
                 anchors.fill: parent
@@ -97,13 +92,10 @@ Rectangle {
 
                 onClicked: function(mouse) {
                     if (mouse.button === Qt.LeftButton) {
-                        root.deviceClicked(model.name, model.shortName, index)
+                        root.deviceClicked(del.model.name, del.index)
                     } else if (mouse.button === Qt.RightButton) {
-                        let originalName = UserSettings.deviceShortName
-                            ? (model.shortName || model.name || "")
-                            : (model.name || "")
-                        deviceRenameContextMenu.originalName = originalName
-                        deviceRenameContextMenu.currentCustomName = AudioBridge.getCustomDeviceName(originalName)
+                        deviceRenameContextMenu.originalName = del.model.name || ""
+                        deviceRenameContextMenu.currentCustomName = AudioBridge.getCustomDeviceName(del.model.name || "")
                         deviceRenameContextMenu.popup()
                     }
                 }

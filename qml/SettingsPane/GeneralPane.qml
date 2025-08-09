@@ -35,17 +35,6 @@ ColumnLayout {
 
             Card {
                 Layout.fillWidth: true
-                title: qsTr("Link same input and output devices")
-                description: qsTr("Try to match input / output from the same device")
-
-                additionalControl: Switch {
-                    checked: UserSettings.linkIO
-                    onClicked: UserSettings.linkIO = checked
-                }
-            }
-
-            Card {
-                Layout.fillWidth: true
                 title: qsTr("Sound keepalive")
                 description: qsTr("Emit an inaudible sound to keep bluetooth devices awake")
 

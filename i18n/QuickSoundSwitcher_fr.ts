@@ -57,11 +57,11 @@
     </message>
     <message>
         <source>Use short device names</source>
-        <translation>Utiliser un nom court pour les périphériques</translation>
+        <translation type="vanished">Utiliser un nom court pour les périphériques</translation>
     </message>
     <message>
         <source>Shorten device names by shrinking description</source>
-        <translation>Réduire les noms des périphériques en raccourcissant leur description</translation>
+        <translation type="vanished">Réduire les noms des périphériques en raccourcissant leur description</translation>
     </message>
     <message>
         <source>Volume value display mode</source>
@@ -350,11 +350,11 @@
     </message>
     <message>
         <source>Link same input and output devices</source>
-        <translation>Lier les périphériques I/O similaires</translation>
+        <translation type="vanished">Lier les périphériques I/O similaires</translation>
     </message>
     <message>
         <source>Try to match input / output from the same device</source>
-        <translation>Essayez d’associer l’entrée et la sortie du même périphérique au changement</translation>
+        <translation type="vanished">Essayez d’associer l’entrée et la sortie du même périphérique au changement</translation>
     </message>
     <message>
         <source>Sound keepalive</source>

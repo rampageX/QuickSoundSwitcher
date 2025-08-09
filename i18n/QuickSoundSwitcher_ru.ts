@@ -49,11 +49,11 @@
     </message>
     <message>
         <source>Use short device names</source>
-        <translation>Использовать короткие названия устройств</translation>
+        <translation type="vanished">Использовать короткие названия устройств</translation>
     </message>
     <message>
         <source>Shorten device names by shrinking description</source>
-        <translation>Сократить описания устройств</translation>
+        <translation type="vanished">Сократить описания устройств</translation>
     </message>
     <message>
         <source>Volume value display mode</source>
@@ -330,11 +330,11 @@
     </message>
     <message>
         <source>Link same input and output devices</source>
-        <translation>Связать устройства ввода/вывода</translation>
+        <translation type="vanished">Связать устройства ввода/вывода</translation>
     </message>
     <message>
         <source>Try to match input / output from the same device</source>
-        <translation>Попробовать связать ввод / вывод с одного устройства</translation>
+        <translation type="vanished">Попробовать связать ввод / вывод с одного устройства</translation>
     </message>
     <message>
         <source>Sound keepalive</source>

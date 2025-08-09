@@ -49,11 +49,11 @@
     </message>
     <message>
         <source>Use short device names</source>
-        <translation>Usa nome corto dispositivo</translation>
+        <translation type="vanished">Usa nome corto dispositivo</translation>
     </message>
     <message>
         <source>Shorten device names by shrinking description</source>
-        <translation>Accorcia nomi dispositivi riducendo la descrizione</translation>
+        <translation type="vanished">Accorcia nomi dispositivi riducendo la descrizione</translation>
     </message>
     <message>
         <source>Hidden</source>
@@ -322,11 +322,11 @@
     </message>
     <message>
         <source>Link same input and output devices</source>
-        <translation>Collegamento stesso dispositivo ingresso/uscita</translation>
+        <translation type="vanished">Collegamento stesso dispositivo ingresso/uscita</translation>
     </message>
     <message>
         <source>Try to match input / output from the same device</source>
-        <translation>Prova ad abbinare input/output dallo stesso dispositivo</translation>
+        <translation type="vanished">Prova ad abbinare input/output dallo stesso dispositivo</translation>
     </message>
     <message>
         <source>Sound keepalive</source>

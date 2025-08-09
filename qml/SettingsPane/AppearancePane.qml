@@ -83,17 +83,6 @@ ColumnLayout {
 
             Card {
                 Layout.fillWidth: true
-                title: qsTr("Use short device names")
-                description: qsTr("Shorten device names by shrinking description")
-
-                additionalControl: Switch {
-                    checked: UserSettings.deviceShortName
-                    onClicked: UserSettings.deviceShortName = checked
-                }
-            }
-
-            Card {
-                Layout.fillWidth: true
                 title: qsTr("Media info display")
                 description: qsTr("Display currently playing media from Windows known sources")
 

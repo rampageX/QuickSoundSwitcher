@@ -33,17 +33,6 @@ SIZE_T getProcessMemoryUsage(DWORD processId) {
     return memoryUsage;
 }
 
-QString extractShortName(const QString& fullName) {
-    int firstOpenParenIndex = fullName.indexOf('(');
-    int lastCloseParenIndex = fullName.lastIndexOf(')');
-
-    if (firstOpenParenIndex != -1 && lastCloseParenIndex != -1 && firstOpenParenIndex < lastCloseParenIndex) {
-        return fullName.mid(firstOpenParenIndex + 1, lastCloseParenIndex - firstOpenParenIndex - 1).trimmed();
-    }
-
-    return fullName;
-}
-
 AudioManager* AudioManager::m_instance = nullptr;
 QMutex AudioManager::m_mutex;
 
@@ -71,8 +60,6 @@ QVariant AudioDeviceModel::data(const QModelIndex &index, int role) const
         return device.id;
     case NameRole:
         return device.name;
-    case ShortNameRole:
-        return device.shortName;
     case DescriptionRole:
         return device.description;
     case IsDefaultRole:
@@ -93,7 +80,6 @@ QHash<int, QByteArray> AudioDeviceModel::roleNames() const
     QHash<int, QByteArray> roles;
     roles[IdRole] = "deviceId";
     roles[NameRole] = "name";
-    roles[ShortNameRole] = "shortName";
     roles[DescriptionRole] = "description";
     roles[IsDefaultRole] = "isDefault";
     roles[IsDefaultCommunicationRole] = "isDefaultCommunication";
@@ -991,8 +977,6 @@ AudioDevice AudioWorker::createAudioDeviceFromInterface(IMMDevice* device, EData
     if (audioDevice.name.isEmpty()) {
         audioDevice.name = "Unknown Device";
     }
-
-    audioDevice.shortName = extractShortName(audioDevice.name);
 
     return audioDevice;
 }

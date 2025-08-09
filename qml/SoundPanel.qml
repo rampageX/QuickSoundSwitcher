@@ -48,10 +48,6 @@ ApplicationWindow {
         function onGlobalShortcutsEnabledChanged() {
             panel.globalShortcutsToggled(UserSettings.globalShortcutsEnabled)
         }
-
-        function onDeviceShortNameChanged() {
-            AudioBridge.refreshDeviceDisplayNames()
-        }
     }
 
     MediaPlayer {
@@ -654,20 +650,8 @@ ApplicationWindow {
                 DevicesListView {
                     id: outputDevicesRect
                     model: AudioBridge.outputDevices
-                    onDeviceClicked: function(name, shortName, index) {
+                    onDeviceClicked: function(name, index) {
                         AudioBridge.setOutputDevice(index)
-
-                        if (UserSettings.linkIO) {
-                            // Try to find matching input device using shortName
-                            let inputModel = AudioBridge.inputDevices
-                            for (let i = 0; i < inputModel.rowCount(); ++i) {
-                                let inputDeviceShortName = inputModel.getDeviceShortName(i)
-                                if (inputDeviceShortName === shortName) {
-                                    AudioBridge.setInputDevice(i)
-                                    break
-                                }
-                            }
-                        }
                         if (UserSettings.closeDeviceListOnClick) {
                             expanded = false
                         }
@@ -746,19 +730,8 @@ ApplicationWindow {
                 DevicesListView {
                     id: inputDevicesRect
                     model: AudioBridge.inputDevices
-                    onDeviceClicked: function(name, shortName, index) {
+                    onDeviceClicked: function(name, index) {
                         AudioBridge.setInputDevice(index)
-                        if (UserSettings.linkIO) {
-                            // Try to find matching output device using shortName
-                            let outputModel = AudioBridge.outputDevices
-                            for (let i = 0; i < outputModel.rowCount(); ++i) {
-                                let outputDeviceShortName = outputModel.getDeviceShortName(i)
-                                if (outputDeviceShortName === shortName) {
-                                    AudioBridge.setOutputDevice(i)
-                                    break
-                                }
-                            }
-                        }
                         if (UserSettings.closeDeviceListOnClick) {
                             expanded = false
                         }
@@ -783,7 +756,7 @@ ApplicationWindow {
 
                 Repeater {
                     id: appRepeater
-                    model: AudioBridge.groupedApplications // You'll need to implement this model
+                    model: AudioBridge.groupedApplications
 
                     delegate: ColumnLayout {
                         id: appDelegateRoot
@@ -794,7 +767,6 @@ ApplicationWindow {
 
                         readonly property real applicationListHeight: individualAppsRect.expandedNeededHeight
 
-                        // Main application row (represents the executable)
                         RowLayout {
                             Layout.preferredHeight: 40
                             Layout.fillWidth: true

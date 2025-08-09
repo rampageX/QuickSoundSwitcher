@@ -49,11 +49,11 @@
     </message>
     <message>
         <source>Use short device names</source>
-        <translation>짧은 장치 이름 사용</translation>
+        <translation type="vanished">짧은 장치 이름 사용</translation>
     </message>
     <message>
         <source>Shorten device names by shrinking description</source>
-        <translation>설명을 축소하여 장치 이름 단축</translation>
+        <translation type="vanished">설명을 축소하여 장치 이름 단축</translation>
     </message>
     <message>
         <source>Volume value display mode</source>
@@ -330,11 +330,11 @@
     </message>
     <message>
         <source>Link same input and output devices</source>
-        <translation>동일한 입력 및 출력 장치 연결</translation>
+        <translation type="vanished">동일한 입력 및 출력 장치 연결</translation>
     </message>
     <message>
         <source>Try to match input / output from the same device</source>
-        <translation>동일한 장치에서 입력/출력을 일치시키려고 시도합니다</translation>
+        <translation type="vanished">동일한 장치에서 입력/출력을 일치시키려고 시도합니다</translation>
     </message>
     <message>
         <source>Sound keepalive</source>

@@ -145,8 +145,6 @@ QVariant FilteredDeviceModel::data(const QModelIndex &index, int role) const
         return device.id;
     case NameRole:
         return device.name;
-    case ShortNameRole:
-        return device.shortName;
     case DescriptionRole:
         return device.description;
     case IsDefaultRole:
@@ -165,7 +163,6 @@ QHash<int, QByteArray> FilteredDeviceModel::roleNames() const
     QHash<int, QByteArray> roles;
     roles[IdRole] = "deviceId";
     roles[NameRole] = "name";
-    roles[ShortNameRole] = "shortName";
     roles[DescriptionRole] = "description";
     roles[IsDefaultRole] = "isDefault";
     roles[IsDefaultCommunicationRole] = "isDefaultCommunication";
@@ -177,14 +174,6 @@ QString FilteredDeviceModel::getDeviceName(int index) const
 {
     if (index >= 0 && index < m_devices.count()) {
         return m_devices[index].name;
-    }
-    return QString();
-}
-
-QString FilteredDeviceModel::getDeviceShortName(int index) const
-{
-    if (index >= 0 && index < m_devices.count()) {
-        return m_devices[index].shortName;
     }
     return QString();
 }
@@ -1809,10 +1798,8 @@ void AudioBridge::refreshDeviceModelData(const QString& originalName)
     for (int i = 0; i < m_outputDeviceModel->rowCount(); ++i) {
         QModelIndex index = m_outputDeviceModel->index(i, 0);
         QString deviceName = m_outputDeviceModel->data(index, FilteredDeviceModel::NameRole).toString();
-        QString deviceShortName = m_outputDeviceModel->data(index, FilteredDeviceModel::ShortNameRole).toString();
-
-        if (deviceName == originalName || deviceShortName == originalName) {
-            emit m_outputDeviceModel->dataChanged(index, index, {FilteredDeviceModel::NameRole, FilteredDeviceModel::ShortNameRole});
+        if (deviceName == originalName) {
+            emit m_outputDeviceModel->dataChanged(index, index, {FilteredDeviceModel::NameRole});
         }
     }
 
@@ -1820,10 +1807,8 @@ void AudioBridge::refreshDeviceModelData(const QString& originalName)
     for (int i = 0; i < m_inputDeviceModel->rowCount(); ++i) {
         QModelIndex index = m_inputDeviceModel->index(i, 0);
         QString deviceName = m_inputDeviceModel->data(index, FilteredDeviceModel::NameRole).toString();
-        QString deviceShortName = m_inputDeviceModel->data(index, FilteredDeviceModel::ShortNameRole).toString();
-
-        if (deviceName == originalName || deviceShortName == originalName) {
-            emit m_inputDeviceModel->dataChanged(index, index, {FilteredDeviceModel::NameRole, FilteredDeviceModel::ShortNameRole});
+        if (deviceName == originalName) {
+            emit m_inputDeviceModel->dataChanged(index, index, {FilteredDeviceModel::NameRole});
         }
     }
 }

@@ -48,14 +48,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>Use short device names</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Shorten device names by shrinking description</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Hidden</source>
         <translation></translation>
     </message>
@@ -310,14 +302,6 @@
     </message>
     <message>
         <source>Devices only</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Link same input and output devices</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Try to match input / output from the same device</source>
         <translation></translation>
     </message>
     <message>
