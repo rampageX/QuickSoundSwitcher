@@ -224,7 +224,7 @@ ApplicationWindow {
     PropertyAnimation {
         id: hideAnimation
         target: contentTransform
-        duration: 180
+        duration: 220
         easing.type: Easing.InCubic
         onFinished: {
             panel.visible = false
